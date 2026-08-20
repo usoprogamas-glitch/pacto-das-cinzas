@@ -114,16 +114,15 @@ func show_current_step() -> void:
    for child in choice_container.get_children():
     child.queue_free()
    
-  for choice in step.choices:
-   var btn = Button.new()
-   btn.text = choice.text
-   btn.custom_minimum_size = Vector2(300, 60)
-   btn.pressed.connect(func(): _on_choice_selected(choice))
-   choice_container.add_child(btn)
- else:
-  choice_container.visible = false
-  # Auto-advance para texto sem escolhas
-  if not step.choices or step.choices.size() == 0:
+   for choice in step.choices:
+    var btn = Button.new()
+    btn.text = choice.text
+    btn.custom_minimum_size = Vector2(300, 60)
+    btn.pressed.connect(func(): _on_choice_selected(choice))
+    choice_container.add_child(btn)
+  else:
+   choice_container.visible = false
+   # Auto-advance para texto sem escolhas
    var tween = create_tween()
    tween.tween_callback(func(): await get_tree().create_timer(3.0).timeout)
    tween.tween_callback(func(): _advance_step())

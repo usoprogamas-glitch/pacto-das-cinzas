@@ -285,7 +285,7 @@ static func get_away_position(enemy: Unit, target: Unit, grid: BattleGrid) -> Ve
  return best_pos
 
 static func get_flank_position(enemy: Unit, target: Unit, all_units: Array, grid: BattleGrid) -> Vector2i:
- var behind_target = target.grid_position + (target.grid_position - enemy.grid_position).signi()
+ var behind_target = target.grid_position + (target.grid_position - enemy.grid_position).sign()
  if BattleManager.is_valid_position(behind_target) and BattleManager.is_walkable(behind_target):
   return behind_target
  return get_closer_position(enemy, target, grid)
