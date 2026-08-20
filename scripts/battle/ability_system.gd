@@ -108,13 +108,13 @@ func initialize_abilities() -> void:
  }
 
 func has_ability(unit_name: String, ability_type: String) -> bool:
- var unit_key = unit_name.to_lower().replace(" ", "_")
+ var unit_key = unit_name.to_lower().replace(" ", "_").replace("'", "")
  if abilities.has(unit_key):
   return abilities[unit_key].has(ability_type)
  return false
 
 func get_ability(unit_name: String, ability_type: String) -> Dictionary:
- var unit_key = unit_name.to_lower().replace(" ", "_")
+ var unit_key = unit_name.to_lower().replace(" ", "_").replace("'", "")
  if abilities.has(unit_key) and abilities[unit_key].has(ability_type):
   return abilities[unit_key][ability_type]
  return {}
@@ -155,7 +155,7 @@ func use_ability(unit_name: String, ability_type: String, target: Unit = null) -
  return {"success": false, "reason": "unknown_effect"}
 
 func get_unit_abilities(unit_name: String) -> Array:
- var unit_key = unit_name.to_lower().replace(" ", "_")
+ var unit_key = unit_name.to_lower().replace(" ", "_").replace("'", "")
  if abilities.has(unit_key):
   return abilities[unit_key].keys()
  return []
@@ -165,3 +165,4 @@ func get_ability_description(unit_name: String, ability_type: String) -> String:
  if not ability.is_empty():
   return ability.get("description", "")
  return ""
+

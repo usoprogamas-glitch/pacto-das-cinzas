@@ -26,14 +26,14 @@ func pixel_to_grid(pixel_pos: Vector2) -> Vector2i:
  var local = pixel_pos - grid_origin
  return Vector2i(int(local.x / TILE_SIZE), int(local.y / TILE_SIZE))
 
-func show_movement_range(unit: Unit, range: int) -> void:
+func show_movement_range(unit: Unit, move_range: int) -> void:
  clear_highlights()
- movement_tiles = get_reachable_tiles(unit.grid_position, range)
+ movement_tiles = get_reachable_tiles(unit.grid_position, move_range)
  for tile in movement_tiles:
   highlight_tile(tile, Color(0.2, 0.6, 1.0, 0.4))
 
-func show_attack_range(unit: Unit, range: int) -> void:
- attack_tiles = get_tiles_in_range(unit.grid_position, range)
+func show_attack_range(unit: Unit, attack_range: int) -> void:
+ attack_tiles = get_tiles_in_range(unit.grid_position, attack_range)
  for tile in attack_tiles:
   highlight_tile(tile, Color(1.0, 0.2, 0.2, 0.4))
 
@@ -61,14 +61,14 @@ func get_reachable_tiles(start: Vector2i, move_range: int) -> Array[Vector2i]:
 
  return reachable
 
-func get_tiles_in_range(center: Vector2i, range: int) -> Array[Vector2i]:
+func get_tiles_in_range(center: Vector2i, tile_range: int) -> Array[Vector2i]:
  var tiles: Array[Vector2i] = []
- for y in range(center.y - range, center.y + range + 1):
-  for x in range(center.x - range, center.x + range + 1):
+ for y in range(center.y - tile_range, center.y + tile_range + 1):
+  for x in range(center.x - tile_range, center.x + tile_range + 1):
    var pos = Vector2i(x, y)
    if BattleManager.is_valid_position(pos):
     var dist = abs(x - center.x) + abs(y - center.y)
-    if dist <= range and dist > 0:
+    if dist <= tile_range and dist > 0:
      tiles.append(pos)
  return tiles
 
@@ -97,3 +97,4 @@ func _draw() -> void:
    var color = Color(0.2, 0.35, 0.2) if (x + y) % 2 == 0 else Color(0.25, 0.4, 0.25)
    draw_rect(rect, color, true)
    draw_rect(rect, Color(0.35, 0.5, 0.35), false, 1.0)
+

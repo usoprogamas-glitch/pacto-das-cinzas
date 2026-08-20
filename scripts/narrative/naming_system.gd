@@ -154,21 +154,19 @@ func name_soul(soul_type: String, custom_name: String) -> Dictionary:
  return {"success": true, "soul": soul}
 
 func check_protagonist_evolution() -> void:
- var progression = get_node("/root/CharacterProgression")
- if not progression:
-  return
-
- var old_form = protagonist_stats.form
+ var old_form = "Imp Menor"
 
  if total_named >= 1000 and fragments_collected >= 12:
-  protagonist_stats.form = "Avatar Primordial"
+  old_form = "Avatar Primordial"
  elif total_named >= 100 and fragments_collected >= 7:
-  protagonist_stats.form = "Arquidemônio"
+  old_form = "Arquidemônio"
  elif total_named >= 10 and fragments_collected >= 3:
-  protagonist_stats.form = "Nobre Abissal"
+  old_form = "Nobre Abissal"
+ else:
+  old_form = "Imp Menor"
 
- if protagonist_stats.form != old_form:
-  protagonist_evolved.emit(protagonist_stats.form)
+ # Notificar mudança de forma
+ protagonist_progress.emit(total_named)
 
 func add_experience(soul_id: String, amount: int) -> void:
  if not named_souls.has(soul_id):

@@ -3,10 +3,10 @@ extends Node2D
 
 # Sistema de feedback visual para combate
 # - Números de dano flutuantes
-- Flash de dano
-- Partículas de impacto
-- Screen shake
-- Slow motion
+# - Flash de dano
+# - Partículas de impacto
+# - Screen shake
+# - Slow motion
 
 func show_damage_number(position: Vector2, damage: int, is_critical: bool = false, is_heal: bool = false) -> void:
  var label = Label.new()

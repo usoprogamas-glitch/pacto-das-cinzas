@@ -49,7 +49,7 @@ func take_damage(amount: int) -> void:
  hp_changed.emit(current_hp)
  update_hp_bar()
  if current_hp <= 0:
-  die()
+  await die()
 
 func heal(amount: int) -> void:
  if not data:
@@ -62,9 +62,8 @@ func calculate_damage(target: Unit) -> int:
  if not data or not target.data:
   return 0
  var base_damage = data.attack + data.magic
- var defense = target.data.defense
  var variation = randf_range(0.85, 1.15)
- return int(base_damage * variation) - defense
+ return int(base_damage * variation)
 
 func die() -> void:
  var tween = create_tween()

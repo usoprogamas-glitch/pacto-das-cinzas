@@ -1,3 +1,4 @@
+class_name GameManagerClass
 extends Node
 
 signal game_started()

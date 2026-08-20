@@ -116,18 +116,18 @@ func create_unit(grid_pos: Vector2i, unit_name: String, color: Color, unit_class
  sprite.texture = texture
  unit.add_child(sprite)
 
- var hp_bar = ProgressBar.new()
- hp_bar.name = "HPBar"
- hp_bar.position = Vector2(-12, -20)
- hp_bar.size = Vector2(24, 4)
- hp_bar.max_value = hp
- hp_bar.value = hp
- var hp_fill = ColorRect.new()
- hp_fill.color = Color(0.2, 0.8, 0.2)
- hp_bar.add_theme_stylebox_override("fill", hp_fill.create_style_box())
- var hp_bg = ColorRect.new()
- hp_bg.color = Color(0.2, 0.2, 0.2)
- hp_bar.add_theme_stylebox_override("background", hp_bg.create_style_box())
+  var hp_bar = ProgressBar.new()
+  hp_bar.name = "HPBar"
+  hp_bar.position = Vector2(-12, -20)
+  hp_bar.size = Vector2(24, 4)
+  hp_bar.max_value = hp
+  hp_bar.value = hp
+  var hp_fill = StyleBoxFlat.new()
+  hp_fill.bg_color = Color(0.2, 0.8, 0.2)
+  hp_bar.add_theme_stylebox_override("fill", hp_fill)
+  var hp_bg = StyleBoxFlat.new()
+  hp_bg.bg_color = Color(0.2, 0.2, 0.2)
+  hp_bar.add_theme_stylebox_override("background", hp_bg)
  unit.add_child(hp_bar)
 
  var selection = ColorRect.new()
@@ -334,9 +334,10 @@ func _on_unit_attacked(attacker: Unit, target: Unit, damage: int) -> void:
  else:
   battle_stats.damage_taken += damage
 
- # Atualizar HP bar
- if target.hp_bar:
-  target.hp_bar.value = target.current_hp
+  # Atualizar HP bar
+  var hp_bar = target.get_node("HPBar") if target.has_node("HPBar") else null
+  if hp_bar:
+   hp_bar.value = target.current_hp
 
  # Flash de dano
  combat_feedback.flash_unit(target, Color(2, 0.5, 0.5), 0.1)

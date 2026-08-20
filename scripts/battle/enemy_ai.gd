@@ -7,7 +7,7 @@ static func decide_action(enemy: Unit, all_units: Array[Unit], grid: BattleGrid)
  var ai_type = get_ai_type(enemy)
  var nearest_player = find_nearest_player(enemy, all_units)
  var nearest_ally = find_nearest_ally(enemy, all_units)
- var health_percent = enemy.current_hp / enemy.data.max_hp
+ var health_percent = float(enemy.current_hp) / float(enemy.data.max_hp)
 
  match ai_type:
   "aggressive":
@@ -70,13 +70,13 @@ static func ranged_ai(enemy: Unit, target: Unit, grid: BattleGrid) -> Dictionary
   return {"action": "wait"}
 
 static func caster_ai(enemy: Unit, target: Unit, all_units: Array, grid: BattleGrid) -> Dictionary:
+ if not target:
+  return {"action": "wait"}
+
  var allies_near = count_allies_near(target, all_units)
 
  if allies_near >= 2:
   return {"action": "attack", "target": target, "aoe": true}
-
- if not target:
-  return {"action": "wait"}
 
  var dist = enemy.grid_position.distance_to(target.grid_position)
  if dist <= enemy.data.attack_range:
@@ -146,14 +146,14 @@ static func swarmer_ai(enemy: Unit, target: Unit, all_units: Array, grid: Battle
  return aggressive_ai(enemy, target, grid)
 
 static func zombie_ai(enemy: Unit, target: Unit, grid: BattleGrid) -> Dictionary:
- var health_percent = enemy.current_hp / enemy.data.max_hp
+ var health_percent = float(enemy.current_hp) / float(enemy.data.max_hp)
  if health_percent < 0.2:
   return {"action": "wait"}
 
  return brute_ai(enemy, target, grid)
 
 static func boss_ai(enemy: Unit, target: Unit, all_units: Array, grid: BattleGrid) -> Dictionary:
- var health_percent = enemy.current_hp / enemy.data.max_hp
+ var health_percent = float(enemy.current_hp) / float(enemy.data.max_hp)
 
  if health_percent < 0.3:
   var weakest = find_weakest_player(all_units)
@@ -295,3 +295,4 @@ static func get_between_position(enemy: Unit, ally: Unit, target: Unit, grid: Ba
  var temp_unit = Unit.new()
  temp_unit.grid_position = mid_point
  return get_closer_position(enemy, temp_unit, grid)
+

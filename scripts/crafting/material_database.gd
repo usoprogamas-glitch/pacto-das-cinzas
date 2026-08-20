@@ -23,8 +23,8 @@ static var materials: Dictionary = {
   "drop_chance": 0.6,
   "icon_color": "#4A4A4A"
  },
- "lama_ESCURA": {
-  "id": "lama_escura",
+  "lama_escura": {
+   "id": "lama_escura",
   "name": "Lama Escura",
   "rarity": Rarity.COMMON,
   "description": "Lama coletada de pântanos",
@@ -108,8 +108,8 @@ static var materials: Dictionary = {
   "drop_chance": 0.1,
   "icon_color": "#FF4500"
  },
- "lmina_corrompida": {
-  "id": "lamina_corrompida",
+  "lamina_corrompida": {
+   "id": "lamina_corrompida",
   "name": "Lâmina Corrompida",
   "rarity": Rarity.RARE,
   "description": "Espada infectada por magia sombria",

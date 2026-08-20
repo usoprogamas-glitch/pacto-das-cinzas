@@ -241,7 +241,7 @@ var events: Dictionary = {
   "chapter": 1,
   "title": "Invasão",
   "description": "O exército atinge as muralhas de mármore de Solaria.",
-  "type": "battle大规模",
+   "type": "battle",
   "enemies": ["paladino", "paladino", "paladino", "inquisidor", "inquisidor", "inquisidor"],
   "allies": ["kroug", "lira", "thalkor", "goblin_army"],
   "rewards": {"fragment": 1},

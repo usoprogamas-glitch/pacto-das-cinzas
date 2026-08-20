@@ -196,3 +196,4 @@ func get_available_dialogues() -> Array:
   if check_conditions(dialogues[id].conditions):
    available.append(id)
  return available
+
