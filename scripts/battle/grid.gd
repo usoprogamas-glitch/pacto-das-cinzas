@@ -94,6 +94,6 @@ func _draw() -> void:
   for x in GRID_SIZE.x:
    var pos = grid_to_pixel(Vector2i(x, y))
    var rect = Rect2(pos, Vector2(TILE_SIZE, TILE_SIZE))
-   var color = Color(0.15, 0.15, 0.2) if (x + y) % 2 == 0 else Color(0.2, 0.2, 0.25)
+   var color = Color(0.2, 0.35, 0.2) if (x + y) % 2 == 0 else Color(0.25, 0.4, 0.25)
    draw_rect(rect, color, true)
-   draw_rect(rect, Color(0.3, 0.3, 0.35), false, 1.0)
+   draw_rect(rect, Color(0.35, 0.5, 0.35), false, 1.0)

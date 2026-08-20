@@ -57,8 +57,9 @@ size_flags_vertical = 3
 bbcode_enabled = true
 text = "Selecione uma criatura para ver detalhes"
 
-[node name="NameInput" type="LineEdit" placeholdertext="Digite um nome para a alma..." placeholder_text="Digite um nome para a alma..."
+[node name="NameInput" type="LineEdit" parent="VBoxContainer"]
 layout_mode = 2
+placeholder_text = "Digite um nome para a alma..."
 
 [node name="NameButton" type="Button" parent="VBoxContainer"]
 layout_mode = 2

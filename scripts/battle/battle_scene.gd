@@ -61,8 +61,23 @@ func create_unit(grid_pos: Vector2i, unit_name: String, color: Color, unit_class
  var unit = Unit.new()
  unit.name = unit_name
 
+ # Criar sprite visual
  var sprite = Sprite2D.new()
  sprite.name = "Sprite2D"
+ var image = Image.create(32, 32, false, Image.FORMAT_RGBA8)
+ image.fill(color)
+ # Adicionar detalhes
+ for i in range(8):
+  var x = randi() % 32
+  var y = randi() % 32
+  image.set_pixel(x, y, color.lightened(0.3))
+ # Olhos
+ image.set_pixel(12, 12, Color.WHITE)
+ image.set_pixel(20, 12, Color.WHITE)
+ image.set_pixel(12, 12, Color.BLACK)
+ image.set_pixel(20, 12, Color.BLACK)
+ var texture = ImageTexture.create_from_image(image)
+ sprite.texture = texture
  unit.add_child(sprite)
 
  var hp_bar = ProgressBar.new()
