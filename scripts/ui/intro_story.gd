@@ -108,11 +108,12 @@ func show_current_step() -> void:
  else:
   kaelen_portrait.visible = false
  
- # Mostrar escolhas se houver
- if step.choices and step.choices.size() > 0:
-  choice_container.visible = true
-  choice_container.get_children().for_each(func(child): child.queue_free())
-  
+# Mostrar escolhas se houver
+  if step.choices and step.choices.size() > 0:
+   choice_container.visible = true
+   for child in choice_container.get_children():
+    child.queue_free()
+   
   for choice in step.choices:
    var btn = Button.new()
    btn.text = choice.text
