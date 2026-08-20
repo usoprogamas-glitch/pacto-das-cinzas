@@ -5,23 +5,32 @@ signal game_started()
 signal game_paused()
 signal game_resumed()
 signal scene_changed(scene_name: String)
+signal intro_completed(choices: Dictionary)
 
 var faith_system: FaithSystem
 var building_system: BuildingSystem
 var ability_system: AbilitySystem
+var intro_story: IntroStory
 
-var current_scene: String = "battle"
+var current_scene: String = "intro"
 var game_data: Dictionary = {
  "protagonist_name": "Kael",
  "protagonist_form": "Imp Menor",
  "soul_ether": 0,
  "gold": 0,
  "turn_count": 0,
- "chapter": 1
+ "chapter": 1,
+ "mana": 120,
+ "starting_ally": "none",
+ "kaelen_approval": 0,
+ "difficulty": "normal",
+ "knowledge_bonus": false,
+ "first_pact": false
 }
 
 func _ready() -> void:
  initialize_systems()
+ connect_intro_story()
 
 func initialize_systems() -> void:
  faith_system = FaithSystem.new()
@@ -36,6 +45,39 @@ func initialize_systems() -> void:
  ability_system.name = "AbilitySystem"
  add_child(ability_system)
 
+ intro_story = IntroStory.new()
+ intro_story.name = "IntroStory"
+ add_child(intro_story)
+
+func connect_intro_story() -> void:
+ intro_story.intro_completed.connect(_on_intro_completed)
+
+func _on_intro_completed(choices: Dictionary) -> void:
+ # Aplicar escolhas do jogador
+ for key in choices:
+  var choice = choices[key]
+  if choice.consequence == "first_pact":
+   game_data.starting_ally = "kroug"
+   game_data.first_pact = true
+   game_data.mana -= 15
+  elif choice.consequence == "lone_survivor":
+   game_data.starting_ally = "none"
+   game_data.kaelen_approval = -10
+   game_data.difficulty = "hard"
+  elif choice.consequence == "cautious_start":
+   game_data.starting_ally = "none"
+   game_data.knowledge_bonus = true
+   game_data.mana += 10
+   game_data.difficulty = "normal"
+
+ # Aplicar bônus de conhecimento se escolhido
+ if game_data.knowledge_bonus:
+  # Desbloquear conhecimento extra
+  pass
+
+ # Iniciar jogo propriamente dito
+ start_new_game()
+
 func start_new_game() -> void:
  game_data = {
   "protagonist_name": "Kael",
@@ -43,10 +85,24 @@ func start_new_game() -> void:
   "soul_ether": 0,
   "gold": 0,
   "turn_count": 0,
-  "chapter": 1
+  "chapter": 1,
+  "mana": game_data.mana,
+  "starting_ally": game_data.starting_ally,
+  "kaelen_approval": game_data.kaelen_approval,
+  "difficulty": game_data.difficulty,
+  "knowledge_bonus": game_data.knowledge_bonus,
+  "first_pact": game_data.first_pact
  }
 
- faith_system.register_apostle("Kroug")
+ # Registrar aliados baseado na escolha
+ if game_data.starting_ally == "kroug":
+  faith_system.register_apostle("Kroug")
+  # K25 de fé inicial por ser o primeiro pacto
+  faith_system.add_faith("Kroug", 25)
+ elif game_data.starting_ally == "none":
+  # Sem aliado inicial
+  pass
+
  faith_system.register_apostle("Lira")
  faith_system.register_apostle("Thal'kor")
 
