@@ -1,0 +1,27 @@
+# Godot 4 specific
+.godot/
+
+# Godot-specific ignores
+*.translation
+export_presets.cfg
+
+# Imported resources
+.import/
+
+# Builds
+builds/
+export/
+
+# OS-specific
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
