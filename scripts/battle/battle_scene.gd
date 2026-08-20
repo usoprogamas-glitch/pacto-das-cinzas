@@ -22,6 +22,7 @@ var tutorial_system: TutorialSystem
 var combat_feedback: CombatFeedback
 var screen_effects: ScreenEffects
 var unit_animators: Dictionary = {}
+var autotile_system: AutoTileSystem
 
 var selected_unit: Unit = null
 var is_unit_selected: bool = false
@@ -58,6 +59,11 @@ func setup_systems() -> void:
  add_child(screen_effects)
  screen_effects.setup_camera(camera)
 
+ # Autotile System
+ autotile_system = AutoTileSystem.new()
+ autotile_system.name = "AutoTileSystem"
+ add_child(autotile_system)
+
 func setup_ui() -> void:
  phase_label.text = "FASE: JOGADOR"
  turn_label.text = "Turno: 1"
@@ -70,14 +76,30 @@ func setup_ui() -> void:
  wait_button.pressed.connect(_on_wait_pressed)
 
 func setup_battle() -> void:
- spawn_player_unit(Vector2i(2, 6), "Kael", Color(0.2, 0.8, 0.3), "Imp Menor", 80, 12, 8, 3, 1)
- spawn_player_unit(Vector2i(1, 7), "Kroug", Color(0.8, 0.3, 0.1), "Goblin da Lama", 120, 10, 15, 2, 1)
- spawn_enemy_unit(Vector2i(9, 5), "Mercenário", Color(0.7, 0.2, 0.2), "Guerreiro", 60, 14, 10, 3, 1)
- spawn_enemy_unit(Vector2i(10, 6), "Mercenário", Color(0.7, 0.2, 0.2), "Guerreiro", 60, 14, 10, 3, 1)
- spawn_enemy_unit(Vector2i(8, 4), "Caçador", Color(0.6, 0.3, 0.3), "Arqueiro", 45, 16, 5, 4, 3)
-
- grid.draw_grid()
- BattleManager.start_battle()
+ # Inicializar sistema de autotile para o mapa
+ autotile_system.auto_tile_map(grid, 0, 0, Rect2i(0, 0, 12, 12))
+ autotile_system.setup_animated_tiles(grid, 0)
+ autotile_system.apply_random_variations(grid, 0, Rect2i(0, 0, 12, 12), 0.15)
+ 
+ # Obter o mapa atual
+ var current_map = MapDatabase.get_map(GameManager.game_data.get("current_map", 0))
+ if current_map:
+  # Spawn inimigos baseado no mapa
+  var enemy_positions = MapDatabase.get_enemy_spawn_positions(GameManager.game_data.get("current_map", 0), current_map.enemy_count)
+  var enemies = current_map.enemies
+  
+  for i in range(min(current_map.enemy_count, enemy_positions.size())):
+   var enemy_type = enemies[randi() % enemies.size()]
+   var enemy_data = EnemyDatabase.get_enemy(enemy_type)
+   if enemy_data:
+    spawn_enemy_unit(enemy_positions[i], enemy_data.name, Color(enemy_data.color.r, enemy_data.color.g, enemy_data.color.b), enemy_data.class, enemy_data.hp, enemy_data.atk, enemy_data.def, enemy_data.mov, enemy_data.rng)
+ else:
+  # Fallback para spawn padrão
+  spawn_player_unit(Vector2i(2, 6), "Kael", Color(0.2, 0.8, 0.3), "Imp Menor", 80, 12, 8, 3, 1)
+  spawn_player_unit(Vector2i(1, 7), "Kroug", Color(0.8, 0.3, 0.1), "Goblin da Lama", 120, 10, 15, 2, 1)
+  spawn_enemy_unit(Vector2i(9, 5), "Mercenário", Color(0.7, 0.2, 0.2), "Guerreiro", 60, 14, 10, 3, 1)
+  spawn_enemy_unit(Vector2i(10, 6), "Mercenário", Color(0.7, 0.2, 0.2), "Guerreiro", 60, 14, 10, 3, 1)
+  spawn_enemy_unit(Vector2i(8, 4), "Caçador", Color(0.6, 0.3, 0.3), "Arqueiro", 45, 16, 5, 4, 3)
 
  # Iniciar tutorial na primeira batalha
  if not FileAccess.file_exists("user://tutorial_completed"):
