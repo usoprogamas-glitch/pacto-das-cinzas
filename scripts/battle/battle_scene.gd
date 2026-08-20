@@ -119,44 +119,29 @@ func create_unit(grid_pos: Vector2i, unit_name: String, color: Color, unit_class
  var unit = Unit.new()
  unit.name = unit_name
 
- # Criar sprite visual
- var sprite = Sprite2D.new()
- sprite.name = "Sprite2D"
- var image = Image.create(32, 32, false, Image.FORMAT_RGBA8)
- image.fill(color)
- # Adicionar detalhes
- for i in range(8):
-  var x = randi() % 32
-  var y = randi() % 32
-  image.set_pixel(x, y, color.lightened(0.3))
- # Olhos
- image.set_pixel(12, 12, Color.WHITE)
- image.set_pixel(20, 12, Color.WHITE)
- image.set_pixel(12, 12, Color.BLACK)
- image.set_pixel(20, 12, Color.BLACK)
- var texture = ImageTexture.create_from_image(image)
- sprite.texture = texture
+ # Criar sprite visual usando PixelArtRenderer
+ var sprite = create_unit_sprite(unit_name, color, is_player)
  unit.add_child(sprite)
 
-  var hp_bar = ProgressBar.new()
-  hp_bar.name = "HPBar"
-  hp_bar.position = Vector2(-12, -20)
-  hp_bar.size = Vector2(24, 4)
-  hp_bar.max_value = hp
-  hp_bar.value = hp
-  var hp_fill = StyleBoxFlat.new()
-  hp_fill.bg_color = Color(0.2, 0.8, 0.2)
-  hp_bar.add_theme_stylebox_override("fill", hp_fill)
-  var hp_bg = StyleBoxFlat.new()
-  hp_bg.bg_color = Color(0.2, 0.2, 0.2)
-  hp_bar.add_theme_stylebox_override("background", hp_bg)
+ var hp_bar = ProgressBar.new()
+ hp_bar.name = "HPBar"
+ hp_bar.position = Vector2(-16, -24)
+ hp_bar.size = Vector2(32, 5)
+ hp_bar.max_value = hp
+ hp_bar.value = hp
+ var hp_fill = StyleBoxFlat.new()
+ hp_fill.bg_color = Color(0.2, 0.8, 0.2)
+ hp_bar.add_theme_stylebox_override("fill", hp_fill)
+ var hp_bg = StyleBoxFlat.new()
+ hp_bg.bg_color = Color(0.2, 0.2, 0.2)
+ hp_bar.add_theme_stylebox_override("background", hp_bg)
  unit.add_child(hp_bar)
 
  var selection = ColorRect.new()
  selection.name = "SelectionIndicator"
- selection.color = Color(1, 1, 0, 0.3)
- selection.position = Vector2(-2, -2)
- selection.size = Vector2(36, 36)
+ selection.color = Color(1, 1, 0, 0.4)
+ selection.position = Vector2(-4, -4)
+ selection.size = Vector2(40, 40)
  selection.visible = false
  unit.add_child(selection)
 
@@ -186,6 +171,10 @@ func create_unit(grid_pos: Vector2i, unit_name: String, color: Color, unit_class
  unit_animators[unit_name] = animator
  animator.play_idle()
 
+ # Aplicar efeitos visuais avançados
+ if PixelArtRenderer.has_method("apply_all_effects"):
+  PixelArtRenderer.apply_all_effects(sprite, unit_name.to_lower().replace(" ", "_"))
+
  return unit
 
 func connect_signals() -> void:
@@ -197,6 +186,83 @@ func connect_signals() -> void:
  BattleManager.battle_won.connect(_on_battle_won)
  BattleManager.battle_lost.connect(_on_battle_lost)
  BattleManager.soul_ether_gained.connect(_on_soul_ether_gained)
+
+func create_unit_sprite(unit_name: String, color: Color, is_player: bool) -> Sprite2D:
+ # Usar PixelArtRenderer para sprites detalhados
+ var char_key = unit_name.to_lower().replace(" ", "_")
+ 
+ match char_key:
+  "kael":
+   return PixelArtRenderer.create_kael("imp")
+  "kroug":
+   return PixelArtRenderer.create_kroug()
+  "lira":
+   return PixelArtRenderer.create_lira()
+  "thalkor":
+   return PixelArtRenderer.create_thalkor()
+  "mercenário", "mercenario":
+   return PixelArtRenderer.create_enemy("mercenario")
+  "guerreiro":
+   return PixelArtRenderer.create_enemy("mercenario")
+  "caçador", "cacador":
+   return PixelArtRenderer.create_enemy("cacador")
+  "arqueiro":
+   return PixelArtRenderer.create_enemy("cacador")
+  "inquisidor":
+   return PixelArtRenderer.create_enemy("inquisidor")
+  "paladino":
+   return PixelArtRenderer.create_enemy("paladino")
+  "troll":
+   return PixelArtRenderer.create_enemy("troll")
+  "lobo_sombrio":
+   return PixelArtRenderer.create_enemy("lobo_sombrio")
+  "aranha_gigante":
+   return PixelArtRenderer.create_enemy("aranha_gigante")
+  "esqueleto":
+   return PixelArtRenderer.create_enemy("esqueleto")
+  "cardeal", "santo_cardeal":
+   return PixelArtRenderer.create_enemy("cardeal")
+  _:
+   # Fallback para sprite procedural se não encontrado
+   return _create_fallback_sprite(color, is_player)
+
+func _create_fallback_sprite(color: Color, is_player: bool) -> Sprite2D:
+ var sprite = Sprite2D.new()
+ var image = Image.create(64, 64, false, Image.FORMAT_RGBA8)
+ image.fill(Color(0, 0, 0, 0))
+ 
+ var base_color = color if is_player else color.darkened(0.3)
+ 
+ # Desenhar personagem simples mas melhorado
+ var center = 32
+ 
+ # Corpo
+ for y in range(center - 10, center + 10):
+  for x in range(center - 8, center + 8):
+   if x >= 0 && x < 64 && y >= 0 && y < 64:
+    var dist = sqrt(pow(x - center, 2) + pow(y - center, 2))
+    if dist < 10:
+     var shade = 1.0 - dist / 10.0
+     if shade > 0.7:
+      image.set_pixel(x, y, base_color.lightened(0.3))
+     elif shade > 0.4:
+      image.set_pixel(x, y, base_color)
+     else:
+      image.set_pixel(x, y, base_color.darkened(0.3))
+
+ # Olhos
+ var eye_color = Color.WHITE if is_player else Color("#FF4444")
+ image.set_pixel(center - 4, center - 4, eye_color)
+ image.set_pixel(center + 4, center - 4, eye_color)
+ image.set_pixel(center - 3, center - 3, Color.BLACK)
+ image.set_pixel(center + 3, center - 3, Color.BLACK)
+
+ var texture = ImageTexture.create_from_image(image)
+ var sprite = Sprite2D.new()
+ sprite.texture = texture
+ sprite.scale = Vector2(1.5, 1.5)
+ 
+ return sprite
 
 func _input(event: InputEvent) -> void:
  if not can_interact:

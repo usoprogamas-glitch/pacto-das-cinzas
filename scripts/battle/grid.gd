@@ -5,18 +5,28 @@ const TILE_SIZE = 32
 const GRID_SIZE = Vector2i(12, 12)
 
 var highlight_layer: TileMapLayer
+var terrain_layer: TileMapLayer
 var movement_tiles: Array[Vector2i] = []
 var attack_tiles: Array[Vector2i] = []
-
 var grid_origin: Vector2 = Vector2.ZERO
+
+var terrain_map: Array = []  # Mapa de terrenos por posição
 
 func _ready() -> void:
  grid_origin = position
- setup_highlight_layer()
+ setup_layers()
 
-func setup_highlight_layer() -> void:
+func setup_layers() -> void:
+ # Camada de terreno (base)
+ terrain_layer = TileMapLayer.new()
+ terrain_layer.name = "TerrainLayer"
+ terrain_layer.z_index = -1
+ add_child(terrain_layer)
+ 
+ # Camada de highlights (por cima)
  highlight_layer = TileMapLayer.new()
  highlight_layer.name = "HighlightLayer"
+ highlight_layer.z_index = 10
  add_child(highlight_layer)
 
 func grid_to_pixel(grid_pos: Vector2i) -> Vector2:
@@ -26,16 +36,43 @@ func pixel_to_grid(pixel_pos: Vector2) -> Vector2i:
  var local = pixel_pos - grid_origin
  return Vector2i(int(local.x / TILE_SIZE), int(local.y / TILE_SIZE))
 
+func initialize_terrain(terrain_type: String = "grass") -> void:
+ # Inicializar mapa de terreno
+ terrain_map.clear()
+ terrain_layer.clear()
+ 
+ for y in GRID_SIZE.y:
+  var row: Array = []
+  for x in GRID_SIZE.x:
+   var terrain_id = get_terrain_tile_id(terrain_type)
+   row.append(terrain_id)
+   var pos = Vector2i(x, y)
+   terrain_layer.set_cell(0, pos, 0, terrain_id)
+  terrain_map.append(row)
+
+func get_terrain_tile_id(terrain_type: String) -> int:
+ # Retorna o ID do tile no atlas para o tipo de terreno
+ match terrain_type:
+  "grass": return 0
+  "dirt": return 14
+  "stone": return 28
+  "water": return 42
+  "lava": return 56
+  "castle": return 98
+  "cave": return 112
+  "forest": return 126
+  _: return 0
+
 func show_movement_range(unit: Unit, move_range: int) -> void:
  clear_highlights()
  movement_tiles = get_reachable_tiles(unit.grid_position, move_range)
  for tile in movement_tiles:
-  highlight_tile(tile, Color(0.2, 0.6, 1.0, 0.4))
+  highlight_tile(tile, Color(0.2, 0.6, 1.0, 0.5))
 
 func show_attack_range(unit: Unit, attack_range: int) -> void:
  attack_tiles = get_tiles_in_range(unit.grid_position, attack_range)
  for tile in attack_tiles:
-  highlight_tile(tile, Color(1.0, 0.2, 0.2, 0.4))
+  highlight_tile(tile, Color(1.0, 0.2, 0.2, 0.5))
 
 func get_reachable_tiles(start: Vector2i, move_range: int) -> Array[Vector2i]:
  var reachable: Array[Vector2i] = []
@@ -86,15 +123,32 @@ func clear_highlights() -> void:
  movement_tiles.clear()
  attack_tiles.clear()
 
-func draw_grid() -> void:
- queue_redraw()
+func set_terrain_at(pos: Vector2i, terrain_type: String) -> void:
+ if BattleManager.is_valid_position(pos):
+  var terrain_id = get_terrain_tile_id(terrain_type)
+  terrain_map[pos.y][pos.x] = terrain_id
+  terrain_layer.set_cell(0, pos, 0, terrain_id)
+
+func get_terrain_at(pos: Vector2i) -> String:
+ if BattleManager.is_valid_position(pos):
+  var terrain_id = terrain_map[pos.y][pos.x]
+  return get_terrain_name(terrain_id)
+ return "grass"
+
+func apply_autotile(map_database: MapDatabase) -> void:
+ # Aplicar autotile usando o sistema avançado
+ if AutotileSystem.has_method("auto_tile_map"):
+  AutotileSystem.auto_tile_map(self, 0, 0, Rect2i(0, 0, GRID_SIZE.x, GRID_SIZE.y))
+  AutotileSystem.setup_animated_tiles(self, 0)
+  AutotileSystem.apply_random_variations(self, 0, Rect2i(0, 0, GRID_SIZE.x, GRID_SIZE.y), 0.15)
 
 func _draw() -> void:
- for y in GRID_SIZE.y:
-  for x in GRID_SIZE.x:
-   var pos = grid_to_pixel(Vector2i(x, y))
-   var rect = Rect2(pos, Vector2(TILE_SIZE, TILE_SIZE))
-   var color = Color(0.2, 0.35, 0.2) if (x + y) % 2 == 0 else Color(0.25, 0.4, 0.25)
-   draw_rect(rect, color, true)
-   draw_rect(rect, Color(0.35, 0.5, 0.35), false, 1.0)
-
+ # Desenhar fundo se não houver terrain_layer
+ if terrain_layer.get_used_cells(0).size() == 0:
+  for y in GRID_SIZE.y:
+   for x in GRID_SIZE.x:
+    var pos = grid_to_pixel(Vector2i(x, y))
+    var rect = Rect2(pos, Vector2(TILE_SIZE, TILE_SIZE))
+    var color = Color(0.2, 0.35, 0.2) if (x + y) % 2 == 0 else Color(0.25, 0.4, 0.25)
+    draw_rect(rect, color, true)
+    draw_rect(rect, Color(0.35, 0.5, 0.35), false, 1.0)
