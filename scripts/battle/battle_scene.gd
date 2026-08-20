@@ -17,14 +17,46 @@ extends Node2D
 @onready var attack_button: Button = $UILayer/ActionMenu/VBoxContainer/AttackButton
 @onready var wait_button: Button = $UILayer/ActionMenu/VBoxContainer/WaitButton
 
+# Novos sistemas
+var tutorial_system: TutorialSystem
+var combat_feedback: CombatFeedback
+var screen_effects: ScreenEffects
+var unit_animators: Dictionary = {}
+
 var selected_unit: Unit = null
 var is_unit_selected: bool = false
 var can_interact: bool = true
+var battle_stats: Dictionary = {
+ "turns": 0,
+ "enemies_defeated": 0,
+ "total_damage": 0,
+ "damage_taken": 0,
+ "souls_named": 0
+}
 
 func _ready() -> void:
+ setup_systems()
  setup_ui()
  setup_battle()
  connect_signals()
+
+func setup_systems() -> void:
+ # Tutorial
+ tutorial_system = TutorialSystem.new()
+ tutorial_system.name = "TutorialSystem"
+ add_child(tutorial_system)
+ tutorial_system.tutorial_message.connect(_on_tutorial_message)
+
+ # Combat Feedback
+ combat_feedback = CombatFeedback.new()
+ combat_feedback.name = "CombatFeedback"
+ add_child(combat_feedback)
+
+ # Screen Effects
+ screen_effects = ScreenEffects.new()
+ screen_effects.name = "ScreenEffects"
+ add_child(screen_effects)
+ screen_effects.setup_camera(camera)
 
 func setup_ui() -> void:
  phase_label.text = "FASE: JOGADOR"
@@ -46,6 +78,10 @@ func setup_battle() -> void:
 
  grid.draw_grid()
  BattleManager.start_battle()
+
+ # Iniciar tutorial na primeira batalha
+ if not FileAccess.file_exists("user://tutorial_completed"):
+  tutorial_system.start_tutorial()
 
 func spawn_player_unit(grid_pos: Vector2i, unit_name: String, color: Color, unit_class: String, hp: int, atk: int, def: int, mov: int, rng: int) -> Unit:
  var unit = create_unit(grid_pos, unit_name, color, unit_class, hp, atk, def, mov, rng, true)
@@ -120,6 +156,14 @@ func create_unit(grid_pos: Vector2i, unit_name: String, color: Color, unit_class
  unit.grid_position = grid_pos
  unit_container.add_child(unit)
 
+ # Criar animador
+ var animator = UnitAnimator.new()
+ animator.name = "Animator"
+ unit.add_child(animator)
+ animator.setup(unit)
+ unit_animators[unit_name] = animator
+ animator.play_idle()
+
  return unit
 
 func connect_signals() -> void:
@@ -150,13 +194,16 @@ func handle_left_click() -> void:
 
  var clicked_unit = BattleManager.get_tile_at(grid_pos)
 
- if clicked_unit and clicked_unit.is_player and BattleManager.current_phase == BattleManager.Phase.PLAYER_TURN:
+ if clicked_unit and clicked_unit.data and clicked_unit.data.is_player and BattleManager.current_phase == BattleManager.Phase.PLAYER_TURN:
   select_unit(clicked_unit)
+  tutorial_system.complete_step("select_unit")
  elif is_unit_selected and selected_unit:
   if not selected_unit.has_moved and grid.movement_tiles.has(grid_pos):
    move_selected_unit(grid_pos)
-  elif not selected_unit.has_acted and grid.attack_tiles.has(grid_pos) and clicked_unit and not clicked_unit.is_player:
+   tutorial_system.complete_step("move_unit")
+  elif not selected_unit.has_acted and grid.attack_tiles.has(grid_pos) and clicked_unit and clicked_unit.data and not clicked_unit.data.is_player:
    attack_with_selected_unit(clicked_unit)
+   tutorial_system.complete_step("attack_unit")
 
 func handle_right_click() -> void:
  deselect_unit()
@@ -165,7 +212,10 @@ func select_unit(unit: Unit) -> void:
  deselect_unit()
  selected_unit = unit
  is_unit_selected = true
- unit.select()
+
+ # Feedback visual
+ SoundManager.play_select()
+ combat_feedback.flash_unit(unit, Color(1.2, 1.2, 1.5), 0.1)
 
  show_unit_info(unit)
  show_action_menu(unit)
@@ -176,8 +226,6 @@ func select_unit(unit: Unit) -> void:
   grid.show_attack_range(unit, unit.data.attack_range)
 
 func deselect_unit() -> void:
- if selected_unit:
-  selected_unit.deselect()
  selected_unit = null
  is_unit_selected = false
  grid.clear_highlights()
@@ -186,6 +234,12 @@ func deselect_unit() -> void:
 
 func move_selected_unit(grid_pos: Vector2i) -> void:
  if selected_unit and not selected_unit.has_moved:
+  # Animação de movimento
+  var animator = unit_animators.get(selected_unit.name)
+  if animator:
+   animator.play_walk(grid.grid_to_pixel(grid_pos))
+
+  SoundManager.play_step()
   BattleManager.move_unit(selected_unit, grid_pos)
   selected_unit.has_moved = true
   grid.clear_highlights()
@@ -194,7 +248,21 @@ func move_selected_unit(grid_pos: Vector2i) -> void:
 
 func attack_with_selected_unit(target: Unit) -> void:
  if selected_unit and not selected_unit.has_acted:
+  # Animação de ataque
+  var attacker_animator = unit_animators.get(selected_unit.name)
+  if attacker_animator:
+   await attacker_animator.play_attack(target)
+
+  SoundManager.play_hit()
+  combat_feedback.shake_light()
+
   BattleManager.attack_unit(selected_unit, target)
+
+  # Animação de dano no alvo
+  var target_animator = unit_animators.get(target.name)
+  if target_animator:
+   target_animator.play_hit()
+
   selected_unit.has_acted = true
   grid.clear_highlights()
   hide_action_menu()
@@ -232,6 +300,7 @@ func _on_wait_pressed() -> void:
  if selected_unit:
   selected_unit.has_moved = true
   selected_unit.has_acted = true
+  tutorial_system.complete_step("wait_action")
   deselect_unit()
   check_all_units_acted()
 
@@ -239,6 +308,7 @@ func check_all_units_acted() -> void:
  for unit in BattleManager.player_units:
   if not unit.has_acted or not unit.has_moved:
    return
+ tutorial_system.complete_step("end_turn")
  BattleManager.end_player_turn()
 
 func _on_phase_changed(phase: String) -> void:
@@ -247,23 +317,119 @@ func _on_phase_changed(phase: String) -> void:
 
 func _on_turn_started(_unit: Unit) -> void:
  turn_label.text = "Turno: %d" % BattleManager.turn_count
+ battle_stats.turns = BattleManager.turn_count
 
 func _on_unit_moved(unit: Unit, _from: Vector2i, to: Vector2i) -> void:
  unit.position = grid.grid_to_pixel(to)
 
 func _on_unit_attacked(attacker: Unit, target: Unit, damage: int) -> void:
- pass
+ # Feedback visual de dano
+ var target_pos = target.global_position + Vector2(0, -20)
+ combat_feedback.show_damage_number(target_pos, damage)
+ combat_feedback.spawn_hit_particles(target.global_position)
+
+ # Atualizar stats
+ if attacker.data and attacker.data.is_player:
+  battle_stats.total_damage += damage
+ else:
+  battle_stats.damage_taken += damage
+
+ # Atualizar HP bar
+ if target.hp_bar:
+  target.hp_bar.value = target.current_hp
+
+ # Flash de dano
+ combat_feedback.flash_unit(target, Color(2, 0.5, 0.5), 0.1)
 
 func _on_unit_died(unit: Unit) -> void:
- pass
+ # Animação de morte
+ var animator = unit_animators.get(unit.name)
+ if animator:
+  await animator.play_death()
+
+ SoundManager.play_death()
+ combat_feedback.shake_medium()
+
+ if unit.data and not unit.data.is_player:
+  battle_stats.enemies_defeated += 1
+
+ # Verificar vitória
+ check_battle_end()
+
+func check_battle_end() -> void:
+ if BattleManager.player_units.size() == 0:
+  BattleManager.battle_lost.emit()
+ elif BattleManager.enemy_units.size() == 0:
+  BattleManager.battle_won.emit()
 
 func _on_battle_won() -> void:
- phase_label.text = "VITÓRIA!"
  can_interact = false
 
+ # Efeitos visuais
+ await screen_effects.flash_white()
+ combat_feedback.spawn_level_up_effect(Vector2(640, 360))
+
+ # Mostrar tela de vitória
+ await get_tree().create_timer(1.0).timeout
+ show_victory_screen()
+
 func _on_battle_lost() -> void:
- phase_label.text = "DERROTA..."
  can_interact = false
+
+ # Efeitos visuais
+ await screen_effects.flash_red()
+ screen_effects.slow_motion(0.3, 1.0)
+
+ # Mostrar tela de derrota
+ await get_tree().create_timer(1.5).timeout
+ show_defeat_screen()
 
 func _on_soul_ether_gained(amount: int) -> void:
  soul_ether_label.text = "Soul Éter: %d" % BattleManager.soul_ether
+ combat_feedback.show_status_effect(Vector2(640, 100), "Soul Éter +%d" % amount)
+
+func show_victory_screen() -> void:
+ # Criar tela de vitória dinamicamente
+ var result_screen = load("res://scenes/ui/battle_result_screen.tscn").instantiate()
+ add_child(result_screen)
+ result_screen.show_victory(battle_stats)
+ result_screen.restart_pressed.connect(_on_restart)
+ result_screen.menu_pressed.connect(_on_menu)
+ result_screen.continue_pressed.connect(_on_continue)
+
+func show_defeat_screen() -> void:
+ var result_screen = load("res://scenes/ui/battle_result_screen.tscn").instantiate()
+ add_child(result_screen)
+ result_screen.show_defeat(battle_stats)
+ result_screen.restart_pressed.connect(_on_restart)
+ result_screen.menu_pressed.connect(_on_menu)
+
+func _on_restart() -> void:
+ get_tree().reload_current_scene()
+
+func _on_menu() -> void:
+ SceneManager.change_scene("main_menu")
+
+func _on_continue() -> void:
+ SceneManager.change_scene("map_select")
+
+func _on_tutorial_message(message: String, position: Vector2) -> void:
+ # Mostrar mensagem do tutorial
+ var label = Label.new()
+ label.text = message
+ label.position = position - Vector2(200, 20)
+ label.z_index = 150
+ label.add_theme_font_size_override("font_size", 16)
+ label.add_theme_color_override("font_color", Color.WHITE)
+ label.add_theme_color_override("font_shadow_color", Color("#000000"))
+ label.add_theme_constant_override("shadow_offset_x", 2)
+ label.add_theme_constant_override("shadow_offset_y", 2)
+ label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+ label.custom_minimum_size = Vector2(400, 0)
+
+ ui_layer.add_child(label)
+
+ # Auto-remover após 3 segundos
+ await get_tree().create_timer(3.0).timeout
+ if is_instance_valid(label):
+  label.queue_free()

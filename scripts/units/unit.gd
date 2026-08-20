@@ -17,6 +17,7 @@ var current_mp: int = 50
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var hp_bar: ProgressBar = $HPBar
 @onready var selection_indicator: ColorRect = $SelectionIndicator
+@onready var animator: Node = $Animator if has_node("Animator") else null
 
 func _ready() -> void:
  if data:
