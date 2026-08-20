@@ -1,0 +1,35 @@
+# O Pacto das Cinzas - Contexto do Projeto
+
+## Engine
+Godot 4 com GDScript
+
+## Estrutura de Arquivos
+- project.godot - configuração do projeto
+- scripts/battle/BattleManager.gd - gerencia turnos, IA, Soul Éter
+- scripts/battle/battle_scene.gd - cena principal, input, UI
+- scripts/battle/grid.gd - grid 12x12, highlights de movimento
+- scripts/units/unit.gd - personagem no grid
+- scripts/units/unit_data.gd - stats do personagem
+- scenes/battle/battle_scene.tscn - cena da batalha
+
+## Sistemas Implementados
+1. Grid de combate 12x12
+2. Sistema de turnos (Jogador → Inimigo)
+3. Unidades com HP, ATK, DEF, MOV, RNG
+4. Movimentação com pathfinding simples
+5. IA inimiga (perseguir + atacar)
+6. Menu de ações (Mover/Atacar/Esperar)
+7. HUD com info da unidade e Soul Éter
+8. Unidades morrem com fade-out
+
+## Personagens Principais
+- Kael (Imp Menor) - protagonista
+- Kroug (Goblin da Lama → Rei Ogro de Fogo)
+- Lira (Muda Mágica → Rainha dos Bosques)
+- Thal'kor (Anjo Caído → Serafim das Sombras)
+
+## Convenções
+- Usar class_name para tipos customizados
+- Sinais para comunicação entre sistemas
+- Autoload para BattleManager
+- Sprites placeholder com ColorRect
