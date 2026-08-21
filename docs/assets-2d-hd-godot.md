@@ -94,4 +94,3 @@ Para uma base visual mais consistente no jogo final, a recomendação é **Ember
 ## Avisos de licença
 
 Uso comercial não significa que os PNGs podem ser revendidos separadamente. Em geral, os assets podem ser incluídos dentro do jogo, mas não podem ser redistribuídos como outro pacote de assets. O pack **2DPIXX** exige atribuição. O pack VFX de **pewas** declara pipeline assistido por IA. Verifique os termos atuais antes do lançamento.
-

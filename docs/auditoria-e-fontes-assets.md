@@ -139,4 +139,3 @@ Troque para `Node3D` com câmera ortográfica, iluminação e pipeline de render
 5. Adicionar conteúdo dos quatro atos, arte final, áudio e acessibilidade.
 
 Nenhum arquivo de terceiros foi copiado para o projeto; este documento contém apenas referências e recomendações.
-
