@@ -23,6 +23,7 @@ var combat_feedback: CombatFeedback
 var screen_effects: ScreenEffects
 var unit_animators: Dictionary = {}
 var autotile_system: AutoTileSystem
+var pixel_art_renderer: PixelArtRenderer
 
 var selected_unit: Unit = null
 var is_unit_selected: bool = false
@@ -64,6 +65,11 @@ func setup_systems() -> void:
  autotile_system.name = "AutoTileSystem"
  add_child(autotile_system)
 
+ # Pixel Art Renderer
+ pixel_art_renderer = PixelArtRenderer.new()
+ pixel_art_renderer.name = "PixelArtRenderer"
+ add_child(pixel_art_renderer)
+
 func setup_ui() -> void:
  phase_label.text = "FASE: JOGADOR"
  turn_label.text = "Turno: 1"
@@ -76,10 +82,10 @@ func setup_ui() -> void:
  wait_button.pressed.connect(_on_wait_pressed)
 
 func setup_battle() -> void:
- # Inicializar sistema de autotile para o mapa
- autotile_system.auto_tile_map(grid, 0, 0, Rect2i(0, 0, 12, 12))
- autotile_system.setup_animated_tiles(grid, 0)
- autotile_system.apply_random_variations(grid, 0, Rect2i(0, 0, 12, 12), 0.15)
+ # Inicializar sistema de autotile para o mapa (aplicado sobre a camada de terreno do grid)
+ autotile_system.auto_tile_map(grid.terrain_layer, 0, Rect2i(0, 0, 12, 12))
+ autotile_system.setup_animated_tiles(grid.terrain_layer)
+ autotile_system.apply_random_variations(grid.terrain_layer, Rect2i(0, 0, 12, 12), 0.15)
  
  # Obter o mapa atual
  var current_map = MapDatabase.get_map(GameManager.game_data.get("current_map", 0))
@@ -172,8 +178,8 @@ func create_unit(grid_pos: Vector2i, unit_name: String, color: Color, unit_class
  animator.play_idle()
 
  # Aplicar efeitos visuais avançados
- if PixelArtRenderer.has_method("apply_all_effects"):
-  PixelArtRenderer.apply_all_effects(sprite, unit_name.to_lower().replace(" ", "_"))
+ if pixel_art_renderer.has_method("apply_all_effects"):
+  pixel_art_renderer.apply_all_effects(sprite, unit_name.to_lower().replace(" ", "_"))
 
  return unit
 
@@ -193,35 +199,35 @@ func create_unit_sprite(unit_name: String, color: Color, is_player: bool) -> Spr
  
  match char_key:
   "kael":
-   return PixelArtRenderer.create_kael("imp")
+   return pixel_art_renderer.create_kael("imp")
   "kroug":
-   return PixelArtRenderer.create_kroug()
+   return pixel_art_renderer.create_kroug()
   "lira":
-   return PixelArtRenderer.create_lira()
+   return pixel_art_renderer.create_lira()
   "thalkor":
-   return PixelArtRenderer.create_thalkor()
+   return pixel_art_renderer.create_thalkor()
   "mercenário", "mercenario":
-   return PixelArtRenderer.create_enemy("mercenario")
+   return pixel_art_renderer.create_enemy("mercenario")
   "guerreiro":
-   return PixelArtRenderer.create_enemy("mercenario")
+   return pixel_art_renderer.create_enemy("mercenario")
   "caçador", "cacador":
-   return PixelArtRenderer.create_enemy("cacador")
+   return pixel_art_renderer.create_enemy("cacador")
   "arqueiro":
-   return PixelArtRenderer.create_enemy("cacador")
+   return pixel_art_renderer.create_enemy("cacador")
   "inquisidor":
-   return PixelArtRenderer.create_enemy("inquisidor")
+   return pixel_art_renderer.create_enemy("inquisidor")
   "paladino":
-   return PixelArtRenderer.create_enemy("paladino")
+   return pixel_art_renderer.create_enemy("paladino")
   "troll":
-   return PixelArtRenderer.create_enemy("troll")
+   return pixel_art_renderer.create_enemy("troll")
   "lobo_sombrio":
-   return PixelArtRenderer.create_enemy("lobo_sombrio")
+   return pixel_art_renderer.create_enemy("lobo_sombrio")
   "aranha_gigante":
-   return PixelArtRenderer.create_enemy("aranha_gigante")
+   return pixel_art_renderer.create_enemy("aranha_gigante")
   "esqueleto":
-   return PixelArtRenderer.create_enemy("esqueleto")
+   return pixel_art_renderer.create_enemy("esqueleto")
   "cardeal", "santo_cardeal":
-   return PixelArtRenderer.create_enemy("cardeal")
+   return pixel_art_renderer.create_enemy("cardeal")
   _:
    # Fallback para sprite procedural se não encontrado
    return _create_fallback_sprite(color, is_player)
@@ -258,11 +264,11 @@ func _create_fallback_sprite(color: Color, is_player: bool) -> Sprite2D:
  image.set_pixel(center + 3, center - 3, Color.BLACK)
 
  var texture = ImageTexture.create_from_image(image)
- var sprite = Sprite2D.new()
- sprite.texture = texture
- sprite.scale = Vector2(1.5, 1.5)
- 
- return sprite
+ var sprite_node = Sprite2D.new()
+ sprite_node.texture = texture
+ sprite_node.scale = Vector2(1.5, 1.5)
+
+ return sprite_node
 
 func _input(event: InputEvent) -> void:
  if not can_interact:

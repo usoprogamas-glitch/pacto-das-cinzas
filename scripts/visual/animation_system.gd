@@ -51,9 +51,6 @@ var blend_time: float = 0.1
 var sprite: Sprite2D
 var animations: Dictionary = {}
 var current_anim_data: AnimationData
-var frame_timer: float = 0.0
-var current_frame: int = 0
-var is_playing: bool = false
 var current_priority: int = 0
 var blend_timer: float = 0.0
 var blend_from: AnimationData
@@ -271,25 +268,25 @@ func build_animations() -> void:
  animations["aurius_final_form"] = create_anim_data("aurius", "final_form", 8, 0.1, true, AnimationPriority.CRITICAL)
  animations["aurius_death"] = create_death_anim("aurius", "death", 30, 0.1, AnimationPriority.CRITICAL)
 
-# === MESTRE ===
-animations["master_idle"] = create_anim_data("master", "idle", 4, 0.2, true, AnimationPriority.LOW)
-animations["master_teach"] = create_anim_data("master", "teach", 12, 0.08, true, AnimationPriority.LOW)
-animations["master_combat"] = create_attack_anim("master", "combat", 16, 0.05, [
+ # === MESTRE ===
+ animations["master_idle"] = create_anim_data("master", "idle", 4, 0.2, true, AnimationPriority.LOW)
+ animations["master_teach"] = create_anim_data("master", "teach", 12, 0.08, true, AnimationPriority.LOW)
+ animations["master_combat"] = create_attack_anim("master", "combat", 16, 0.05, [
   {"frame": 4, "type": "hitbox", "data": {"damage": 100, "radius": 300, "true_damage": true}},
   {"frame": 8, "type": "screen_shake", "data": {"intensity": 20, "duration": 0.8}}
  ], AnimationPriority.CRITICAL)
 
 func create_anim_data(character: String, action: String, frames: int, duration: float, loop: bool, priority: int) -> Dictionary:
- var frames = []
+ var frame_paths = []
  for i in range(frames):
-  frames.append("res://assets/sprites/%s/%s_%03d.png" % [character, action, i])
- 
+  frame_paths.append("res://assets/sprites/%s/%s_%03d.png" % [character, action, i])
+
  return {
   "name": "%s_%s" % [character, action],
   "character": character,
   "action": action,
-  "frames": frames,
-  "frame_duration": 1.0 / frames if frames > 0 else 0.1,
+  "frames": frame_paths,
+  "frame_duration": duration,
   "loop": loop,
   "priority": priority,
   "events": {},

@@ -3,18 +3,60 @@ extends Control
 
 signal intro_completed(choices: Dictionary)
 
-@onready var background: ColorRect = $Background
-@onready var text_label: Label = $VBoxContainer/TextLabel
-@onready var choice_container: HBoxContainer = $VBoxContainer/ChoiceContainer
-@onready var kaelen_portrait: TextureRect = $VBoxContainer/KaelenPortrait
+var background: ColorRect
+var text_label: Label
+var choice_container: HBoxContainer
+var kaelen_portrait: TextureRect
 
 var current_step: int = 0
 var story_text: Array[Dictionary] = []
 var player_choices: Dictionary = {}
 
 func _ready() -> void:
+ _build_ui_if_missing()
+ background = get_node("Background") as ColorRect
+ text_label = get_node("VBoxContainer/TextLabel") as Label
+ choice_container = get_node("VBoxContainer/ChoiceContainer") as HBoxContainer
+ kaelen_portrait = get_node("VBoxContainer/KaelenPortrait") as TextureRect
  setup_story()
  show_current_step()
+
+func _build_ui_if_missing() -> void:
+ # Quando instanciado via código (sem .tscn), cria os nós de UI esperados
+ if not has_node("Background"):
+  var bg = ColorRect.new()
+  bg.name = "Background"
+  bg.color = Color(0.05, 0.04, 0.08)
+  bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+  add_child(bg)
+
+ if not has_node("VBoxContainer"):
+  var vbox = VBoxContainer.new()
+  vbox.name = "VBoxContainer"
+  vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+  vbox.add_theme_constant_override("separation", 20)
+  add_child(vbox)
+
+  var portrait = TextureRect.new()
+  portrait.name = "KaelenPortrait"
+  portrait.custom_minimum_size = Vector2(0, 200)
+  portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+  portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+  vbox.add_child(portrait)
+
+  var label = Label.new()
+  label.name = "TextLabel"
+  label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+  label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+  label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+  label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+  vbox.add_child(label)
+
+  var choices = HBoxContainer.new()
+  choices.name = "ChoiceContainer"
+  choices.alignment = BoxContainer.ALIGNMENT_CENTER
+  choices.add_theme_constant_override("separation", 30)
+  vbox.add_child(choices)
 
 func setup_story() -> void:
  story_text = [
@@ -108,24 +150,23 @@ func show_current_step() -> void:
  else:
   kaelen_portrait.visible = false
  
-# Mostrar escolhas se houver
-  if step.choices and step.choices.size() > 0:
-   choice_container.visible = true
-   for child in choice_container.get_children():
-    child.queue_free()
-   
-   for choice in step.choices:
-    var btn = Button.new()
-    btn.text = choice.text
-    btn.custom_minimum_size = Vector2(300, 60)
-    btn.pressed.connect(func(): _on_choice_selected(choice))
-    choice_container.add_child(btn)
-  else:
-   choice_container.visible = false
-   # Auto-advance para texto sem escolhas
-   var tween = create_tween()
-   tween.tween_callback(func(): await get_tree().create_timer(3.0).timeout)
-   tween.tween_callback(func(): _advance_step())
+ # Mostrar escolhas se houver
+ if step.get("choices", []) and step.choices.size() > 0:
+  choice_container.visible = true
+  for child in choice_container.get_children():
+   child.queue_free()
+
+  for choice in step.choices:
+   var btn = Button.new()
+   btn.text = choice.text
+   btn.custom_minimum_size = Vector2(300, 60)
+   btn.pressed.connect(func(): _on_choice_selected(choice))
+   choice_container.add_child(btn)
+ else:
+  choice_container.visible = false
+  # Auto-advance para texto sem escolhas
+  var tween = create_tween()
+  tween.tween_callback(func(): _advance_step())
 
 func _advance_step() -> void:
  current_step += 1

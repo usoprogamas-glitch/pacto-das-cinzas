@@ -22,6 +22,38 @@ func _ready() -> void:
  build_tile_variations()
  build_animated_tiles()
 
+# === BUILDERS (populam os dicionários a partir das constantes estáticas) ===
+
+func build_autotile_patterns() -> void:
+ # Um padrão por terreno: lista de índices de tile válidos dentro da sua faixa
+ autotile_patterns.clear()
+ for terrain in TERRAIN_BASE_INDEX:
+  var base = TERRAIN_BASE_INDEX[terrain]
+  autotile_patterns[terrain] = range(base, base + 14)
+
+func build_tile_variations() -> void:
+ # Variações de preenchimento para cada terreno (índices internos 5..13 da faixa)
+ tile_variations.clear()
+ for terrain in TERRAIN_BASE_INDEX:
+  var base = TERRAIN_BASE_INDEX[terrain]
+  var variants: Array[int] = []
+  for i in range(5, 14):
+   variants.append(base + i)
+  tile_variations[base] = variants
+
+func build_animated_tiles() -> void:
+ # Tiles animados por terreno (frames relativos à faixa do terreno)
+ animated_tiles.clear()
+ for terrain in ANIMATED_TERRAINS:
+  if TERRAIN_BASE_INDEX.has(terrain):
+   var base = TERRAIN_BASE_INDEX[terrain]
+   var frame_ids: Array[int] = []
+   for f in ANIMATED_TERRAINS[terrain].frames:
+    frame_ids.append(base + int(f))
+   animated_tiles[base] = {"frames": frame_ids, "frame_duration": ANIMATED_TERRAINS[terrain].frame_duration}
+
+# === CÁLCULO DE BITMASK ===
+
 # === MAPEAMENTO 47-TILE BITMASK ===
 # Bitmask: 1=UP, 2=RIGHT, 4=DOWN, 8=LEFT
 # Centro = 0, bordas = 1-4, cantos = 5-8, T-junctions = 9-12, cruz = 13
@@ -99,12 +131,9 @@ static var EXTENDED_PATTERNS: Dictionary = {
  "transition_grass_dirt": 46, "transition_grass_water": 47
 }
 
-func _ready() -> void:
- pass
-
 # === CÁLCULO DE BITMASK ===
 
-static func calculate_bitmask(tilemap: TileMap, layer: int, pos: Vector2i, terrain_id: int) -> int:
+static func calculate_bitmask(layer_node: TileMapLayer, pos: Vector2i, terrain_id: int) -> int:
  var bitmask = 0
  var neighbors = [
   Vector2i(0, -1),   # UP
@@ -113,53 +142,54 @@ static func calculate_bitmask(tilemap: TileMap, layer: int, pos: Vector2i, terra
   Vector2i(-1, 0)    # LEFT
  ]
 
+ var target_coords = index_to_atlas(terrain_id)
  for i in range(4):
   var neighbor_pos = pos + neighbors[i]
-  var neighbor_id = tilemap.get_cell_atlas_coords(layer, neighbor_pos)
-  if neighbor_id == terrain_id:
+  var neighbor_id = layer_node.get_cell_atlas_coords(neighbor_pos)
+  if neighbor_id == target_coords:
    bitmask |= (1 << i)
- 
+
  return bitmask
 
-static func calculate_extended_bitmask(tilemap: TileMap, layer: int, pos: Vector2i, terrain_id: int, other_terrains: Array[int]) -> Dictionary:
+static func calculate_extended_bitmask(layer_node: TileMapLayer, pos: Vector2i, terrain_id: int, other_terrains: Array[int]) -> Dictionary:
  var result = {
   "bitmask": 0,
   "extended_type": "normal",
   "transitions": {}
  }
- 
+
  var neighbors = [
   Vector2i(0, -1),   # UP
   Vector2i(1, 0),    # RIGHT
   Vector2i(0, 1),    # DOWN
   Vector2i(-1, 0)    # LEFT
  ]
- 
+
+ var target_coords = index_to_atlas(terrain_id)
  var same_count = 0
  var neighbor_types = []
- 
+ var same_dirs: Array[int] = []
+
  for i in range(4):
   var neighbor_pos = pos + neighbors[i]
-  var neighbor_id = tilemap.get_cell_atlas_coords(layer, neighbor_pos)
+  var neighbor_id = layer_node.get_cell_atlas_coords(neighbor_pos)
   var neighbor_terrain = get_terrain_from_atlas(neighbor_id)
-  
-  if neighbor_terrain == terrain_id:
+
+  if neighbor_id == target_coords or neighbor_terrain == terrain_id:
    same_count += 1
+   same_dirs.append(i)
    neighbor_types.append(terrain_id)
   else:
    neighbor_types.append(neighbor_terrain)
    if neighbor_terrain != -1:
-    result.transitions[neighbor_terrain] = neighbor_types[-1]
- 
+    result.transitions[neighbor_terrain] = neighbor_terrain
+
  var bitmask = 0
- for i in range(4):
-  var neighbor_pos = pos + [Vector2i(0, -1), Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0)][i]
-  var neighbor_id = tilemap.get_cell_atlas_coords(layer, neighbor_pos)
-  if get_terrain_from_atlas(neighbor_id) == terrain_id:
-   bitmask |= (1 << i)
- 
+ for dir in same_dirs:
+  bitmask |= (1 << dir)
+
  result.bitmask = bitmask
- 
+
  # Determinar tipo estendido
  if same_count == 4:
   result.extended_type = "center"
@@ -167,29 +197,16 @@ static func calculate_extended_bitmask(tilemap: TileMap, layer: int, pos: Vector
   result.extended_type = "triple"
  elif same_count == 2:
   # Verificar se adjacentes (canto) ou opostos (linha)
-  var dirs = []
-  for i in range(4):
-   var neighbor_pos = pos + [Vector2i(0, -1), Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0)][i]
-   var neighbor_id = tilemap.get_cell_atlas_coords(layer, neighbor_pos)
-   if get_terrain_from_atlas(neighbor_id) == terrain_id:
-    intersections.append(i)
-  
-  if intersections.size() == 2:
-   if abs(intersections[0] - intersections[1]) == 1 or abs(intersections[0] - intersections[1]) == 3:
-    result.extended_type = "corner"
-   else:
-    result.extended_type = "edge_straight"
+  if abs(same_dirs[0] - same_dirs[1]) == 1 or abs(same_dirs[0] - same_dirs[1]) == 3:
+   result.extended_type = "corner"
+  else:
+   result.extended_type = "edge_straight"
  elif same_count == 1:
   result.extended_type = "edge"
  else:
   result.extended_type = "isolated"
- 
- return result
 
-static func get_terrain_from_atlas(atlas_coords: Vector2i) -> int:
- # Mapear coordenadas do atlas para ID de terreno
- # Implementar conforme seu atlas
- return -1
+ return result
 
 # === SELEÇÃO DE TILE ===
 
@@ -255,35 +272,34 @@ static func select_extended_tile(bitmask_data: Dictionary, terrain_type: String,
 
 # === APLICAÇÃO AUTOMÁTICA ===
 
-func auto_tile_map(tilemap: TileMap, layer: int, terrain_id: int, bounds: Rect2i) -> void:
+func auto_tile_map(layer_node: TileMapLayer, terrain_id: int, bounds: Rect2i) -> void:
  for y in range(bounds.position.y, bounds.position.y + bounds.size.y):
   for x in range(bounds.position.x, bounds.position.x + bounds.size.x):
    var pos = Vector2i(x, y)
-   var current_id = tilemap.get_cell_atlas_coords(layer, pos)
+   var current_id = layer_node.get_cell_atlas_coords(pos)
    var current_terrain = get_terrain_from_atlas(current_id)
-   
-   if current_terrain == terrain_id:
-    var bitmask = calculate_bitmask(tilemap, layer, pos, terrain_id)
-    var tile_index = select_tile(bitmask, get_terrain_name(terrain_id))
-    tilemap.set_cell(layer, pos, 0, tile_index)
- 
-   # Verificar transições com terrenos vizinhos
-   _apply_transitions(tilemap, layer, pos, terrain_id)
 
-func _apply_transitions(tilemap: TileMap, layer: int, pos: Vector2i, terrain_id: int) -> void:
+   if current_terrain == terrain_id:
+    var bitmask = calculate_bitmask(layer_node, pos, terrain_id)
+    var tile_index = select_tile(bitmask, get_terrain_name(terrain_id))
+    layer_node.set_cell(pos, 0, index_to_atlas(tile_index))
+
+   # Verificar transições com terrenos vizinhos
+   _apply_transitions(layer_node, pos, terrain_id)
+
+func _apply_transitions(layer_node: TileMapLayer, pos: Vector2i, terrain_id: int) -> void:
  var neighbors = [Vector2i(0, -1), Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0)]
- 
+
  for i in range(4):
-  var neighbor_pos = pos + [Vector2i(0, -1), Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0)][i]
-  var neighbor_id = tilemap.get_cell_atlas_coords(layer, neighbor_pos)
+  var neighbor_pos = pos + neighbors[i]
+  var neighbor_id = layer_node.get_cell_atlas_coords(neighbor_pos)
   var neighbor_terrain = get_terrain_from_atlas(neighbor_id)
-  
+
   if neighbor_terrain != -1 and neighbor_terrain != terrain_id:
    # Aplicar tile de transição
    var transition_tile = get_transition_tile(terrain_id, neighbor_terrain, i)
    if transition_tile != -1:
-    var transition_layer = layer + 1  # Camada acima
-    tilemap.set_cell(transition_layer, neighbor_pos, 0, transition_tile)
+    layer_node.set_cell(neighbor_pos, 0, index_to_atlas(transition_tile))
 
 static func get_transition_tile(terrain_a: int, terrain_b: int, direction: int) -> int:
  # Retorna tile de transição entre dois terrenos
@@ -293,43 +309,52 @@ static func get_transition_tile(terrain_a: int, terrain_b: int, direction: int) 
 
 # === VARIANTES ALEATÓRIAS ===
 
-func apply_random_variations(tilemap: TileMap, layer: int, bounds: Rect2i, variation_chance: float = 0.15) -> void:
+func apply_random_variations(layer_node: TileMapLayer, bounds: Rect2i, variation_chance: float = 0.15) -> void:
  for y in range(bounds.position.y, bounds.position.y + bounds.size.y):
   for x in range(bounds.position.x, bounds.position.x + bounds.size.x):
    var pos = Vector2i(x, y)
-   var cell_id = tilemap.get_cell_atlas_coords(layer, pos)
-   
+   var cell_id = get_terrain_from_atlas(layer_node.get_cell_atlas_coords(pos))
+
    if cell_id != -1 and randf() < variation_chance:
-    var variations = get_tile_variations(cell_id)
+    var variations = tile_variations.get(TERRAIN_BASE_INDEX.get(get_terrain_name(cell_id), cell_id), [])
     if variations.size() > 0:
      var variant = variations[randi() % variations.size()]
-     tilemap.set_cell(layer, pos, 0, variant)
+     layer_node.set_cell(pos, 0, index_to_atlas(variant))
 
 # === ANIMAÇÃO DE TILES ===
 
 var animated_tile_timers: Dictionary = {}
 
-func setup_animated_tiles(tilemap: TileMap, layer: int) -> void:
+func setup_animated_tiles(layer_node: TileMapLayer) -> void:
  # Configurar timer para tiles animados
  var timer = Timer.new()
  timer.wait_time = 0.2
  timer.autostart = true
  timer.one_shot = false
- timer.timeout.connect(_update_animated_tiles.bind(tilemap, layer))
+ timer.timeout.connect(_update_animated_tiles.bind(layer_node))
  add_child(timer)
  timer.start()
 
-func _update_animated_tiles(tilemap: TileMap, layer: int) -> void:
- var used_cells = tilemap.get_used_cells(layer)
+func _update_animated_tiles(layer_node: TileMapLayer) -> void:
+ var used_cells = layer_node.get_used_cells()
  for cell in used_cells:
-  var cell_data = tilemap.get_cell_atlas_coords(layer, cell)
+  var cell_data = layer_node.get_cell_atlas_coords(cell)
   var terrain = get_terrain_from_atlas(cell_data)
-  
+
   if ANIMATED_TERRAINS.has(get_terrain_name(terrain)):
    var anim_data = ANIMATED_TERRAINS[get_terrain_name(terrain)]
-   var frame = (Time.get_ticks_msec() / anim_data.frame_duration) % anim_data.frames.size()
+   var frame = int(Time.get_ticks_msec() / (anim_data.frame_duration * 1000.0)) % anim_data.frames.size()
    var frame_id = anim_data.frames[frame]
-   tilemap.set_cell_atlas_coords(layer, cell, Vector2i(frame_id % 16, frame_id / 16))
+   layer_node.set_cell(cell, 0, index_to_atlas(frame_id))
+
+# === CONVERSÃO ÍNDICE <-> COORDENADAS DE ATLAS ===
+# Consistente com grid.gd: atlas de 8 colunas, índice = y*8 + x
+
+static func index_to_atlas(index: int) -> Vector2i:
+ return Vector2i(index % 8, index / 8)
+
+static func atlas_to_index(coords: Vector2i) -> int:
+ return coords.y * 8 + coords.x
 
 # === TERRENOS ANIMADOS ===
 
@@ -384,8 +409,6 @@ static var TERRAIN_TILE_INDICES: Dictionary = {
  # Será populado conforme atlas
 }
 
-static var ANIMATED_TERRAINS: Dictionary = ANIMATED_TERRAINS
-
 # === FUNÇÕES AUXILIARES ===
 
 static func get_terrain_name(terrain_id: int) -> String:
@@ -395,13 +418,10 @@ static func get_terrain_name(terrain_id: int) -> String:
  return "grass"
 
 static func get_terrain_from_atlas(atlas_coords: Vector2i) -> int:
+ var tile_index = atlas_to_index(atlas_coords)
  for terrain in TERRAIN_BASE_INDEX:
   var base = TERRAIN_BASE_INDEX[terrain]
-  var atlas_x = atlas_coords.x
-  var atlas_y = atlas_coords.y
-  var tile_index = atlas_y * 16 + atlas_x  # Assumindo atlas 16 cols
-  
-  if tile_index >= base and tile_index < base + 48:
+  if tile_index >= base and tile_index < base + 14:
    return TERRAIN_BASE_INDEX[terrain]
  return -1
 

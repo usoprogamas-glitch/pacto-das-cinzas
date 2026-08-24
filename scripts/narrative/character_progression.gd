@@ -129,12 +129,12 @@ func evolve_form(new_form: String) -> void:
  var old_form = protagonist_stats.form
  protagonist_stats.form = new_form
 
-  # Aplicar novos stats
-  var form_data = forms[new_form]
-  for stat in form_data.stat_multipliers:
-   if protagonist_stats.stats.has(stat):
-    var base = get_base_stat(stat)
-    protagonist_stats.stats[stat] = int(base * form_data.stat_multipliers[stat])
+ # Aplicar novos stats
+ var form_data = forms[new_form]
+ for stat in form_data.stat_multipliers:
+  if protagonist_stats.stats.has(stat):
+   var base = get_base_stat(stat)
+   protagonist_stats.stats[stat] = int(base * form_data.stat_multipliers[stat])
 
  # Desbloquear habilidades
  for ability in form_data.new_abilities:

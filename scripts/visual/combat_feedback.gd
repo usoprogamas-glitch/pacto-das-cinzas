@@ -10,38 +10,8 @@ extends Node2D
 # - Efeitos de status visual
 # - Critical hit cinemático
 
-func show_damage_number(position: Vector2, damage: int, is_critical: bool = false, is_heal: bool = false) -> void:
- var label = Label.new()
- label.position = position + Vector2(randf_range(-10, 10), -20)
- label.z_index = 100
-
- if is_heal:
-  label.text = "+%d" % damage
-  label.add_theme_color_override("font_color", Color("#76FF03"))
-  label.add_theme_font_size_override("font_size", 20)
- elif is_critical:
-  label.text = "%d!" % damage
-  label.add_theme_color_override("font_color", Color("#FFD93D"))
-  label.add_theme_font_size_override("font_size", 28)
-  label.add_theme_color_override("font_outline_color", Color("#FF8800"))
- else:
-  label.text = str(damage)
-  label.add_theme_color_override("font_color", Color("#FF5252"))
-  label.add_theme_font_size_override("font_size", 18)
-
- label.add_theme_color_override("font_shadow_color", Color("#000000"))
- label.add_theme_constant_override("shadow_offset_x", 2)
- label.add_theme_constant_override("shadow_offset_y", 2)
-
- add_child(label)
-
- # Animação com bounce
- var tween = create_tween()
- tween.tween_property(label, "position:y", position.y - 60, 0.8).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
- tween.parallel().tween_property(label, "scale", Vector2(1.3, 1.3), 0.1).set_trans(Tween.TRANS_ELASTIC)
- tween.tween_property(label, "scale", Vector2(1.0, 1.0), 0.3).set_trans(Tween.TRANS_ELASTIC)
- tween.parallel().tween_property(label, "modulate:a", 0.0, 0.8).set_delay(0.3)
- tween.tween_callback(label.queue_free)
+var is_shaking: bool = false
+var is_slow_motion: bool = false
 
 func show_damage_number_with_grade(position: Vector2, damage: int, grade: String) -> void:
  var grade_colors = {
@@ -140,6 +110,13 @@ func shake_screen(camera: Camera2D, intensity: float = 5.0, duration: float = 0.
  camera.position = original_position
  is_shaking = false
 
+func shake(intensity: float = 5.0, duration: float = 0.2, falloff: bool = true) -> void:
+ # Screen shake usando a câmera atual da árvore
+ var camera = get_viewport().get_camera_2d()
+ if camera == null:
+  return
+ await shake_screen(camera, intensity, duration, falloff)
+
 func shake_light() -> void:
  await shake(3.0, 0.15)
 
@@ -153,8 +130,6 @@ func shake_critical() -> void:
  await shake(15.0, 0.5, false) # Sem falloff para crítico
 
 # === SLOW MOTION ===
-
-var is_slow_motion: bool = false
 
 func slow_motion(scale: float = 0.25, duration: float = 0.4) -> void:
  if is_slow_motion:
@@ -204,7 +179,7 @@ func spawn_hit_particles(position: Vector2, color: Color = Color.WHITE, count: i
   add_child(particle)
 
 func spawn_critical_hit_particles(position: Vector2) -> void:
- // Partículas douradas para crítico
+ # Partículas douradas para crítico
  for i in range(20):
   var particle = CPUParticles2D.new()
   particle.emitting = true

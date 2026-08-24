@@ -95,7 +95,8 @@ func shake_heavy() -> void:
  await shake(10.0, 0.35)
 
 func shake_critical() -> void:
- await shake(15.0, 0.5, false)
+ # Intensidade máxima; sem direção (o decay do trauma cuida do falloff)
+ await shake(15.0, 0.5)
 
 func shake_directional(direction: Vector2, intensity: float = 8.0, duration: float = 0.3) -> void:
  await shake(intensity, duration, direction.normalized())
@@ -115,8 +116,6 @@ func _process(delta: float) -> void:
    camera.position = camera.position + offset
 
 # === SLOW MOTION ===
-
-var is_slow_motion: bool = false
 
 func slow_motion(scale: float = 0.25, duration: float = 0.5, ease_in: float = 0.1, ease_out: float = 0.2) -> void:
  if is_slow_motion:
@@ -239,21 +238,7 @@ void fragment() {
  tween.tween_property(chromatic_aberration_node.material, "shader_parameter/intensity", 0.0, duration).set_trans(Tween.TRANS_QUAD)
  tween.tween_callback(func(): chromatic_aberration_node.visible = false)
 
-func create_chromatic_aberration() -> void:
- chromatic_aberration_node = ColorRect.new()
- chromatic_aberration_node.color = Color(1, 1, 1, 1)
- chromatic_aberration_node.anchors_preset = 15
- chromatic_aberration_node.anchor_right = 1.0
- chromatic_aberration_node.anchor_bottom = 1.0
- chromatic_aberration_node.grow_horizontal = 2
- chromatic_aberration_node.grow_vertical = 2
- chromatic_aberration_node.z_index = 997
- chromatic_aberration_node.visible = false
- add_child(chromatic_aberration_node)
-
 # === VIGNETTE DINÂMICA ===
-
-var vignette_node: ColorRect
 
 func add_vignette(intensity: float = 0.3, animated: bool = false) -> void:
  if vignette_node:
@@ -455,21 +440,18 @@ func clear_all_effects() -> void:
  Engine.time_scale = 1.0
  is_shaking = false
  is_slow_motion = false
- 
+
  if chromatic_aberration_node:
   chromatic_aberration_node.visible = false
  if vignette_node:
   vignette_node.queue_free()
   vignette_node = null
 
-func setup_camera(cam: Camera2D) -> void:
- camera = cam
-
 # === CINEMATIC BARS ===
 
 var cinematic_bars: Array = []
 
-func set_cinematic_mode(enabled: bool, ratio: float = 2.35:1, duration: float = 0.5) -> void:
+func set_cinematic_mode(enabled: bool, ratio: float = 2.35, duration: float = 0.5) -> void:
  var target_height = (1.0 - 1.0 / ratio) * 360 / 2.0
  
  if enabled:
@@ -501,13 +483,13 @@ func set_cinematic_mode(enabled: bool, ratio: float = 2.35:1, duration: float = 
    tween.parallel().tween_property(bottom, "offset_top", 360 * 0.5, duration).set_trans(Tween.TRANS_QUAD)
  else:
   if cinematic_bars.size() == 2:
-   var bar_height = cinematic_bars[0].rect_size.y
-   
    var tween = create_tween()
    tween.tween_property(cinematic_bars[0], "offset_bottom", -360, duration).set_trans(Tween.TRANS_QUAD)
    tween.parallel().tween_property(cinematic_bars[1], "offset_top", 360, duration).set_trans(Tween.TRANS_QUAD)
-   tween.tween_callback(func(): 
-    cinematic_bars[0].queue_free()
-    cinematic_bars[1].queue_free()
-    cinematic_bars.clear()
-   )
+   tween.tween_callback(_remove_cinematic_bars)
+
+func _remove_cinematic_bars() -> void:
+ for bar in cinematic_bars:
+  if is_instance_valid(bar):
+   bar.queue_free()
+ cinematic_bars.clear()

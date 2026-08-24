@@ -27,8 +27,10 @@ func create_level_up_effect(position: Vector2) -> void:
  create_burst_particles(position, effect.particles, effect.color, effect.lifetime, effect.size)
 
 func create_particle_burst(pos: Vector2, count: int, color: Color, lifetime: float, size: int) -> void:
+ var batch: Array[CPUParticles2D] = []
  for i in range(count):
   var particle = CPUParticles2D.new()
+  batch.append(particle)
   particle.emitting = true
   particle.one_shot = true
   particle.amount = 1
@@ -52,12 +54,15 @@ func create_particle_burst(pos: Vector2, count: int, color: Color, lifetime: flo
   particles.append(particle)
 
  await get_tree().create_timer(lifetime).timeout
- if is_instance_valid(particle):
-  particle.queue_free()
+ for particle in batch:
+  if is_instance_valid(particle):
+   particle.queue_free()
 
 func create_rising_particles(pos: Vector2, count: int, color: Color, lifetime: float, size: int) -> void:
+ var batch: Array[CPUParticles2D] = []
  for i in range(count):
   var particle = CPUParticles2D.new()
+  batch.append(particle)
   particle.emitting = true
   particle.one_shot = true
   particle.amount = 1
@@ -79,12 +84,15 @@ func create_rising_particles(pos: Vector2, count: int, color: Color, lifetime: f
   particles.append(particle)
 
  await get_tree().create_timer(lifetime).timeout
- if is_instance_valid(particle):
-  particle.queue_free()
+ for particle in batch:
+  if is_instance_valid(particle):
+   particle.queue_free()
 
 func create_burst_particles(pos: Vector2, count: int, color: Color, lifetime: float, size: int) -> void:
+ var batch: Array[CPUParticles2D] = []
  for i in range(count):
   var particle = CPUParticles2D.new()
+  batch.append(particle)
   particle.emitting = true
   particle.one_shot = true
   particle.amount = 1
@@ -108,8 +116,9 @@ func create_burst_particles(pos: Vector2, count: int, color: Color, lifetime: fl
   particles.append(particle)
 
  await get_tree().create_timer(lifetime).timeout
- if is_instance_valid(particle):
-  particle.queue_free()
+ for particle in batch:
+  if is_instance_valid(particle):
+   particle.queue_free()
 
 func create_damage_number(position: Vector2, damage: int, is_critical: bool = false) -> void:
  var label = Label.new()

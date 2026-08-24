@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/battle/battle_scene.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/battle/grid.gd" id="2"]
 
 [node name="BattleScene" type="Node2D"]
 script = ExtResource("1")
@@ -11,6 +12,7 @@ offset_bottom = 720.0
 color = Color(0.08, 0.12, 0.08, 1)
 
 [node name="BattleGrid" type="Node2D" parent="."]
+script = ExtResource("2")
 
 [node name="UnitContainer" type="Node2D" parent="."]
 

@@ -61,9 +61,6 @@ func show_defeat(stats: Dictionary) -> void:
  continue_button.visible = false
  restart_button.visible = true
 
-func hide() -> void:
- visible = false
-
 func _on_restart() -> void:
  restart_pressed.emit()
 

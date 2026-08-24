@@ -10,7 +10,7 @@ signal intro_completed(choices: Dictionary)
 var faith_system: FaithSystem
 var building_system: BuildingSystem
 var ability_system: AbilitySystem
-var intro_story: IntroStory
+var intro_story: Control  # Instância de IntroStory (evita dependência circular de class_name)
 
 var current_scene: String = "intro"
 var game_data: Dictionary = {
@@ -45,12 +45,15 @@ func initialize_systems() -> void:
  ability_system.name = "AbilitySystem"
  add_child(ability_system)
 
- intro_story = IntroStory.new()
- intro_story.name = "IntroStory"
- add_child(intro_story)
+ var intro_script = load("res://scripts/ui/intro_story.gd")
+ if intro_script:
+  intro_story = intro_script.new()
+  intro_story.name = "IntroStory"
+  add_child(intro_story)
 
 func connect_intro_story() -> void:
- intro_story.intro_completed.connect(_on_intro_completed)
+ if intro_story and intro_story.has_signal("intro_completed"):
+  intro_story.intro_completed.connect(_on_intro_completed)
 
 func _on_intro_completed(choices: Dictionary) -> void:
  # Aplicar escolhas do jogador

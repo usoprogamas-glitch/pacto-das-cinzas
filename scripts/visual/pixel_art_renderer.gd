@@ -47,7 +47,7 @@ void fragment() {
  
  outline_sum /= samples;
  
- // Dithering para transição suave
+// Dithering para transição suave
  float alpha_threshold = 0.15;
  if(use_dither) {
   vec2 dither_uv = UV * 100.0;
@@ -105,26 +105,26 @@ uniform vec4 foam_color : source_color = vec4(0.9, 0.95, 1.0, 0.8);
 void fragment() {
  vec2 uv = UV;
  
- // Ondas animadas
+// Ondas animadas
  float wave1 = sin(uv.x * 20.0 + time * wave_speed) * wave_height * 0.5;
  float wave2 = sin(uv.y * 15.0 - time * wave_speed * 0.7) * wave_height * 0.3;
  float wave3 = sin((uv.x + uv.y) * 10.0 + time * wave_speed * 1.3) * wave_height * 0.2;
  
  float wave = wave1 + wave2 + wave3;
  
- // Profundidade baseada na posição Y + ondas
+// Profundidade baseada na posição Y + ondas
  float depth = uv.y + wave * 0.02;
  
- // Interpolação entre cor profunda e rasa
+// Interpolação entre cor profunda e rasa
  vec3 color = mix(deep_color.rgb, shallow_color.rgb, smoothstep(0.3, 0.8, depth));
  
- // Espuma nas cristas das ondas
+// Espuma nas cristas das ondas
  float foam = smoothstep(0.85, 1.0, sin(uv.x * 30.0 + time * 3.0) * 0.5 + 0.5);
  foam *= smoothstep(0.7, 1.0, depth);
  
  vec3 final_color = color + foam_color.rgb * foam;
  
- // Reflexo sutil
+// Reflexo sutil
  float reflection = smoothstep(0.1, 0.3, depth) * sin(uv.x * 50.0 + time * 2.0) * 0.1;
  final_color += vec3(reflection);
  
@@ -148,13 +148,13 @@ uniform vec4 grass_dark : source_color = vec4(0.2, 0.35, 0.15, 1.0);
 void fragment() {
  vec2 uv = UV;
  
- // Vento nas gramas
+// Vento nas gramas
  float wind = sin(uv.x * 25.0 + time * wind_speed * 2.0) * wind_strength * 0.02;
  wind += sin(uv.y * 15.0 - time * wind_speed * 1.5) * wind_strength * 0.01;
  
  uv.x += wind;
  
- // Textura de grama procedural
+// Textura de grama procedural
  float grass_pattern = 0.0;
  for(int i = 0; i < 5; i++) {
   float freq = float(i + 1) * 20.0;
@@ -162,10 +162,10 @@ void fragment() {
  }
  grass_pattern *= 0.15;
  
- // Cor base com variação
+// Cor base com variação
  vec3 color = mix(grass_dark.rgb, grass_light.rgb, smoothstep(0.3, 0.7, uv.y + grass_pattern));
  
- // Highlights nas pontas
+// Highlights nas pontas
  float highlight = smoothstep(0.85, 1.0, uv.y + grass_pattern * 0.5);
  color += vec3(0.15, 0.2, 0.1) * highlight;
  
@@ -190,7 +190,7 @@ void fragment() {
  
  if(tex_color.a < 0.01) discard;
  
- // Calcular normal aproximada baseada na transparência
+// Calcular normal aproximada baseada na transparência
  vec2 pixel_size = SCREEN_PIXEL_SIZE;
  float alpha_center = tex_color.a;
  float alpha_left = texture(TEXTURE, UV - vec2(pixel_size.x, 0.0)).a;
@@ -200,11 +200,11 @@ void fragment() {
  
  vec2 normal = normalize(vec2(alpha_left - alpha_right, alpha_up - alpha_down));
  
- // Produto escalar com direção da luz
+// Produto escalar com direção da luz
  float rim = max(0.0, dot(normal, normalize(light_direction)));
  rim = pow(rim, 2.0) * rim_intensity;
  
- // Aplicar rim light apenas nas bordas
+// Aplicar rim light apenas nas bordas
  float edge = step(0.1, tex_color.a) * step(0.99, tex_color.a);
  rim *= (1.0 - edge) * 2.0;
  
@@ -225,11 +225,11 @@ uniform vec2 dither_scale : hint_range(1.0, 100.0) = vec2(50.0, 50.0);
 void fragment() {
  vec4 tex_color = texture(TEXTURE, UV);
  
- // Bayer dithering 4x4
+// Bayer dithering 4x4
  vec2 dither_uv = UV * dither_scale;
  float dither_pattern = 0.0;
  
- // Matriz de Bayer 4x4
+// Matriz de Bayer 4x4
  float bayer[16] = float[16](
   0.0, 8.0, 2.0, 10.0,
   12.0, 4.0, 14.0, 6.0,
@@ -243,7 +243,7 @@ void fragment() {
  
  float threshold = bayer_val + dither_amount * 0.5;
  
- // Aplicar dithering na transparência
+// Aplicar dithering na transparência
  float alpha = tex_color.a;
  alpha = mix(alpha, step(threshold, alpha), dither_amount);
  
@@ -396,9 +396,6 @@ static var TERRAINS: Dictionary = {
  }
 }
 
-func _ready() -> void:
- create_shaders()
-
 # === FUNÇÕES DE CRIAÇÃO AVANÇADAS ===
 
 func create_detailed_character(char_type: String, size: int = 64) -> Sprite2D:
@@ -448,10 +445,10 @@ func _draw_detailed_character(image: Image, palette: Dictionary, size: int) -> v
  
  # Olhos
  var eye_color = Color(PALETTES.get("kael_imp", {}).get("eyes", "#00FF88"))
- _draw_pixel(image, cx - 3, cy - 12, accent)
- _draw_pixel(image, cx + 1, cy - 12, accent)
- _draw_pixel(image, cx - 3, cy - 11, Color(1,1,1,0.3))
- _draw_pixel(image, cx + 1, cy - 11, Color(1,1,1,0.3))
+ _draw_rect(image, cx - 3, cy - 12, 1, 1, accent)
+ _draw_rect(image, cx + 1, cy - 12, 1, 1, accent)
+ _draw_rect(image, cx - 3, cy - 11, 1, 1, Color(1,1,1,0.3))
+ _draw_rect(image, cx + 1, cy - 11, 1, 1, Color(1,1,1,0.3))
  
  # Chifres (se tiver)
  if PALETTES.get("kael_imp", {}).has("horns"):
@@ -627,13 +624,13 @@ func _generate_water_static(image: Image) -> void:
    var dy = float(y) / size
    var base = lerp(deep, shallow, dy)
    
-   // Ondas sutis
+   # Ondas sutis
    var wave = sin(float(x) * 0.3) * 0.1 + sin(float(x) * 0.1) * 0.05
    var depth = clamp(float(y) / image.get_height() + wave, 0.0, 1.0)
    
    var color = lerp(Color("#0A1A3A"), Color("#2A5A8A"), depth)
    
-   // Espuma nas bordas
+   # Espuma nas bordas
    var foam_amount = sin(float(x) * 0.5 + float(y) * 0.3) * 0.5 + 0.5
    if foam_amount > 0.9 and randf() < 0.1:
     image.set_pixel(x, y, Color("#E0F0FF"))
@@ -648,13 +645,13 @@ func _generate_stone(image: Image, terrain: Dictionary) -> void:
  
  image.fill(Color(colors[0]))
  
- // Ruído base
+ # Ruído base
  for i in range(size * size / 3):
   var x = randi() % size
   var y = randi() % size
   image.set_pixel(x, y, Color(colors[randi() % colors.size()]))
  
- // Musgo
+ # Musgo
  for moss_str in moss_colors:
   var moss_color = Color(moss_str)
   for i in range(30):
@@ -663,7 +660,7 @@ func _generate_stone(image: Image, terrain: Dictionary) -> void:
    if randf() < 0.15:
     image.set_pixel(x, y, moss_color)
  
- // Rachaduras
+ # Rachaduras
  for i in range(8):
   var x1 = randi() % size
   var y1 = randi() % size
@@ -681,7 +678,7 @@ func _generate_lava_static(image: Image) -> void:
    var base_idx = int(lerp(0, 5, dy))
    var base = Color(colors[min(base_idx, 5)])
    
-   // Bolhas
+   # Bolhas
    var bubble = sin(float(x) * 0.4 + float(y) * 0.3) * 0.3
    var heat = clamp(bubble + randf() * 0.5, 0.0, 1.0)
    
@@ -697,7 +694,7 @@ func _generate_castle(image: Image, terrain: Dictionary) -> void:
  
  image.fill(stone_dark)
  
- // Padrão de tijolos
+ # Padrão de tijolos
  for y in range(0, size, 8):
   for x in range(0, size, 16):
    var offset = (y / 8) % 2 * 8
@@ -713,7 +710,7 @@ func _generate_castle(image: Image, terrain: Dictionary) -> void:
       else:
        image.set_pixel(bx2, by, Color(terrain["stone_dark"]))
  
- // Detalhes dourados
+ # Detalhes dourados
  for i in range(5):
   var x = randi() % size
   var y = randi() % (size / 2)
@@ -731,7 +728,7 @@ func _generate_forest(image: Image, terrain: Dictionary) -> void:
  
  image.fill(ground)
  
- // Grama base
+ # Grama base
  for i in range(size * size / 3):
   var x = randi() % size
   var y = randi() % size
@@ -740,7 +737,7 @@ func _generate_forest(image: Image, terrain: Dictionary) -> void:
   else:
    image.set_pixel(x, y, Color(terrain["ground"]))
  
- // Árvores
+ # Árvores
  for i in range(12):
   var tx = randi() % (size - 6)
   var ty = randi() % (size - 10)
@@ -749,13 +746,13 @@ func _generate_forest(image: Image, terrain: Dictionary) -> void:
   var h = randi_range(6, 12)
   var w = randi_range(4, 8)
   
-  // Tronco
+  # Tronco
   for y in range(h):
    for x in range(2):
     if tx + x < size and ty + y < size:
      image.set_pixel(tx + x, ty + y, trunk_color)
   
-  // Copa
+  # Copa
   for ly in range(h):
    var lw = w - abs(ly - h/2) * w / h * 0.8
    for lx in range(int(lw)):
@@ -771,7 +768,7 @@ func _generate_cave(image: Image, terrain: Dictionary) -> void:
  
  image.fill(wall_dark)
  
- // Textura de parede
+ # Textura de parede
  for i in range(size * size / 2):
   var x = randi() % size
   var y = randi() % size
@@ -783,7 +780,7 @@ func _generate_cave(image: Image, terrain: Dictionary) -> void:
   else:
    image.set_pixel(x, y, wall_light)
  
- // Cristais
+ # Cristais
  for crystal_str in crystals:
   var c = Color(crystal_str)
   for i in range(5):

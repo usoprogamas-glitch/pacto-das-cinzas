@@ -47,7 +47,7 @@ func initialize_terrain(terrain_type: String = "grass") -> void:
    var terrain_id = get_terrain_tile_id(terrain_type)
    row.append(terrain_id)
    var pos = Vector2i(x, y)
-   terrain_layer.set_cell(0, pos, 0, terrain_id)
+   terrain_layer.set_cell(pos, 0, Vector2i(terrain_id % 8, terrain_id / 8))
   terrain_map.append(row)
 
 func get_terrain_tile_id(terrain_type: String) -> int:
@@ -127,24 +127,28 @@ func set_terrain_at(pos: Vector2i, terrain_type: String) -> void:
  if BattleManager.is_valid_position(pos):
   var terrain_id = get_terrain_tile_id(terrain_type)
   terrain_map[pos.y][pos.x] = terrain_id
-  terrain_layer.set_cell(0, pos, 0, terrain_id)
+  terrain_layer.set_cell(pos, 0, Vector2i(terrain_id % 8, terrain_id / 8))
 
 func get_terrain_at(pos: Vector2i) -> String:
  if BattleManager.is_valid_position(pos):
   var terrain_id = terrain_map[pos.y][pos.x]
-  return get_terrain_name(terrain_id)
+  return get_terrain_name_from_id(terrain_id)
  return "grass"
 
-func apply_autotile(map_database: MapDatabase) -> void:
- # Aplicar autotile usando o sistema avançado
- if AutotileSystem.has_method("auto_tile_map"):
-  AutotileSystem.auto_tile_map(self, 0, 0, Rect2i(0, 0, GRID_SIZE.x, GRID_SIZE.y))
-  AutotileSystem.setup_animated_tiles(self, 0)
-  AutotileSystem.apply_random_variations(self, 0, Rect2i(0, 0, GRID_SIZE.x, GRID_SIZE.y), 0.15)
+func get_terrain_name_from_id(terrain_id: int) -> String:
+ # Converte ID de tile de volta para nome de terreno
+ for terrain_name in ["grass", "dirt", "stone", "water", "lava"]:
+  if get_terrain_tile_id(terrain_name) == terrain_id:
+   return terrain_name
+ return "grass"
+
+func apply_autotile(autotile) -> void:
+ # Autotile é aplicado pela battle_scene diretamente (grid não é um TileMap clássico)
+ pass
 
 func _draw() -> void:
  # Desenhar fundo se não houver terrain_layer
- if terrain_layer.get_used_cells(0).size() == 0:
+ if terrain_layer.get_used_cells().size() == 0:
   for y in GRID_SIZE.y:
    for x in GRID_SIZE.x:
     var pos = grid_to_pixel(Vector2i(x, y))
