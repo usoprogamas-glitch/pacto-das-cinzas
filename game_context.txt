@@ -24,14 +24,15 @@ Janela: 1280x720, stretch canvas_items
 ## Sistemas Implementados
 1. Grid de combate 12x12 (BattleGrid, TileMapLayer, highlights de movimento/ataque)
 2. Sistema de turnos PHASE-BASED no BattleManager (PLAYER_TURN → ENEMY_TURN → ANIMATING)
-3. TurnOrderManager velocity-based NOVO (commit 693d55a) - ainda NÃO integrado ao BattleManager
-4. Unidades com HP/MP/ATK/DEF/MAG/speed/move_range/attack_range (UnitData Resource)
-5. Pathfinding: BFS para alcance de movimento + A* simplificado no BattleManager
-6. IA inimiga básica (perseguir + atacar via EnemyAI.decide_action)
-7. Menu de ações, HUD, Soul Éter exibido
-8. Sistemas narrativos: intro_story, naming (mecânica do Nome), eventos, progressão de formas
-9. Crafting/equipamentos e construção de vila (auditados apenas superficialmente)
-10. Testes GUT 9.3.0 rodando headless (5/5 passando em TurnOrderManager)
+3. TurnOrderManager velocity-based (commit 693d55a) - integração com BattleManager via start_round()/advance_turn()
+4. EtherSystem (Éter Vivo, GDD v2 §3.3) - 3 cargas máx, regen 1/turno, geração ao acertar, boost físico +30%/mágico +50% por carga
+5. Unidades com HP/MP/ATK/DEF/MAG/speed/move_range/attack_range/ether (UnitData Resource)
+6. Pathfinding: BFS para alcance de movimento + A* simplificado no BattleManager
+7. IA inimiga básica (perseguir + atacar via EnemyAI.decide_action)
+8. Menu de ações, HUD, Soul Éter exibido
+9. Sistemas narrativos: intro_story, naming (mecânica do Nome), eventos, progressão de formas
+10. Crafting/equipamentos e construção de vila (auditados apenas superficialmente)
+11. Testes GUT 9.3.0 rodando headless (5 TurnOrder + 6 BattleManager + 7 Narrative + 25 EtherSystem)
 
 ## Infra de Testes
 - GUT 9.3.0 (NÃO atualizar p/ main: usa extends Logger = Godot 4.4+)
@@ -48,8 +49,8 @@ Janela: 1280x720, stretch canvas_items
 - Antagonista: Aurius, o Falso Deus + Igreja da Luz Solar
 
 ## Pendências vs GDD v2 (ordem sugerida)
-1. Integrar TurnOrderManager ao BattleManager (trocar phase-based por individual)
-2. Sistema de Éter (3 pts, regen 1/turno, custos por skill)
+1. ~~Integrar TurnOrderManager ao BattleManager~~ ✅
+2. ~~Sistema de Éter (3 pts, regen 1/turno, custos por skill)~~ ✅
 3. Efeitos de terreno mecânicos (floresta +15% DEF etc.)
 4. Timed Hits/Blocks (janela 0.2s), Lock & Spellbreak, Pontos de Combo
 5. Flanqueamento +25% e combos de adjacência entre Apóstolos

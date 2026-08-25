@@ -19,6 +19,7 @@ extends Resource
 @export var current_mp: int = 50
 @export var max_mp: int = 50
 @export var soul_ether_value: int = 10
+@export var start_ether: int = 0  ## Cargas de Éter iniciais (GDD v2 §3.3, máx. 3)
 
 @export_group("Visual")
 @export var color: Color = Color.WHITE

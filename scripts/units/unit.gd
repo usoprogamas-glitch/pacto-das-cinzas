@@ -3,6 +3,7 @@ extends Node2D
 
 signal hp_changed(new_hp: int)
 signal mp_changed(new_mp: int)
+signal ether_changed(new_ether: int)
 signal selected()
 signal deselected()
 
@@ -13,6 +14,7 @@ var has_acted: bool = false
 var has_moved: bool = false
 var current_hp: int = 100
 var current_mp: int = 50
+var _ether: int = 0  ## Cargas de Éter (boost), máx. 3 (GDD v2 §3.3)
 
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var hp_bar: ProgressBar = $HPBar
@@ -23,6 +25,7 @@ func _ready() -> void:
  if data:
   current_hp = data.max_hp
   current_mp = data.max_mp
+  _ether = data.start_ether
   if sprite:
    sprite.modulate = data.color
   update_hp_bar()
@@ -87,6 +90,18 @@ func update_hp_bar() -> void:
  if hp_bar and data:
   hp_bar.max_value = data.max_hp
   hp_bar.value = current_hp
+
+# --- Contrato EtherSystem (duck typing, GDD v2 §3.3) ---
+
+func get_ether() -> int:
+	return _ether
+
+func set_ether(value: int) -> void:
+	_ether = clampi(value, 0, 3)
+	ether_changed.emit(_ether)
+
+# --- Fim contrato EtherSystem ---
+
 
 func get_grid_center() -> Vector2:
  return position + Vector2(16, 16)

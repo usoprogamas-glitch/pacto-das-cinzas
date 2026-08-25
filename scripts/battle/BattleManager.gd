@@ -11,6 +11,7 @@ signal unit_died(unit: Unit)
 signal battle_won()
 signal battle_lost()
 signal soul_ether_gained(amount: int)
+signal ether_boost_applied(unit, charges: int)
 
 enum Phase { PLAYER_TURN, ENEMY_TURN, ANIMATING }
 
@@ -25,6 +26,8 @@ var all_units: Array[Unit] = []
 
 var grid_size: Vector2i = Vector2i(12, 12)
 var grid: Array = []
+
+var _ether_system: EtherSystem = EtherSystem.new()
 
 # Ordem de turnos velocity-based (GDD v2 §5.1): quem é mais rápido age primeiro.
 # Quando ativo, cada unidade tem seu próprio turno dentro do round.
@@ -203,6 +206,9 @@ func attack_unit(attacker: Unit, target: Unit) -> void:
  target.take_damage(damage)
  unit_attacked.emit(attacker, target, damage)
 
+ # Éter Vivo: ataque gera 1 carga (GDD v2 §3.3)
+ _ether_system.generate_on_hit(attacker)
+
  if target.current_hp <= 0:
   unit_died.emit(target)
   unregister_unit(target)
@@ -253,6 +259,7 @@ func _begin_unit_turn(unit: Unit) -> void:
  current_phase = Phase.PLAYER_TURN if is_player_side(unit) else Phase.ENEMY_TURN
  phase_changed.emit("PLAYER_TURN" if is_player_side(unit) else "ENEMY_TURN")
  unit.reset_turn()
+ _ether_system.regen_turn_start(unit)
  individual_turn_started.emit(unit)
 
 func advance_turn() -> void:
