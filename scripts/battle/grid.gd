@@ -13,6 +13,7 @@ var grid_origin: Vector2 = Vector2.ZERO
 var terrain_map: Array = []  # Mapa de terrenos por posição
 
 func _ready() -> void:
+ add_to_group("battle_grid")
  grid_origin = position
  setup_layers()
 

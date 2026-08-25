@@ -28,6 +28,7 @@ var grid_size: Vector2i = Vector2i(12, 12)
 var grid: Array = []
 
 var _ether_system: EtherSystem = EtherSystem.new()
+var _terrain_system: TerrainEffectSystem = TerrainEffectSystem.new()
 
 # Ordem de turnos velocity-based (GDD v2 §5.1): quem é mais rápido age primeiro.
 # Quando ativo, cada unidade tem seu próprio turno dentro do round.
@@ -201,8 +202,16 @@ func move_unit(unit: Unit, new_pos: Vector2i) -> void:
  set_tile_at(new_pos, unit)
  unit_moved.emit(unit, old_pos, new_pos)
 
-func attack_unit(attacker: Unit, target: Unit) -> void:
+func attack_unit(attacker: Unit, target: Unit, attacker_terrain: String = "", target_terrain: String = "") -> void:
  var damage = attacker.calculate_damage(target)
+
+ # Efeitos de terreno no dano (GDD v2 §3 Pipeline)
+ if attacker_terrain != "":
+  damage = int(damage * _terrain_system.get_attack_multiplier(attacker_terrain))
+ if target_terrain != "":
+  damage = int(damage * _terrain_system.get_defense_multiplier(target_terrain))
+ damage = maxi(1, damage)
+
  target.take_damage(damage)
  unit_attacked.emit(attacker, target, damage)
 
@@ -260,7 +269,34 @@ func _begin_unit_turn(unit: Unit) -> void:
  phase_changed.emit("PLAYER_TURN" if is_player_side(unit) else "ENEMY_TURN")
  unit.reset_turn()
  _ether_system.regen_turn_start(unit)
+
+ # Dano ambiental de terreno (GDD v2 §3.3 — lava: 5 HP ao iniciar turno)
+ var terrain_damage := _get_unit_terrain_damage(unit)
+ if terrain_damage > 0:
+  unit.take_damage(terrain_damage)
+
  individual_turn_started.emit(unit)
+
+
+func _get_unit_terrain_damage(unit: Unit) -> int:
+ ## Retorna dano fixo de terreno para a unidade na sua posição atual.
+ ## Chamado pelo _begin_unit_turn e pelo battle_scene (que tem acesso ao grid).
+ ## Para testes unitários, o battle_scene pode passar o terreno diretamente.
+ ## Retorna 0 se não houver dano.
+ var terrain := _get_unit_terrain(unit)
+ if terrain != "":
+  return _terrain_system.get_turn_damage(terrain)
+ return 0
+
+
+func _get_unit_terrain(unit: Unit) -> String:
+ ## Tenta obter o terreno da posição da unidade via BattleGrid (se disponível na scene tree).
+ ## Retorna "" se não encontrar (safe fallback para testes unitários).
+ var grids := get_tree().get_nodes_in_group("battle_grid") if is_inside_tree() else []
+ for node in grids:
+  if node.has_method("get_terrain_at"):
+   return node.get_terrain_at(unit.grid_position)
+ return ""
 
 func advance_turn() -> void:
  ## Chamar quando a unidade atual terminou suas ações (agiu ou esperou).
