@@ -34,12 +34,13 @@ Janela: 1280x720, stretch canvas_items
 10. LockSystem (Lock & Spellbreak, GDD v2 §3.2) - locks com tipo de dano (Corte/Perfuração/Éter etc.), hits_required, turn_counter, stun ao quebrar todos + 2 CP
 11. ComboSystem (Pontos de Combo, GDD v2 §3.3) - max 3 CP, PERFECT +1 CP, lock break +2 CP, combos: Erupção de Éter (1 CP), Tempestade das Cinzas (3 CP)
 12. BalanceSystem (Éter vs Fúria de Kaelen, GDD v2 §3.3) - barra bipolar 0-100, ações diplomáticas/cura → Éter (regen/defesa/lealdade), execuções/destruição → Fúria (armadura/crítico/terror), Simbiose Cinzenta quando ambos ≥ 50
+13. LineageSystem (Árvore de Linhagens, GDD v2 §3.4) - evolução dos 4 apóstolos (Kroug/Lira/Thal'kor/Garm) em 3 atos, ramificações táticas (Vanguarda/Xamãs, Protetoras/Lianas), stat_modifiers por forma
 6. Pathfinding: BFS para alcance de movimento + A* simplificado no BattleManager
 7. IA inimiga básica (perseguir + atacar via EnemyAI.decide_action)
 8. Menu de ações, HUD, Soul Éter exibido
 9. Sistemas narrativos: intro_story, naming (mecânica do Nome), eventos, progressão de formas
 10. Crafting/equipamentos e construção de vila (auditados apenas superficialmente)
-14. Testes GUT 9.3.0 rodando headless (5 TurnOrder + 6 BattleManager + 7 Narrative + 22 EtherSystem + 12 Terrain + 10 Flanking + 13 Adjacency + 14 TimedCombat + 13 Lock + 15 Combo + 20 Balance)
+14. Testes GUT 9.3.0 rodando headless (5 TurnOrder + 6 BattleManager + 7 Narrative + 22 EtherSystem + 12 Terrain + 10 Flanking + 13 Adjacency + 14 TimedCombat + 13 Lock + 15 Combo + 20 Balance + 20 Lineage)
 
 ## Infra de Testes
 - GUT 9.3.0 (NÃO atualizar p/ main: usa extends Logger = Godot 4.4+)
