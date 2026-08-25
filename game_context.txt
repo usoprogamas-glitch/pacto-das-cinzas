@@ -1,35 +1,62 @@
 # O Pacto das Cinzas - Contexto do Projeto
+# Fonte da verdade de lore/design: docs/GDD_Completo_v2.md ("O Deus Despedaçado")
+# Última atualização: 2026-08-24
 
 ## Engine
-Godot 4 com GDScript
+Godot 4.3 (GL Compatibility) + GDScript
+Executável: C:\Users\Administrator\Downloads\Godot43\Godot_v4.3-stable_win64_console.exe
+Janela: 1280x720, stretch canvas_items
 
-## Estrutura de Arquivos
-- project.godot - configuração do projeto
-- scripts/battle/BattleManager.gd - gerencia turnos, IA, Soul Éter
-- scripts/battle/battle_scene.gd - cena principal, input, UI
-- scripts/battle/grid.gd - grid 12x12, highlights de movimento
-- scripts/units/unit.gd - personagem no grid
-- scripts/units/unit_data.gd - stats do personagem
-- scenes/battle/battle_scene.tscn - cena da batalha
+## Estrutura Principal
+- scenes/ui/intro_story.tscn - cena inicial (main_scene), história + escolhas
+- scenes/battle/battle_scene.tscn - cena da batalha tática
+- scenes/menu/ - main_menu, map_select
+- scenes/village/village_scene.tscn - vila/construção
+- scripts/battle/ - combate (BattleManager, battle_scene, grid, enemy_ai,
+  magic_system, ability_system, faith_system, map_database,
+  timed_hit_system, turn_order_manager)
+- scripts/units/ - unit.gd (Unit), unit_data.gd (UnitData Resource), unit_sprite.gd
+- scripts/narrative/ - narrative_system, dialogue_system, event_system, naming_system
+- scripts/building/, scripts/crafting/ - vila e itens
+- scripts/audio/ - sound_manager (autoload), sound_generator
+- tests/unit/ - testes GUT (+ stubs)
 
 ## Sistemas Implementados
-1. Grid de combate 12x12
-2. Sistema de turnos (Jogador → Inimigo)
-3. Unidades com HP, ATK, DEF, MOV, RNG
-4. Movimentação com pathfinding simples
-5. IA inimiga (perseguir + atacar)
-6. Menu de ações (Mover/Atacar/Esperar)
-7. HUD com info da unidade e Soul Éter
-8. Unidades morrem com fade-out
+1. Grid de combate 12x12 (BattleGrid, TileMapLayer, highlights de movimento/ataque)
+2. Sistema de turnos PHASE-BASED no BattleManager (PLAYER_TURN → ENEMY_TURN → ANIMATING)
+3. TurnOrderManager velocity-based NOVO (commit 693d55a) - ainda NÃO integrado ao BattleManager
+4. Unidades com HP/MP/ATK/DEF/MAG/speed/move_range/attack_range (UnitData Resource)
+5. Pathfinding: BFS para alcance de movimento + A* simplificado no BattleManager
+6. IA inimiga básica (perseguir + atacar via EnemyAI.decide_action)
+7. Menu de ações, HUD, Soul Éter exibido
+8. Sistemas narrativos: intro_story, naming (mecânica do Nome), eventos, progressão de formas
+9. Crafting/equipamentos e construção de vila (auditados apenas superficialmente)
+10. Testes GUT 9.3.0 rodando headless (5/5 passando em TurnOrderManager)
 
-## Personagens Principais
-- Kael (Imp Menor) - protagonista
-- Kroug (Goblin da Lama → Rei Ogro de Fogo)
-- Lira (Muda Mágica → Rainha dos Bosques)
-- Thal'kor (Anjo Caído → Serafim das Sombras)
+## Infra de Testes
+- GUT 9.3.0 (NÃO atualizar p/ main: usa extends Logger = Godot 4.4+)
+- Rodar: godot_console --headless --path . -s addons/gut/gut_cmdln.gd -gdir=res://tests/unit -ginclude_subdirs -gexit
 
-## Convenções
-- Usar class_name para tipos customizados
-- Sinais para comunicação entre sistemas
-- Autoload para BattleManager
-- Sprites placeholder com ColorRect
+## Personagens (canon v2)
+- Protagonista: Querubim Fraturado (Imp Angelical) → Serafim das Cinzas →
+  Trono Cósmico/Arquidemônio → Avatar Primordial; voz interna: Kaelen
+  (NOTA: narrative_system.gd ainda usa enum antigo IMP_MENOR/NOBRE_ABISSAL/... - pendente sync)
+- Apóstolos: Kroug (tanque, Goblin da Lama → Rei Ogro de Fogo),
+  Lira (suporte, Muda Mágica → Rainha Ent Primordial),
+  Thal'kor (DPS, Corvo Bestial → Serafim Negro),
+  Garm (montaria, Lobo Caolho → Fenrir Menor - ainda sem dados no jogo)
+- Antagonista: Aurius, o Falso Deus + Igreja da Luz Solar
+
+## Pendências vs GDD v2 (ordem sugerida)
+1. Integrar TurnOrderManager ao BattleManager (trocar phase-based por individual)
+2. Sistema de Éter (3 pts, regen 1/turno, custos por skill)
+3. Efeitos de terreno mecânicos (floresta +15% DEF etc.)
+4. Timed Hits/Blocks (janela 0.2s), Lock & Spellbreak, Pontos de Combo
+5. Flanqueamento +25% e combos de adjacência entre Apóstolos
+
+## Convenções do Projeto
+- class_name para tipos reutilizados; signals para comunicação entre sistemas
+- Autoloads: BattleManager, GameManager, SoundManager, SceneManager
+- Data-driven: conteúdo em JSON/TRES, nunca hardcoded na lógica
+- Workflow: 1 mecânica por prompt + teste GUT junto; commit = 1 mecânica;
+  balanceamento via dados; iterar UI com screenshot
