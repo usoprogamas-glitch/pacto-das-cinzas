@@ -2,6 +2,8 @@ extends Node
 
 signal turn_started(unit: Unit)
 signal turn_ended(unit: Unit)
+signal individual_turn_started(unit: Unit)
+signal round_started(order: Array)
 signal phase_changed(phase: String)
 signal unit_moved(unit: Unit, from: Vector2i, to: Vector2i)
 signal unit_attacked(attacker: Unit, target: Unit, damage: int)
@@ -23,6 +25,12 @@ var all_units: Array[Unit] = []
 
 var grid_size: Vector2i = Vector2i(12, 12)
 var grid: Array = []
+
+# Ordem de turnos velocity-based (GDD v2 §5.1): quem é mais rápido age primeiro.
+# Quando ativo, cada unidade tem seu próprio turno dentro do round.
+var use_individual_turns: bool = false
+var _turn_order: Array = []
+var _turn_index: int = 0
 
 func _ready() -> void:
  initialize_grid()
@@ -215,3 +223,59 @@ func end_player_turn() -> void:
   turn_ended.emit(unit)
  await get_tree().create_timer(0.5).timeout
  start_enemy_turn()
+
+# ---------------------------------------------------------------------------
+# Turnos individuais velocity-based (GDD v2 §2/§5.1)
+# ---------------------------------------------------------------------------
+
+func get_speed(unit: Unit) -> int:
+ # Contrato exigido pelo TurnOrderManager
+ return unit.data.speed if unit and unit.data else 0
+
+func is_player_side(unit: Unit) -> bool:
+ return unit.data.is_player if unit and unit.data else false
+
+func is_alive(unit: Unit) -> bool:
+ return unit != null and unit.current_hp > 0
+
+func start_round() -> void:
+ ## Constrói a ordem do round via TurnOrderManager e inicia o primeiro turno individual.
+ _turn_order = TurnOrderManager.build_order(all_units)
+ _turn_index = 0
+ turn_count += 1
+ round_started.emit(_turn_order)
+ if _turn_order.is_empty():
+  check_battle_end()
+  return
+ _begin_unit_turn(_turn_order[0])
+
+func _begin_unit_turn(unit: Unit) -> void:
+ current_phase = Phase.PLAYER_TURN if is_player_side(unit) else Phase.ENEMY_TURN
+ phase_changed.emit("PLAYER_TURN" if is_player_side(unit) else "ENEMY_TURN")
+ unit.reset_turn()
+ individual_turn_started.emit(unit)
+
+func advance_turn() -> void:
+ ## Chamar quando a unidade atual terminou suas ações (agiu ou esperou).
+ var next := _next_alive_index()
+ if next == -1:
+  start_round()  # round acabou -> novo round
+ else:
+  _turn_index = next
+  _begin_unit_turn(_turn_order[_turn_index])
+
+func _next_alive_index() -> int:
+ ## Próximo índice com unidade viva; -1 se o round terminou.
+ var i := _turn_index + 1
+ while i < _turn_order.size():
+  var u = _turn_order[i]
+  if is_alive(u):
+   return i
+  i += 1
+ return -1
+
+func current_turn_unit() -> Unit:
+ ## Unidade que tem a vez agora (modo individual).
+ if _turn_order.is_empty() or _turn_index >= _turn_order.size():
+  return null
+ return _turn_order[_turn_index]

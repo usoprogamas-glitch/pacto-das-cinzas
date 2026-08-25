@@ -41,6 +41,18 @@ func reset_turn() -> void:
  has_acted = false
  has_moved = false
 
+func is_alive() -> bool:
+ ## Contrato do TurnOrderManager (velocity-based turn order)
+ return current_hp > 0
+
+func get_speed() -> int:
+ ## Contrato do TurnOrderManager (velocity-based turn order)
+ return data.speed if data else 0
+
+func is_player_side() -> bool:
+ ## Contrato do TurnOrderManager (velocity-based turn order)
+ return data.is_player if data else false
+
 func take_damage(amount: int) -> void:
  if not data:
   return
