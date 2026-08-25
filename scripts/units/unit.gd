@@ -15,6 +15,7 @@ var has_moved: bool = false
 var current_hp: int = 100
 var current_mp: int = 50
 var _ether: int = 0  ## Cargas de Éter (boost), máx. 3 (GDD v2 §3.3)
+var last_move_direction: Vector2i = Vector2i.ZERO  ## Direção do último movimento (GDD v2 §3 Flanqueamento)
 
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var hp_bar: ProgressBar = $HPBar
@@ -101,6 +102,14 @@ func set_ether(value: int) -> void:
 	ether_changed.emit(_ether)
 
 # --- Fim contrato EtherSystem ---
+
+
+# --- Contrato FlankingSystem (duck typing, GDD v2 §3 Flanqueamento) ---
+
+func get_grid_position() -> Vector2i:
+	return grid_position
+
+# --- Fim contrato FlankingSystem ---
 
 
 func get_grid_center() -> Vector2:

@@ -29,6 +29,7 @@ var grid: Array = []
 
 var _ether_system: EtherSystem = EtherSystem.new()
 var _terrain_system: TerrainEffectSystem = TerrainEffectSystem.new()
+var _flanking_system: FlankingSystem = FlankingSystem.new()
 
 # Ordem de turnos velocity-based (GDD v2 §5.1): quem é mais rápido age primeiro.
 # Quando ativo, cada unidade tem seu próprio turno dentro do round.
@@ -197,6 +198,8 @@ func get_simple_path(start: Vector2i, end: Vector2i, max_steps: int) -> Array:
 
 func move_unit(unit: Unit, new_pos: Vector2i) -> void:
  var old_pos = unit.grid_position
+ # Salvar direção do movimento para flanqueamento (GDD v2 §3)
+ unit.last_move_direction = (new_pos - old_pos).sign()
  set_tile_at(old_pos, null)
  unit.grid_position = new_pos
  set_tile_at(new_pos, unit)
@@ -205,11 +208,17 @@ func move_unit(unit: Unit, new_pos: Vector2i) -> void:
 func attack_unit(attacker: Unit, target: Unit, attacker_terrain: String = "", target_terrain: String = "") -> void:
  var damage = attacker.calculate_damage(target)
 
- # Efeitos de terreno no dano (GDD v2 §3 Pipeline)
+ # Pipeline: Base → Terreno → Flanqueamento (GDD v2 §3)
+
+ # Efeitos de terreno no dano
  if attacker_terrain != "":
   damage = int(damage * _terrain_system.get_attack_multiplier(attacker_terrain))
  if target_terrain != "":
   damage = int(damage * _terrain_system.get_defense_multiplier(target_terrain))
+
+ # Flanqueamento: +25% se atacante está nas costas do alvo
+ var is_flanking := _flanking_system.check_flanking(attacker, target)
+ damage = int(damage * _flanking_system.get_flanking_multiplier(is_flanking))
  damage = maxi(1, damage)
 
  target.take_damage(damage)
