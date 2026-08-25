@@ -43,6 +43,12 @@ var lineage_system: LineageSystem
 var kaelen_system: KaelenSystem
 var boss_system: BossSystem
 
+# §6-7 Sistemas (Traversal / Camp / Cooking / Tavern)
+var traversal_system: TraversalSystem
+var campfire_system: CampfireSystem
+var cooking_system: CookingSystem
+var tavern_minigame: TavernMinigame
+
 # Estado de timed hit
 var _timed_hit_active: bool = false
 var _timed_hit_start_time: float = 0.0
@@ -101,6 +107,26 @@ func setup_systems() -> void:
  lineage_system = LineageSystem.new()
  kaelen_system = KaelenSystem.new()
  boss_system = BossSystem.new()
+
+ # §6.1 Travessia Dinâmica
+ traversal_system = TraversalSystem.new()
+ traversal_system.name = "TraversalSystem"
+ add_child(traversal_system)
+
+ # §7.1 Acampamento
+ campfire_system = CampfireSystem.new()
+ campfire_system.name = "CampfireSystem"
+ add_child(campfire_system)
+
+ # §7.2 Culinária e Elixires
+ cooking_system = CookingSystem.new()
+ cooking_system.name = "CookingSystem"
+ add_child(cooking_system)
+
+ # §7.3 Minigame Taberna
+ tavern_minigame = TavernMinigame.new()
+ tavern_minigame.name = "TavernMinigame"
+ add_child(tavern_minigame)
 
  # Conectar sinais dos sistemas
  combo_system.combo_activated.connect(_on_combo_activated)

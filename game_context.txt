@@ -1,6 +1,6 @@
 # O Pacto das Cinzas - Contexto do Projeto
 # Fonte da verdade de lore/design: docs/GDD_Completo_v2.md ("O Deus Despedaçado")
-# Última atualização: 2026-08-24
+# Última atualização: 2026-08-25
 
 ## Engine
 Godot 4.3 (GL Compatibility) + GDScript
@@ -44,12 +44,13 @@ Janela: 1280x720, stretch canvas_items
 20. CampfireSystem (Acampamento, GDD v2 §7.1) - descanso HP/MP, vínculos com apóstolos, diálogos
 21. CookingSystem (Culinária e Elixires, GDD v2 §7.2) - 10 ingredientes, 3 pratos (buffs temporários), 3 elixires (permanentes), inventário
 22. TavernMinigame (Guerra de Runas, GDD v2 §7.3) - 8 runas, deck de cartas, turnos com gestão de éter, efeitos especiais
+23. ProgressionSystem (§8 Progressão Global) - tabela de 4 Atos por memória/almas, experience curve 1-50, integração com CharacterProgression
 6. Pathfinding: BFS para alcance de movimento + A* simplificado no BattleManager
 7. IA inimiga básica (perseguir + atacar via EnemyAI.decide_action)
 8. Menu de ações, HUD, Soul Éter exibido
 9. Sistemas narrativos: intro_story, naming (mecânica do Nome), eventos, progressão de formas
 10. Crafting/equipamentos e construção de vila (auditados apenas superficialmente)
-14. Testes GUT 9.3.0 rodando headless (5 TurnOrder + 6 BattleManager + 7 Narrative + 22 EtherSystem + 12 Terrain + 10 Flanking + 13 Adjacency + 14 TimedCombat + 13 Lock + 15 Combo + 20 Balance + 20 Lineage + 16 Kaelen + 16 Boss + 19 Traversal + 15 Seamless + 18 LightPuzzle + 12 Campfire + 22 Cooking + 27 Tavern = 306 total)
+14. Testes GUT 9.3.0 rodando headless (5 TurnOrder + 6 BattleManager + 7 Narrative + 22 EtherSystem + 12 Terrain + 10 Flanking + 13 Adjacency + 14 TimedCombat + 13 Lock + 15 Combo + 20 Balance + 20 Lineage + 16 Kaelen + 16 Boss + 19 Traversal + 15 Seamless + 18 LightPuzzle + 12 Campfire + 22 Cooking + 27 Tavern + 22 Progression = 328 total)
 
 ## Infra de Testes
 - GUT 9.3.0 (NÃO atualizar p/ main: usa extends Logger = Godot 4.4+)
@@ -80,11 +81,12 @@ Janela: 1280x720, stretch canvas_items
 12. ~~Acampamento (GDD v2 §7.1)~~ ✅
 13. ~~Culinária e Elixires (GDD v2 §7.2)~~ ✅
 14. ~~Minigame Taberna — Guerra de Runas (GDD v2 §7.3)~~ ✅
+15. ~~§8 Progressão Global (tabela de níveis, experience curve)~~ ✅
 
 ## Próximos passos sugeridos
-- §8 Progressão Global (tabela de níveis, experience curve)
-- Integrar novos sistemas (Traversal, SeamlessEncounters, LightPuzzles, Campfire, Cooking, Tavern) no battle_scene.gd
+- ~~Integrar novos sistemas (Traversal, SeamlessEncounters, LightPuzzles, Campfire, Cooking, Tavern) no battle_scene.gd~~ ✅ (2026-08-25)
 - UI para Combo Points, Éter/Fúria, Boss HP bars
+- Conectar sinais dos sistemas §6-7 (traversal_complete, camp_restored, dish_cooked, tavern_result) ao HUD/ProgressionSystem
 
 ## Convenções do Projeto
 - class_name para tipos reutilizados; signals para comunicação entre sistemas
