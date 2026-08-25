@@ -30,6 +30,7 @@ var grid: Array = []
 var _ether_system: EtherSystem = EtherSystem.new()
 var _terrain_system: TerrainEffectSystem = TerrainEffectSystem.new()
 var _flanking_system: FlankingSystem = FlankingSystem.new()
+var _adjacency_system: AdjacencySystem = AdjacencySystem.new()
 
 # Ordem de turnos velocity-based (GDD v2 §5.1): quem é mais rápido age primeiro.
 # Quando ativo, cada unidade tem seu próprio turno dentro do round.
@@ -208,7 +209,7 @@ func move_unit(unit: Unit, new_pos: Vector2i) -> void:
 func attack_unit(attacker: Unit, target: Unit, attacker_terrain: String = "", target_terrain: String = "") -> void:
  var damage = attacker.calculate_damage(target)
 
- # Pipeline: Base → Terreno → Flanqueamento (GDD v2 §3)
+ # Pipeline: Base → Terreno → Flanqueamento → Adjacência (GDD v2 §3/§4)
 
  # Efeitos de terreno no dano
  if attacker_terrain != "":
@@ -219,6 +220,17 @@ func attack_unit(attacker: Unit, target: Unit, attacker_terrain: String = "", ta
  # Flanqueamento: +25% se atacante está nas costas do alvo
  var is_flanking := _flanking_system.check_flanking(attacker, target)
  damage = int(damage * _flanking_system.get_flanking_multiplier(is_flanking))
+
+ # Adjacência: bônus ATK/DEF de apóstolos adjacentes ao protagonista
+ if attacker.data and not attacker.data.is_player:
+  # Atacante inimigo — protag como alvo ganha DEF de apóstolos adjacentes
+  var target_adj_def := _adjacency_system.get_defense_multiplier(target.grid_position, player_units)
+  damage = int(damage * target_adj_def)
+ elif attacker.data and attacker.data.is_player:
+  # Atacante é protagonista — ganha ATK de apóstolos adjacentes
+  var attacker_adj_atk := _adjacency_system.get_attack_multiplier(attacker.grid_position, player_units)
+  damage = int(damage * attacker_adj_atk)
+
  damage = maxi(1, damage)
 
  target.take_damage(damage)
@@ -283,6 +295,12 @@ func _begin_unit_turn(unit: Unit) -> void:
  var terrain_damage := _get_unit_terrain_damage(unit)
  if terrain_damage > 0:
   unit.take_damage(terrain_damage)
+
+ # Adjacência: Lira adjacent ao protagonista regenera 2% HP (GDD v2 §4)
+ if unit.data and unit.data.is_player:
+  var lira_regen := _adjacency_system.get_hp_regen(unit.grid_position, player_units, unit.data.max_hp)
+  if lira_regen > 0:
+   unit.heal(lira_regen)
 
  individual_turn_started.emit(unit)
 
