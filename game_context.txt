@@ -33,12 +33,13 @@ Janela: 1280x720, stretch canvas_items
 9. TimedCombatSystem (Timed Hits & Blocks, GDD v2 §3.1) - janela 0.3s ataque (Perfect 1.5x, Great 1.25x, Good 1.1x, Miss 0.5x), janela 0.2s bloqueio (Perfect -50%, Great -30%, Good -10%), integrado ao BattleManager via timing_bonus
 10. LockSystem (Lock & Spellbreak, GDD v2 §3.2) - locks com tipo de dano (Corte/Perfuração/Éter etc.), hits_required, turn_counter, stun ao quebrar todos + 2 CP
 11. ComboSystem (Pontos de Combo, GDD v2 §3.3) - max 3 CP, PERFECT +1 CP, lock break +2 CP, combos: Erupção de Éter (1 CP), Tempestade das Cinzas (3 CP)
+12. BalanceSystem (Éter vs Fúria de Kaelen, GDD v2 §3.3) - barra bipolar 0-100, ações diplomáticas/cura → Éter (regen/defesa/lealdade), execuções/destruição → Fúria (armadura/crítico/terror), Simbiose Cinzenta quando ambos ≥ 50
 6. Pathfinding: BFS para alcance de movimento + A* simplificado no BattleManager
 7. IA inimiga básica (perseguir + atacar via EnemyAI.decide_action)
 8. Menu de ações, HUD, Soul Éter exibido
 9. Sistemas narrativos: intro_story, naming (mecânica do Nome), eventos, progressão de formas
 10. Crafting/equipamentos e construção de vila (auditados apenas superficialmente)
-14. Testes GUT 9.3.0 rodando headless (5 TurnOrder + 6 BattleManager + 7 Narrative + 22 EtherSystem + 12 Terrain + 10 Flanking + 13 Adjacency + 14 TimedCombat + 13 Lock + 15 Combo)
+14. Testes GUT 9.3.0 rodando headless (5 TurnOrder + 6 BattleManager + 7 Narrative + 22 EtherSystem + 12 Terrain + 10 Flanking + 13 Adjacency + 14 TimedCombat + 13 Lock + 15 Combo + 20 Balance)
 
 ## Infra de Testes
 - GUT 9.3.0 (NÃO atualizar p/ main: usa extends Logger = Godot 4.4+)
