@@ -25,6 +25,15 @@ var unit_animators: Dictionary = {}
 var autotile_system: AutoTileSystem
 var pixel_art_renderer: PixelArtRenderer
 
+# UI dos novos sistemas
+var combo_label: Label
+var combo_dots: Array[ColorRect] = []
+var balance_bar: ProgressBar
+var balance_label: Label
+var boss_hp_bar: ProgressBar
+var boss_name_label: Label
+var boss_panel: PanelContainer
+
 # Sistemas de combate avançado (GDD v2 §3-5)
 var timed_combat: TimedCombatSystem
 var lock_system: LockSystem
@@ -109,6 +118,98 @@ func setup_ui() -> void:
  move_button.pressed.connect(_on_move_pressed)
  attack_button.pressed.connect(_on_attack_pressed)
  wait_button.pressed.connect(_on_wait_pressed)
+
+ # UI de Combo Points (canto inferior esquerdo)
+ _create_combo_ui()
+
+ # UI de Éter/Fúria (canto inferior direito)
+ _create_balance_ui()
+
+ # UI de Boss HP (topo)
+ _create_boss_ui()
+
+func _create_combo_ui() -> void:
+ # Painel de Combo Points (canto inferior esquerdo)
+ var panel = PanelContainer.new()
+ panel.position = Vector2(10, 650)
+ panel.size = Vector2(150, 60)
+ ui_layer.add_child(panel)
+
+ var vbox = VBoxContainer.new()
+ panel.add_child(vbox)
+
+ combo_label = Label.new()
+ combo_label.text = "CP: 0/3"
+ combo_label.add_theme_font_size_override("font_size", 14)
+ vbox.add_child(combo_label)
+
+ # Dots visuais para CP
+ var dots_container = HBoxContainer.new()
+ vbox.add_child(dots_container)
+
+ for i in range(3):
+  var dot = ColorRect.new()
+  dot.size = Vector2(16, 16)
+  dot.color = Color(0.3, 0.3, 0.3)
+  dots_container.add_child(dot)
+  combo_dots.append(dot)
+
+func _create_balance_ui() -> void:
+ # Painel de Éter/Fúria (canto inferior direito)
+ var panel = PanelContainer.new()
+ panel.position = Vector2(1120, 650)
+ panel.size = Vector2(150, 60)
+ ui_layer.add_child(panel)
+
+ var vbox = VBoxContainer.new()
+ panel.add_child(vbox)
+
+ balance_label = Label.new()
+ balance_label.text = "Neutro"
+ balance_label.add_theme_font_size_override("font_size", 12)
+ balance_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+ vbox.add_child(balance_label)
+
+ balance_bar = ProgressBar.new()
+ balance_bar.size = Vector2(140, 12)
+ balance_bar.max_value = 100
+ balance_bar.value = 50
+ var bar_bg = StyleBoxFlat.new()
+ bar_bg.bg_color = Color(0.2, 0.2, 0.2)
+ balance_bar.add_theme_stylebox_override("background", bar_bg)
+ var bar_fill = StyleBoxFlat.new()
+ bar_fill.bg_color = Color(0.5, 0.5, 0.5)
+ balance_bar.add_theme_stylebox_override("fill", bar_fill)
+ vbox.add_child(balance_bar)
+
+func _create_boss_ui() -> void:
+ # Painel de Boss HP (topo central, inicialmente oculto)
+ boss_panel = PanelContainer.new()
+ boss_panel.position = Vector2(390, 10)
+ boss_panel.size = Vector2(500, 50)
+ boss_panel.visible = false
+ ui_layer.add_child(boss_panel)
+
+ var vbox = VBoxContainer.new()
+ boss_panel.add_child(vbox)
+
+ boss_name_label = Label.new()
+ boss_name_label.text = "Boss"
+ boss_name_label.add_theme_font_size_override("font_size", 14)
+ boss_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+ vbox.add_child(boss_name_label)
+
+ boss_hp_bar = ProgressBar.new()
+ boss_hp_bar.size = Vector2(480, 16)
+ boss_hp_bar.max_value = 500
+ boss_hp_bar.value = 500
+ var hp_bg = StyleBoxFlat.new()
+ hp_bg.bg_color = Color(0.2, 0.1, 0.1)
+ boss_hp_bar.add_theme_stylebox_override("background", hp_bg)
+ var hp_fill = StyleBoxFlat.new()
+ hp_fill.bg_color = Color(0.8, 0.2, 0.2)
+ boss_hp_bar.add_theme_stylebox_override("fill", hp_fill)
+ vbox.add_child(boss_hp_bar)
 
 func setup_battle() -> void:
  # Inicializar sistema de autotile para o mapa (aplicado sobre a camada de terreno do grid)
@@ -416,6 +517,7 @@ func _apply_attack_result(target: Unit, multiplier: float, grade: String) -> voi
  # Ganhar Éter por timing perfeito
  if grade == "PERFECT":
   balance_system.apply_action("buff_ally")  # +8 Éter
+  update_balance_ui()
 
  # Animação de dano no alvo
  var target_animator = unit_animators.get(target.name)
@@ -425,6 +527,7 @@ func _apply_attack_result(target: Unit, multiplier: float, grade: String) -> voi
  # Ganhar CP por Perfect
  if grade == "PERFECT":
   combo_system.earn_from_timed_hit()
+  update_combo_ui()
 
  selected_unit.has_acted = true
  grid.clear_highlights()
@@ -481,6 +584,9 @@ func _on_phase_changed(phase: String) -> void:
 func _on_turn_started(_unit: Unit) -> void:
  turn_label.text = "Turno: %d" % BattleManager.turn_count
  battle_stats.turns = BattleManager.turn_count
+ # Atualizar UI dos sistemas a cada turno
+ update_combo_ui()
+ update_balance_ui()
 
 func _on_unit_moved(unit: Unit, _from: Vector2i, to: Vector2i) -> void:
  unit.position = grid.grid_to_pixel(to)
@@ -624,3 +730,54 @@ func _on_boss_defeated(boss_name: String) -> void:
 func _on_boss_spell_charging(_boss_name: String, spell_name: String, _turns_left: int) -> void:
  combat_feedback.show_status_effect(Vector2(640, 200), "PERIGO: " + spell_name + " se preparando!")
  combat_feedback.shake_light()
+
+# === Funções de atualização de UI ===
+
+func update_combo_ui() -> void:
+ if not combo_label:
+  return
+ var cp = combo_system.get_cp()
+ combo_label.text = "CP: %d/3" % cp
+ for i in range(3):
+  if i < cp:
+   combo_dots[i].color = Color(1.0, 0.8, 0.2)  # Dourado quando ativo
+  else:
+   combo_dots[i].color = Color(0.3, 0.3, 0.3)  # Cinza quando vazio
+
+func update_balance_ui() -> void:
+ if not balance_bar or not balance_label:
+  return
+ var ether = balance_system.get_ether()
+ var fury = balance_system.get_fury()
+ var mode = balance_system.get_current_mode()
+
+ # Barra mostra posição bipolar (Éter esquerda, Fúria direita)
+ balance_bar.value = ether
+
+ # Label do modo
+ match mode:
+  0: balance_label.text = "Neutro"
+  1: balance_label.text = "Modo Éter"
+  2: balance_label.text = "Modo Fúria"
+  3: balance_label.text = "SIMBIOSE!"
+
+ # Cor da barra baseada no modo
+ var bar_fill = StyleBoxFlat.new()
+ match mode:
+  1: bar_fill.bg_color = Color(0.3, 0.7, 1.0)  # Azul para Éter
+  2: bar_fill.bg_color = Color(1.0, 0.3, 0.2)  # Vermelho para Fúria
+  3: bar_fill.bg_color = Color(0.8, 0.5, 1.0)  # Roxo para Simbiose
+  _: bar_fill.bg_color = Color(0.5, 0.5, 0.5)  # Cinza para Neutro
+ balance_bar.add_theme_stylebox_override("fill", bar_fill)
+
+func show_boss_hp(boss_name: String, hp: int, max_hp: int) -> void:
+ if boss_panel:
+  boss_panel.visible = true
+  boss_name_label.text = boss_name
+  boss_hp_bar.max_value = max_hp
+  boss_hp_bar.value = hp
+
+func hide_boss_hp() -> void:
+ if boss_panel:
+  boss_panel.visible = false
+
