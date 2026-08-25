@@ -25,6 +25,20 @@ var unit_animators: Dictionary = {}
 var autotile_system: AutoTileSystem
 var pixel_art_renderer: PixelArtRenderer
 
+# Sistemas de combate avançado (GDD v2 §3-5)
+var timed_combat: TimedCombatSystem
+var lock_system: LockSystem
+var combo_system: ComboSystem
+var balance_system: BalanceSystem
+var lineage_system: LineageSystem
+var kaelen_system: KaelenSystem
+var boss_system: BossSystem
+
+# Estado de timed hit
+var _timed_hit_active: bool = false
+var _timed_hit_start_time: float = 0.0
+var _timed_hit_target: Unit = null
+
 var selected_unit: Unit = null
 var is_unit_selected: bool = false
 var can_interact: bool = true
@@ -69,6 +83,21 @@ func setup_systems() -> void:
  pixel_art_renderer = PixelArtRenderer.new()
  pixel_art_renderer.name = "PixelArtRenderer"
  add_child(pixel_art_renderer)
+
+ # Sistemas de combate avançado
+ timed_combat = TimedCombatSystem.new()
+ lock_system = LockSystem.new()
+ combo_system = ComboSystem.new()
+ balance_system = BalanceSystem.new()
+ lineage_system = LineageSystem.new()
+ kaelen_system = KaelenSystem.new()
+ boss_system = BossSystem.new()
+
+ # Conectar sinais dos sistemas
+ combo_system.combo_activated.connect(_on_combo_activated)
+ balance_system.mode_changed.connect(_on_balance_mode_changed)
+ boss_system.boss_defeated.connect(_on_boss_defeated)
+ boss_system.boss_spell_charging.connect(_on_boss_spell_charging)
 
 func setup_ui() -> void:
  phase_label.text = "FASE: JOGADOR"
@@ -283,6 +312,14 @@ func handle_left_click() -> void:
  var mouse_pos = get_global_mouse_position()
  var grid_pos = grid.pixel_to_grid(mouse_pos)
 
+ # Se timed hit está ativo, processar timing
+ if _timed_hit_active:
+  var elapsed = (Time.get_ticks_msec() / 1000.0) - _timed_hit_start_time
+  var grade = timed_combat.resolve_timing(elapsed)
+  _apply_attack_result(_timed_hit_target, grade.multiplier, grade.label)
+  _timed_hit_active = false
+  return
+
  if not BattleManager.is_valid_position(grid_pos):
   return
 
@@ -342,25 +379,57 @@ func move_selected_unit(grid_pos: Vector2i) -> void:
 
 func attack_with_selected_unit(target: Unit) -> void:
  if selected_unit and not selected_unit.has_acted:
-  # Animação de ataque
-  var attacker_animator = unit_animators.get(selected_unit.name)
-  if attacker_animator:
-   await attacker_animator.play_attack(target)
+  # Iniciar timed hit
+  _timed_hit_active = true
+  _timed_hit_start_time = Time.get_ticks_msec() / 1000.0
+  _timed_hit_target = target
 
-  SoundManager.play_hit()
-  combat_feedback.shake_light()
+  # Mostrar indicador visual
+  combat_feedback.show_status_effect(target.global_position + Vector2(0, -40), "TIMED HIT!")
 
-  BattleManager.attack_unit(selected_unit, target)
+  # Esperar input do jogador (timer de 0.3s)
+  await get_tree().create_timer(TimedCombatSystem.ATTACK_WINDOW).timeout
 
-  # Animação de dano no alvo
-  var target_animator = unit_animators.get(target.name)
-  if target_animator:
-   target_animator.play_hit()
+  # Se jogador não clicou a tempo, aplicar dano sem bônus
+  if _timed_hit_active:
+   _apply_attack_result(target, 1.0, "MISS")
 
-  selected_unit.has_acted = true
-  grid.clear_highlights()
-  hide_action_menu()
-  deselect_unit()
+
+func _apply_attack_result(target: Unit, multiplier: float, grade: String) -> void:
+ if not selected_unit or not target:
+  return
+
+ # Animação de ataque
+ var attacker_animator = unit_animators.get(selected_unit.name)
+ if attacker_animator:
+  await attacker_animator.play_attack(target)
+
+ SoundManager.play_hit()
+ combat_feedback.shake_light()
+
+ # Aplicar dano com bônus de timing via BattleManager
+ BattleManager.attack_unit(selected_unit, target, "", "", multiplier)
+
+ # Mostrar grade de timing
+ combat_feedback.show_status_effect(target.global_position + Vector2(0, -30), grade)
+
+ # Ganhar Éter por timing perfeito
+ if grade == "PERFECT":
+  balance_system.apply_action("buff_ally")  # +8 Éter
+
+ # Animação de dano no alvo
+ var target_animator = unit_animators.get(target.name)
+ if target_animator:
+  target_animator.play_hit()
+
+ # Ganhar CP por Perfect
+ if grade == "PERFECT":
+  combo_system.earn_from_timed_hit()
+
+ selected_unit.has_acted = true
+ grid.clear_highlights()
+ hide_action_menu()
+ deselect_unit()
 
 func show_unit_info(unit: Unit) -> void:
  unit_info_panel.visible = true
@@ -528,3 +597,30 @@ func _on_tutorial_message(message: String, position: Vector2) -> void:
  await get_tree().create_timer(3.0).timeout
  if is_instance_valid(label):
   label.queue_free()
+
+# === Sinal handlers para sistemas avançados ===
+
+func _on_combo_activated(combo_name: String) -> void:
+ combat_feedback.show_status_effect(Vector2(640, 300), "COMBO: " + combo_name)
+ combat_feedback.shake_medium()
+ SoundManager.play_hit()
+
+func _on_balance_mode_changed(new_mode: String) -> void:
+ var color: Color
+ match new_mode:
+  "ETER": color = Color(0.3, 0.7, 1.0)
+  "FURIA": color = Color(1.0, 0.3, 0.2)
+  "SIMBIOSE": color = Color(0.8, 0.5, 1.0)
+  _: color = Color.WHITE
+ combat_feedback.show_status_effect(Vector2(640, 50), new_mode, color)
+
+func _on_boss_defeated(boss_name: String) -> void:
+ can_interact = false
+ await screen_effects.flash_white()
+ combat_feedback.show_status_effect(Vector2(640, 360), boss_name + " DERROTADO!")
+ await get_tree().create_timer(2.0).timeout
+ show_victory_screen()
+
+func _on_boss_spell_charging(_boss_name: String, spell_name: String, _turns_left: int) -> void:
+ combat_feedback.show_status_effect(Vector2(640, 200), "PERIGO: " + spell_name + " se preparando!")
+ combat_feedback.shake_light()

@@ -95,11 +95,11 @@ func update_hp_bar() -> void:
 # --- Contrato EtherSystem (duck typing, GDD v2 §3.3) ---
 
 func get_ether() -> int:
-	return _ether
+ return _ether
 
 func set_ether(value: int) -> void:
-	_ether = clampi(value, 0, 3)
-	ether_changed.emit(_ether)
+ _ether = clampi(value, 0, 3)
+ ether_changed.emit(_ether)
 
 # --- Fim contrato EtherSystem ---
 
@@ -107,7 +107,7 @@ func set_ether(value: int) -> void:
 # --- Contrato FlankingSystem (duck typing, GDD v2 §3 Flanqueamento) ---
 
 func get_grid_position() -> Vector2i:
-	return grid_position
+ return grid_position
 
 # --- Fim contrato FlankingSystem ---
 
