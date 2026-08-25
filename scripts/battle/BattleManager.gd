@@ -31,6 +31,7 @@ var _ether_system: EtherSystem = EtherSystem.new()
 var _terrain_system: TerrainEffectSystem = TerrainEffectSystem.new()
 var _flanking_system: FlankingSystem = FlankingSystem.new()
 var _adjacency_system: AdjacencySystem = AdjacencySystem.new()
+var _timed_combat_system: TimedCombatSystem = TimedCombatSystem.new()
 
 # Ordem de turnos velocity-based (GDD v2 §5.1): quem é mais rápido age primeiro.
 # Quando ativo, cada unidade tem seu próprio turno dentro do round.
@@ -206,7 +207,7 @@ func move_unit(unit: Unit, new_pos: Vector2i) -> void:
  set_tile_at(new_pos, unit)
  unit_moved.emit(unit, old_pos, new_pos)
 
-func attack_unit(attacker: Unit, target: Unit, attacker_terrain: String = "", target_terrain: String = "") -> void:
+func attack_unit(attacker: Unit, target: Unit, attacker_terrain: String = "", target_terrain: String = "", timing_bonus: float = 1.0) -> void:
  var damage = attacker.calculate_damage(target)
 
  # Pipeline: Base → Terreno → Flanqueamento → Adjacência (GDD v2 §3/§4)
@@ -230,6 +231,9 @@ func attack_unit(attacker: Unit, target: Unit, attacker_terrain: String = "", ta
   # Atacante é protagonista — ganha ATK de apóstolos adjacentes
   var attacker_adj_atk := _adjacency_system.get_attack_multiplier(attacker.grid_position, player_units)
   damage = int(damage * attacker_adj_atk)
+
+ # Timed Hit bonus (GDD v2 §3.1)
+ damage = int(damage * timing_bonus)
 
  damage = maxi(1, damage)
 
