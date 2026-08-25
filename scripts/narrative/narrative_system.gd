@@ -1,44 +1,49 @@
 class_name NarrativeSystem
 extends Node
 
+## Sistema narrativo sincronizado com o GDD v2 "O Deus Despedaçado"
+## (docs/GDD_Completo_v2.md — fonte da verdade de lore).
+
 signal act_started(act_number: int, act_name: String)
 signal event_triggered(event_id: String)
 signal protagonist_evolved(new_form: String)
 signal memory_recovered(memory_id: String)
 signal kaelen_spoke(message: String)
 
-enum ProtagonistForm { IMP_MENOR, NOBRE_ABISSAL, ARQUIDEMONIO, AVATAR_PRIMORDIAL }
+## Fases do protagonista (canon GDD v2, seção 2):
+## Querubim Fraturado -> Serafim das Cinzas -> Trono Cósmico/Arquidemônio -> Avatar Primordial
+enum ProtagonistForm { QUERUBIM_FRATURADO, SERAFIM_DAS_CINZAS, TRONO_COSMICO, AVATAR_PRIMORDIAL }
 
 var current_act: int = 1
-var current_form: ProtagonistForm = ProtagonistForm.IMP_MENOR
+var current_form: ProtagonistForm = ProtagonistForm.QUERUBIM_FRATURADO
 var memories_recovered: Array[String] = []
 var fragments_collected: int = 0
 
 var acts: Dictionary = {
  1: {
-  "name": "Sussurros na Escuridão",
-  "description": "O protagonista desperta na Fronteira Cinzenta. Sobrevivência e primeiros aliados.",
+  "name": "A Fronteira Cinzenta",
+  "description": "O Querubim Fraturado desperta nos ermos. Salva os Goblins da Lama e nomeia Kroug.",
   "events": ["evt_despertar", "evt_salvar_goblins", "evt_primeiro_nome", "evt_ataque_mercenarios"],
-  "form_unlocked": ProtagonistForm.IMP_MENOR,
+  "form_unlocked": ProtagonistForm.QUERUBIM_FRATURADO,
   "memories": ["mem_silhueta_antiga", "mem_voz_kaelen"]
  },
  2: {
-  "name": "O Trono de Barro e Sangue",
-  "description": "A vila cresce. Novas raças se unem. Inquisidores descobrem o reino.",
-  "events": ["evt_crescimento_vila", "evt_invasao_inquisidores", "evt_diplomatas_humanos", "evt_forma_nobre"],
-  "form_unlocked": ProtagonistForm.NOBRE_ABISSAL,
-  "memories": ["mem_batalha_antiga", "mem_traição_deuses"]
+  "name": "O Despertar da Chama Sombria",
+  "description": "O acampamento vira fortaleza. Inquisidores de Aço atacam à noite; Lira é resgatada.",
+  "events": ["evt_crescimento_vila", "evt_invasao_inquisidores", "evt_resgate_lira", "evt_nacao_das_cinzas"],
+  "form_unlocked": ProtagonistForm.SERAFIM_DAS_CINZAS,
+  "memories": ["mem_correntes_solares", "mem_batalha_antiga"]
  },
  3: {
-  "name": "A Cruzada de Fogo",
-  "description": "Guerra total. Aurius envia Paladinos e Cardeais. A cidade é danificada.",
-  "events": ["evt_cruzada_aurius", "evt_batalha_cardeais", "evt_cidade_danificada", "evt_marcha_solaria"],
-  "form_unlocked": ProtagonistForm.ARQUIDEMONIO,
+  "name": "A Guerra Fria dos Renegados",
+  "description": "Aliança com Anões e Elfos Caídos. A Bula Papal declara a Guerra Santa.",
+  "events": ["evt_clas_anoes", "vt_elfos_caidos", "evt_bula_papal", "evt_cerco_desfiladeiros"],
+  "form_unlocked": ProtagonistForm.TRONO_COSMICO,
   "memories": ["mem_traicao_completa", "mem_amor_nacao"]
  },
  4: {
-  "name": "A Guerra dos Deuses",
-  "description": "Invasão final. Confronto com Aurius. O Pacto das Cinzas.",
+  "name": "A Queda de Solaria",
+  "description": "Marcha final. Verdade sobre Kaelen. Execução de Aurius. O Pacto das Cinzas.",
   "events": ["evt_invasao_solaria", "evt_confronto_final", "evt_aceitar_kaelen", "evt_pacto_cinzas"],
   "form_unlocked": ProtagonistForm.AVATAR_PRIMORDIAL,
   "memories": ["mem_verdade_kaelen", "mem_paz_divina"]
@@ -47,53 +52,64 @@ var acts: Dictionary = {
 
 var characters: Dictionary = {
  "protagonista": {
-  "name": "Sem Nome (Imp Menor)",
-  "true_name": "O Deus Primordial",
-  "form": "Imp Menor",
-  "description": "Silencioso, estratégico e inicialmente compassivo",
-  "arc": "De imp frágil a Avatar Primordial"
+  "name": "Sem Nome (Querubim Fraturado)",
+  "true_name": "O Deus Primordial do Éter e das Feras",
+  "form": "Querubim Fraturado (Imp Angelical)",
+  "description": "Beleza divina caçada como aberração. Mármore rachado com veias de éter cobalto",
+  "arc": "De fagulha esquecida a Avatar Primordial"
  },
  "kaelen": {
   "name": "Kaelen",
-  "title": "A Voz do Mundo",
-  "description": "Inteligência artificial divina. Frio, calculista e protetor",
-  "secret": "Último resquício da racionalidade do antigo Deus",
-  "mission": "Garantir que o protagonista não enlouqueça"
+  "title": "A Voz da Fratura",
+  "description": "Sistema analítico que calcula trajetórias e fraquezas com precisão matemática",
+  "secret": "Personificação do trauma e da fúria do Deus Primordial no instante da traição — máquina de vingança, não módulo benevolente",
+  "mission": "Guiar a 'aberração angelical' na sobrevivência — e na vingança"
  },
  "kroug": {
   "name": "Kroug",
-  "title": "O Escudo",
-  "description": "Primeiro monstro salvo. Braço direito militarmente",
-  "evolution": "Goblin da Lama → Rei Ogro de Fogo",
-  "personality": "Leal, corajoso, protetor"
+  "title": "O Escudo das Cinzas",
+  "description": "Primeiro monstro salvo e nomeado. Trata o Criador como 'Pai das Chamas'",
+  "evolution": "Goblin da Lama → Hobgoblin de Ferro → Rei Ogro de Fogo",
+  "personality": "Lealdade absoluta; vocabulário rústico e marcial",
+  "synergy": "+15% Defesa base para o Protagonista em campo"
  },
  "lira": {
   "name": "Lira",
-  "title": "A Sacerdotisa",
-  "description": "Rainha Ent Primordial. Controla vida orgânica",
-  "evolution": "Muda Mágica → Dríade Poderosa",
-  "role": "Curandeira e camuflagem do vilarejo"
+  "title": "A Sacerdotisa da Floresta",
+  "description": "Dríade ancestral resgatada. Refere-se ao Éter como 'O Orvalho da Vida'",
+  "evolution": "Muda Mágica → Dríade Sombria → Rainha Ent Primordial",
+  "role": "Suporte supremo de regeneração",
+  "synergy": "Regeneração passiva de 2% HP/seg para o Protagonista"
  },
  "thalkor": {
   "name": "Thal'kor",
   "title": "A Lâmina Cega",
-  "description": "Anjo corrompido. Mestre espião e líder aéreo",
-  "evolution": "Anjo Caído → Serafim Negro",
-  "personality": "Cínico, com código moral oculto"
+  "description": "Assassino aéreo cínico com terminologia celeste deturpada",
+  "evolution": "Corvo Bestial → Harpia Noturna → Serafim Negro",
+  "personality": "Igualdade estratégica; código moral oculto",
+  "synergy": "+20% Velocidade de Ataque para o Protagonista"
+ },
+ "garm": {
+  "name": "Garm",
+  "title": "O Devorador de Horizontes",
+  "description": "Lobo caolho resgatado dos inquisidores. Montaria empática do protagonista",
+  "evolution": "Lobo Caolho → Cão do Inferno Sombrio → Fenrir Menor",
+  "personality": "Empático, instintivo, devorado por horizontes distantes",
+  "synergy": "Montaria veloz: travessia e caça de infantaria"
  }
 }
 
 var antagonists: Dictionary = {
  "aurius": {
   "name": "Aurius",
-  "title": "O Falso Deus da Luz",
-  "description": "Orquestrador da traição primordial",
-  "secret": "Consome almas dos devotos para manter imortalidade",
+  "title": "O Falso Deus da Luz Solar",
+  "description": "Ex-deus menor da aurora que traiu e estilhaçou o Criador no Grande Eclipse",
+  "secret": "Reescreveu a cosmologia na Grande Censura; proclamou-se Único Arquiteto da Criação",
   "final_boss": true
  },
  "santos_cardeais": {
   "name": "Santos Cardeais",
-  "description": "Cinco humanos com avatares dos deuses usurpadores",
+  "description": "Cinco humanos com avatares dos deuses usurpadores: Ignis, Zephyr, Aqua, Terra, Umbra",
   "count": 5,
   "bosses": true
  },
@@ -146,16 +162,16 @@ func get_form_for_fragments() -> ProtagonistForm:
  if fragments_collected >= 12:
   return ProtagonistForm.AVATAR_PRIMORDIAL
  elif fragments_collected >= 7:
-  return ProtagonistForm.ARQUIDEMONIO
+  return ProtagonistForm.TRONO_COSMICO
  elif fragments_collected >= 3:
-  return ProtagonistForm.NOBRE_ABISSAL
- return ProtagonistForm.IMP_MENOR
+  return ProtagonistForm.SERAFIM_DAS_CINZAS
+ return ProtagonistForm.QUERUBIM_FRATURADO
 
 func get_form_name(form: ProtagonistForm) -> String:
  match form:
-  ProtagonistForm.IMP_MENOR: return "Imp Menor"
-  ProtagonistForm.NOBRE_ABISSAL: return "Nobre Abissal"
-  ProtagonistForm.ARQUIDEMONIO: return "Arquidemônio"
+  ProtagonistForm.QUERUBIM_FRATURADO: return "Querubim Fraturado"
+  ProtagonistForm.SERAFIM_DAS_CINZAS: return "Serafim das Cinzas"
+  ProtagonistForm.TRONO_COSMICO: return "Trono Cósmico / Arquidemônio"
   ProtagonistForm.AVATAR_PRIMORDIAL: return "Avatar Primordial"
  return "Desconhecido"
 
