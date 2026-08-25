@@ -134,6 +134,13 @@ func setup_systems() -> void:
  boss_system.boss_defeated.connect(_on_boss_defeated)
  boss_system.boss_spell_charging.connect(_on_boss_spell_charging)
 
+ # §6-7 Sinais
+ traversal_system.traversal_completed.connect(_on_traversal_completed)
+ campfire_system.rest_completed.connect(_on_camp_rest_completed)
+ campfire_system.bond_level_changed.connect(_on_bond_level_changed)
+ cooking_system.recipe_crafted.connect(_on_recipe_crafted)
+ tavern_minigame.game_over.connect(_on_tavern_game_over)
+
 func setup_ui() -> void:
  phase_label.text = "FASE: JOGADOR"
  turn_label.text = "Turno: 1"
@@ -756,6 +763,23 @@ func _on_boss_defeated(boss_name: String) -> void:
 func _on_boss_spell_charging(_boss_name: String, spell_name: String, _turns_left: int) -> void:
  combat_feedback.show_status_effect(Vector2(640, 200), "PERIGO: " + spell_name + " se preparando!")
  combat_feedback.shake_light()
+
+# === Handlers sistemas §6-7 ===
+
+func _on_traversal_completed(traversal_type: String) -> void:
+ combat_feedback.show_status_effect(Vector2(640, 300), "TRAVESSIA: " + traversal_type)
+
+func _on_camp_rest_completed(healed_units: Array) -> void:
+ combat_feedback.show_status_effect(Vector2(640, 300), "ACAMPAMENTO: %d unidades restauradas" % healed_units.size())
+
+func _on_bond_level_changed(apostle_name: String, new_level: int) -> void:
+ combat_feedback.show_status_effect(Vector2(640, 300), "VÍNCULO: " + apostle_name + " nível " + str(new_level))
+
+func _on_recipe_crafted(recipe_name: String, bonuses: Dictionary) -> void:
+ combat_feedback.show_status_effect(Vector2(640, 300), "RECEITA: " + recipe_name)
+
+func _on_tavern_game_over(winner: String, loser: String) -> void:
+ combat_feedback.show_status_effect(Vector2(640, 300), "TABERNA: " + winner + " vence!")
 
 # === Funções de atualização de UI ===
 
