@@ -49,6 +49,12 @@ var campfire_system: CampfireSystem
 var cooking_system: CookingSystem
 var tavern_minigame: TavernMinigame
 
+# §8 Progressão Global
+var progression_system: ProgressionSystem
+
+# HUD cumulativo dos sistemas §6-7
+var progression_hud: PanelContainer
+
 # Estado de timed hit
 var _timed_hit_active: bool = false
 var _timed_hit_start_time: float = 0.0
@@ -108,6 +114,11 @@ func setup_systems() -> void:
  kaelen_system = KaelenSystem.new()
  boss_system = BossSystem.new()
 
+ # §8 Progressão Global
+ progression_system = ProgressionSystem.new()
+ progression_system.name = "ProgressionSystem"
+ add_child(progression_system)
+
  # §6.1 Travessia Dinâmica
  traversal_system = TraversalSystem.new()
  traversal_system.name = "TraversalSystem"
@@ -160,6 +171,10 @@ func setup_ui() -> void:
 
  # UI de Boss HP (topo)
  _create_boss_ui()
+
+ # HUD de Progressão §6-8 (top-right)
+ _create_progression_hud()
+ _update_progression_hud()
 
 func _create_combo_ui() -> void:
  # Painel de Combo Points (canto inferior esquerdo)
@@ -806,18 +821,33 @@ func _on_boss_spell_charging(_boss_name: String, spell_name: String, _turns_left
 
 func _on_traversal_completed(traversal_type: String) -> void:
  combat_feedback.show_status_effect(Vector2(640, 300), "TRAVESSIA: " + traversal_type)
+ if progression_system:
+  progression_system.add_memory(10)
+  progression_system.add_experience(25)
+ _update_progression_hud()
 
 func _on_camp_rest_completed(healed_units: Array) -> void:
  combat_feedback.show_status_effect(Vector2(640, 300), "ACAMPAMENTO: %d unidades restauradas" % healed_units.size())
+ if progression_system:
+  progression_system.add_experience(15)
+  progression_system.add_memory(5)
+ _update_progression_hud()
 
 func _on_bond_level_changed(apostle_name: String, new_level: int) -> void:
  combat_feedback.show_status_effect(Vector2(640, 300), "VÍNCULO: " + apostle_name + " nível " + str(new_level))
 
 func _on_recipe_crafted(recipe_name: String, bonuses: Dictionary) -> void:
  combat_feedback.show_status_effect(Vector2(640, 300), "RECEITA: " + recipe_name)
+ if progression_system:
+  progression_system.add_experience(20)
+  progression_system.add_memory(10)
+ _update_progression_hud()
 
 func _on_tavern_game_over(winner: String, loser: String) -> void:
  combat_feedback.show_status_effect(Vector2(640, 300), "TABERNA: " + winner + " vence!")
+ if progression_system:
+  progression_system.add_named_soul()
+ _update_progression_hud()
 
 # === Funções de atualização de UI ===
 
@@ -868,4 +898,106 @@ func show_boss_hp(boss_name: String, hp: int, max_hp: int) -> void:
 func hide_boss_hp() -> void:
  if boss_panel:
   boss_panel.visible = false
+
+# === HUD de Progressão §6-8 ===
+
+func _create_progression_hud() -> void:
+ progression_hud = PanelContainer.new()
+ progression_hud.position = Vector2(960, 8)
+ progression_hud.size = Vector2(310, 70)
+ var style = StyleBoxFlat.new()
+ style.bg_color = Color(0.03, 0.05, 0.09, 0.88)
+ style.border_color = Color(0.25, 0.4, 0.6)
+ style.set_border_width_all(2)
+ style.set_corner_radius_all(6)
+ progression_hud.add_theme_stylebox_override("panel", style)
+ ui_layer.add_child(progression_hud)
+
+ var vbox = VBoxContainer.new()
+ vbox.add_theme_constant_override("separation", 4)
+ progression_hud.add_child(vbox)
+
+ # Linha 1: Ato + Memória
+ var row1 = HBoxContainer.new()
+ row1.add_theme_constant_override("separation", 16)
+ vbox.add_child(row1)
+
+ var act_label = Label.new()
+ act_label.name = "ActLabel"
+ act_label.text = "ATO 1"
+ act_label.add_theme_font_size_override("font_size", 12)
+ act_label.add_theme_color_override("font_color", Color(0.7, 0.85, 1.0))
+ act_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0))
+ act_label.add_theme_constant_override("shadow_offset_x", 1)
+ act_label.add_theme_constant_override("shadow_offset_y", 1)
+ row1.add_child(act_label)
+
+ var mem_label = Label.new()
+ mem_label.name = "MemLabel"
+ mem_label.text = "MEM 0%"
+ mem_label.add_theme_font_size_override("font_size", 12)
+ mem_label.add_theme_color_override("font_color", Color(0.6, 0.75, 1.0))
+ mem_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0))
+ mem_label.add_theme_constant_override("shadow_offset_x", 1)
+ mem_label.add_theme_constant_override("shadow_offset_y", 1)
+ row1.add_child(mem_label)
+
+ var soul_label = Label.new()
+ soul_label.name = "SoulLabel"
+ soul_label.text = "ALMAS 0"
+ soul_label.add_theme_font_size_override("font_size", 12)
+ soul_label.add_theme_color_override("font_color", Color(0.8, 0.6, 0.9))
+ soul_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0))
+ soul_label.add_theme_constant_override("shadow_offset_x", 1)
+ soul_label.add_theme_constant_override("shadow_offset_y", 1)
+ row1.add_child(soul_label)
+
+ # Linha 2: XP + Forma atual
+ var row2 = HBoxContainer.new()
+ row2.add_theme_constant_override("separation", 16)
+ vbox.add_child(row2)
+
+ var xp_label = Label.new()
+ xp_label.name = "XPLabel"
+ xp_label.text = "XP 0"
+ xp_label.add_theme_font_size_override("font_size", 12)
+ xp_label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.5))
+ xp_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0))
+ xp_label.add_theme_constant_override("shadow_offset_x", 1)
+ xp_label.add_theme_constant_override("shadow_offset_y", 1)
+ row2.add_child(xp_label)
+
+ var form_label = Label.new()
+ form_label.name = "FormLabel"
+ form_label.text = "FORMA: Imp Menor"
+ form_label.add_theme_font_size_override("font_size", 12)
+ form_label.add_theme_color_override("font_color", Color(0.5, 0.9, 0.7))
+ form_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0))
+ form_label.add_theme_constant_override("shadow_offset_x", 1)
+ form_label.add_theme_constant_override("shadow_offset_y", 1)
+ row2.add_child(form_label)
+
+ progression_hud_label = Label.new()
+
+func _update_progression_hud() -> void:
+ if not progression_hud or not progression_system:
+  return
+ var summary: Dictionary = progression_system.get_progress_summary()
+
+ var act_label = progression_hud.get_node_or_null("VBoxContainer/ActLabel") as Label
+ var mem_label = progression_hud.get_node_or_null("VBoxContainer/MemLabel") as Label
+ var soul_label = progression_hud.get_node_or_null("VBoxContainer/SoulLabel") as Label
+ var xp_label = progression_hud.get_node_or_null("VBoxContainer/XPLabel") as Label
+ var form_label = progression_hud.get_node_or_null("VBoxContainer/FormLabel") as Label
+
+ if act_label:
+  act_label.text = "ATO %d" % summary.get("current_act", 1)
+ if mem_label:
+  mem_label.text = "MEM %d%%" % summary.get("memory_percent", 0)
+ if soul_label:
+  soul_label.text = "ALMAS %d" % summary.get("named_souls", 0)
+ if xp_label:
+  xp_label.text = "XP %d" % summary.get("total_xp", 0)
+ if form_label:
+  form_label.text = "FORMA: %s" % summary.get("protagonist_form", "???")
 

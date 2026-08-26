@@ -10,6 +10,7 @@ signal intro_completed(choices: Dictionary)
 var faith_system: FaithSystem
 var building_system: BuildingSystem
 var ability_system: AbilitySystem
+var progression_system: ProgressionSystem
 var intro_story: Control  # Instância de IntroStory (evita dependência circular de class_name)
 
 var current_scene: String = "intro"
@@ -25,7 +26,8 @@ var game_data: Dictionary = {
  "kaelen_approval": 0,
  "difficulty": "normal",
  "knowledge_bonus": false,
- "first_pact": false
+ "first_pact": false,
+  "progression": {}
 }
 
 func _ready() -> void:
@@ -44,6 +46,10 @@ func initialize_systems() -> void:
  ability_system = AbilitySystem.new()
  ability_system.name = "AbilitySystem"
  add_child(ability_system)
+
+ progression_system = ProgressionSystem.new()
+ progression_system.name = "ProgressionSystem"
+ add_child(progression_system)
 
  var intro_script = load("res://scripts/ui/intro_story.gd")
  if intro_script:
@@ -126,6 +132,8 @@ func get_game_data() -> Dictionary:
  return game_data
 
 func save_game() -> void:
+ if progression_system:
+  game_data["progression"] = progression_system.serialize()
  var save_data = {
   "game_data": game_data,
   "faith_data": faith_system.faith_data,
@@ -148,10 +156,12 @@ func load_game() -> bool:
   file.close()
 
   if result == OK:
-   var save_data = json.data
-   game_data = save_data.game_data
-   faith_system.faith_data = save_data.faith_data
-   building_system.buildings = save_data.buildings
-   building_system.resources = save_data.resources
+  var save_data = json.data
+  game_data = save_data.game_data
+  faith_system.faith_data = save_data.faith_data
+  building_system.buildings = save_data.buildings
+  building_system.resources = save_data.resources
+  if progression_system and save_data.game_data.has("progression"):
+    progression_system.deserialize(save_data.game_data.progression)
    return true
  return false
