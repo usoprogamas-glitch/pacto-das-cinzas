@@ -156,12 +156,12 @@ func load_game() -> bool:
   file.close()
 
   if result == OK:
-  var save_data = json.data
-  game_data = save_data.game_data
-  faith_system.faith_data = save_data.faith_data
-  building_system.buildings = save_data.buildings
-  building_system.resources = save_data.resources
-  if progression_system and save_data.game_data.has("progression"):
-    progression_system.deserialize(save_data.game_data.progression)
-   return true
- return false
+    var save_data = json.data
+    game_data = save_data.game_data
+    faith_system.faith_data = save_data.faith_data
+    building_system.buildings = save_data.buildings
+    building_system.resources = save_data.resources
+    if progression_system and save_data.game_data.has("progression"):
+      progression_system.deserialize(save_data.game_data.progression)
+    return true
+  return false
