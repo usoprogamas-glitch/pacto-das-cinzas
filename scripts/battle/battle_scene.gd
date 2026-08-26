@@ -165,82 +165,120 @@ func _create_combo_ui() -> void:
  # Painel de Combo Points (canto inferior esquerdo)
  var panel = PanelContainer.new()
  panel.position = Vector2(10, 650)
- panel.size = Vector2(150, 60)
+ panel.size = Vector2(160, 70)
+ var panel_style = StyleBoxFlat.new()
+ panel_style.bg_color = Color(0.05, 0.05, 0.08, 0.85)
+ panel_style.border_color = Color(0.4, 0.35, 0.15)
+ panel_style.set_border_width_all(2)
+ panel_style.set_corner_radius_all(6)
+ panel.add_theme_stylebox_override("panel", panel_style)
  ui_layer.add_child(panel)
 
  var vbox = VBoxContainer.new()
+ vbox.add_theme_constant_override("separation", 4)
  panel.add_child(vbox)
 
  combo_label = Label.new()
  combo_label.text = "CP: 0/3"
  combo_label.add_theme_font_size_override("font_size", 14)
+ combo_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
+ combo_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0))
+ combo_label.add_theme_constant_override("shadow_offset_x", 2)
+ combo_label.add_theme_constant_override("shadow_offset_y", 2)
  vbox.add_child(combo_label)
 
- # Dots visuais para CP
+ # Dots visuais para CP (maiores, com glow)
  var dots_container = HBoxContainer.new()
+ dots_container.add_theme_constant_override("separation", 6)
  vbox.add_child(dots_container)
 
  for i in range(3):
   var dot = ColorRect.new()
-  dot.size = Vector2(16, 16)
-  dot.color = Color(0.3, 0.3, 0.3)
+  dot.size = Vector2(20, 20)
+  dot.color = Color(0.2, 0.2, 0.2)
   dots_container.add_child(dot)
   combo_dots.append(dot)
 
 func _create_balance_ui() -> void:
  # Painel de Éter/Fúria (canto inferior direito)
  var panel = PanelContainer.new()
- panel.position = Vector2(1120, 650)
- panel.size = Vector2(150, 60)
+ panel.position = Vector2(1100, 650)
+ panel.size = Vector2(170, 70)
+ var panel_style = StyleBoxFlat.new()
+ panel_style.bg_color = Color(0.05, 0.05, 0.08, 0.85)
+ panel_style.border_color = Color(0.3, 0.5, 0.7)
+ panel_style.set_border_width_all(2)
+ panel_style.set_corner_radius_all(6)
+ panel.add_theme_stylebox_override("panel", panel_style)
  ui_layer.add_child(panel)
 
  var vbox = VBoxContainer.new()
+ vbox.add_theme_constant_override("separation", 4)
  panel.add_child(vbox)
 
  balance_label = Label.new()
  balance_label.text = "Neutro"
- balance_label.add_theme_font_size_override("font_size", 12)
+ balance_label.add_theme_font_size_override("font_size", 13)
+ balance_label.add_theme_color_override("font_color", Color(0.8, 0.8, 1.0))
+ balance_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0))
+ balance_label.add_theme_constant_override("shadow_offset_x", 2)
+ balance_label.add_theme_constant_override("shadow_offset_y", 2)
  balance_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
  vbox.add_child(balance_label)
 
  balance_bar = ProgressBar.new()
- balance_bar.size = Vector2(140, 12)
+ balance_bar.size = Vector2(150, 16)
  balance_bar.max_value = 100
  balance_bar.value = 50
  var bar_bg = StyleBoxFlat.new()
- bar_bg.bg_color = Color(0.2, 0.2, 0.2)
+ bar_bg.bg_color = Color(0.15, 0.15, 0.15)
+ bar_bg.set_corner_radius_all(4)
  balance_bar.add_theme_stylebox_override("background", bar_bg)
  var bar_fill = StyleBoxFlat.new()
  bar_fill.bg_color = Color(0.5, 0.5, 0.5)
+ bar_fill.set_corner_radius_all(4)
  balance_bar.add_theme_stylebox_override("fill", bar_fill)
  vbox.add_child(balance_bar)
 
 func _create_boss_ui() -> void:
  # Painel de Boss HP (topo central, inicialmente oculto)
  boss_panel = PanelContainer.new()
- boss_panel.position = Vector2(390, 10)
- boss_panel.size = Vector2(500, 50)
+ boss_panel.position = Vector2(340, 8)
+ boss_panel.size = Vector2(600, 60)
  boss_panel.visible = false
+ var panel_style = StyleBoxFlat.new()
+ panel_style.bg_color = Color(0.08, 0.02, 0.02, 0.9)
+ panel_style.border_color = Color(0.7, 0.15, 0.1)
+ panel_style.set_border_width_all(2)
+ panel_style.set_corner_radius_all(4)
+ boss_panel.add_theme_stylebox_override("panel", panel_style)
  ui_layer.add_child(boss_panel)
 
  var vbox = VBoxContainer.new()
+ vbox.add_theme_constant_override("separation", 2)
  boss_panel.add_child(vbox)
 
  boss_name_label = Label.new()
  boss_name_label.text = "Boss"
- boss_name_label.add_theme_font_size_override("font_size", 14)
+ boss_name_label.add_theme_font_size_override("font_size", 16)
+ boss_name_label.add_theme_color_override("font_color", Color(1.0, 0.6, 0.5))
+ boss_name_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0))
+ boss_name_label.add_theme_constant_override("shadow_offset_x", 2)
+ boss_name_label.add_theme_constant_override("shadow_offset_y", 2)
  boss_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
  vbox.add_child(boss_name_label)
 
  boss_hp_bar = ProgressBar.new()
- boss_hp_bar.size = Vector2(480, 16)
+ boss_hp_bar.size = Vector2(580, 20)
  boss_hp_bar.max_value = 500
  boss_hp_bar.value = 500
  var hp_bg = StyleBoxFlat.new()
- hp_bg.bg_color = Color(0.2, 0.1, 0.1)
+ hp_bg.bg_color = Color(0.15, 0.05, 0.05)
+ hp_bg.set_corner_radius_all(3)
  boss_hp_bar.add_theme_stylebox_override("background", hp_bg)
  var hp_fill = StyleBoxFlat.new()
- hp_fill.bg_color = Color(0.8, 0.2, 0.2)
+ hp_fill.bg_color = Color(0.85, 0.15, 0.1)
+ hp_fill.set_corner_radius_all(3)
  boss_hp_bar.add_theme_stylebox_override("fill", hp_fill)
  vbox.add_child(boss_hp_bar)
 
