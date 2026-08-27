@@ -207,7 +207,7 @@ func move_unit(unit: Unit, new_pos: Vector2i) -> void:
  set_tile_at(new_pos, unit)
  unit_moved.emit(unit, old_pos, new_pos)
 
-func attack_unit(attacker: Unit, target: Unit, attacker_terrain: String = "", target_terrain: String = "", timing_bonus: float = 1.0) -> void:
+func attack_unit(attacker: Unit, target: Unit, attacker_terrain: String = "", target_terrain: String = "", timing_bonus: float = 1.0, defense_bonus: int = 0) -> void:
  var damage = attacker.calculate_damage(target)
 
  # Pipeline: Base → Terreno → Flanqueamento → Adjacência (GDD v2 §3/§4)
@@ -237,7 +237,7 @@ func attack_unit(attacker: Unit, target: Unit, attacker_terrain: String = "", ta
 
  damage = maxi(1, damage)
 
- target.take_damage(damage)
+ target.take_damage(damage, defense_bonus)
  unit_attacked.emit(attacker, target, damage)
 
  # Éter Vivo: ataque gera 1 carga (GDD v2 §3.3)

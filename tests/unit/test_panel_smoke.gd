@@ -137,6 +137,28 @@ func test_cooking_attack_multiplier() -> void:
 	assert_eq(bs._cooking_attack_multiplier(), 2.0, "+10 attack = x2.0")
 
 
+# --- Buff de defesa §7.2 reduz dano recebido ---
+
+func test_cooking_defense_bonus() -> void:
+	assert_eq(bs._cooking_defense_bonus(), 0, "sem buffs: 0")
+	# guisado_goblin: defense 5
+	bs._on_cook_pressed()
+	assert_eq(bs._cooking_defense_bonus(), 5, "guisado_goblin dá +5 defesa")
+
+
+func test_take_damage_applies_defense_bonus() -> void:
+	var data: UnitData = UnitData.new()
+	data.max_hp = 50
+	data.defense = 0
+	var unit: Unit = Unit.new()
+	unit.data = data
+	unit.current_hp = 50
+	unit.take_damage(10, 5)  # 10 - 0(def) - 5(bonus) = 5
+	assert_eq(unit.current_hp, 45, "dano reduzido pelo bonus de defesa")
+	unit.take_damage(2, 50)  # bonus supera dano → mínimo 1
+	assert_eq(unit.current_hp, 44, "dano nunca abaixo de 1")
+
+
 # --- Toast emitido em cada ação (feedback visual) ---
 
 func test_toast_emitted_per_action() -> void:

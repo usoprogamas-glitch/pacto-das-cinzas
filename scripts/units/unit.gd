@@ -57,10 +57,10 @@ func is_player_side() -> bool:
  ## Contrato do TurnOrderManager (velocity-based turn order)
  return data.is_player if data else false
 
-func take_damage(amount: int) -> void:
+func take_damage(amount: int, defense_bonus: int = 0) -> void:
  if not data:
   return
- var actual_damage = maxi(1, amount - data.defense)
+ var actual_damage = maxi(1, amount - data.defense - defense_bonus)
  current_hp = maxi(0, current_hp - actual_damage)
  hp_changed.emit(current_hp)
  update_hp_bar()

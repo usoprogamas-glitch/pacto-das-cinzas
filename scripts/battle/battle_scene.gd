@@ -595,7 +595,7 @@ func _apply_attack_result(target: Unit, multiplier: float, grade: String) -> voi
  combat_feedback.shake_light()
 
  # Aplicar dano com bônus de timing + buffs de cozinha §7.2 via BattleManager
- BattleManager.attack_unit(selected_unit, target, "", "", multiplier * _cooking_attack_multiplier())
+ BattleManager.attack_unit(selected_unit, target, "", "", multiplier * _cooking_attack_multiplier(), _cooking_defense_bonus())
 
  # Mostrar grade de timing
  combat_feedback.show_status_effect(target.global_position + Vector2(0, -30), grade)
@@ -855,6 +855,13 @@ func _cooking_attack_multiplier() -> float:
   return 1.0
  var attack_bonus: int = cooking_system.get_total_bonuses().get("attack", 0)
  return 1.0 + attack_bonus * 0.1
+
+
+func _cooking_defense_bonus() -> int:
+ # Buff de cozinha §7.2: "defense" soma à defesa do alvo (reduz dano recebido).
+ if not cooking_system:
+  return 0
+ return cooking_system.get_total_bonuses().get("defense", 0)
 
 func _on_tavern_game_over(winner: String, loser: String) -> void:
  combat_feedback.show_status_effect(Vector2(640, 300), "TABERNA: " + winner + " vence!")
