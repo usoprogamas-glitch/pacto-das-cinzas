@@ -27,11 +27,13 @@ func before_each() -> void:
 	bs.combo_system = preload("res://scripts/battle/combo_system.gd").new()
 	bs.balance_system = preload("res://scripts/battle/balance_system.gd").new()
 	bs.boss_system = preload("res://scripts/battle/boss_system.gd").new()
+	bs.lock_system = preload("res://scripts/battle/lock_system.gd").new()
 	bs.traversal_system.traversal_completed.connect(bs._on_traversal_completed)
 	bs.campfire_system.rest_completed.connect(bs._on_camp_rest_completed)
 	bs.cooking_system.recipe_crafted.connect(bs._on_recipe_crafted)
 	bs.tavern_minigame.game_over.connect(bs._on_tavern_game_over)
 	bs.boss_system.boss_hp_changed.connect(bs.show_boss_hp)
+	bs.lock_system.lock_broken.connect(bs._on_lock_broken)
 	# HUD de progressão real (labels ActLabel/MemLabel/SoulLabel/XPLabel/FormLabel)
 	bs.ui_layer = CanvasLayer.new()
 	bs._create_progression_hud()
@@ -244,6 +246,20 @@ func test_combo_pressed_activates_with_participants() -> void:
 	BattleManager.player_units.clear()
 	for u in saved_units:
 		BattleManager.player_units.append(u)
+
+
+# --- Quebra de lock §3.2-3.3: lock_broken gera +2 CP (economia completa) ---
+
+func test_lock_break_generates_cp() -> void:
+	bs._create_combo_ui()
+	bs.update_combo_ui()
+	var cp_before: int = bs.combo_system.get_cp()
+	var lock: Dictionary = bs.lock_system.create_lock(null, {"type": "Corte", "hits": 1})
+	bs.lock_system.hit_lock(null, lock, "Corte")  # quebra → lock_broken → _on_lock_broken
+	assert_eq(bs.combo_system.get_cp(), cp_before + 2, "quebra de lock gera +2 CP")
+	assert_eq(bs.combo_dots[cp_before].color, Color(1.0, 0.8, 0.2), "dot acende na UI")
+	assert_true(_toasts.any(func(t: String) -> bool: return t.begins_with("LOCK QUEBRADO")),
+		"toast de lock quebrado emitido")
 
 
 # --- Éter/Fúria §3.3: barra bipolar reage a ether/fury/modo ---

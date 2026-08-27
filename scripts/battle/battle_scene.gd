@@ -146,6 +146,7 @@ func setup_systems() -> void:
  boss_system.boss_defeated.connect(_on_boss_defeated)
  boss_system.boss_spell_charging.connect(_on_boss_spell_charging)
  boss_system.boss_hp_changed.connect(show_boss_hp)
+ lock_system.lock_broken.connect(_on_lock_broken)
 
  # §6-7 Sinais
  traversal_system.traversal_completed.connect(_on_traversal_completed)
@@ -807,6 +808,12 @@ func _on_combo_activated(combo_name: String, description: String) -> void:
  combat_feedback.shake_medium()
  SoundManager.play_hit()
  update_combo_ui()
+
+## §3.2-3.3 Quebra de lock gera CP (2 por lock, GDD via resolve_spellbreak).
+func _on_lock_broken(_enemy, _lock: Dictionary) -> void:
+ combo_system.earn_from_lock_break()
+ update_combo_ui()
+ combat_feedback.show_status_effect(Vector2(640, 300), "LOCK QUEBRADO (+2 CP)")
 
 func _on_balance_mode_changed(new_mode: String) -> void:
  var color: Color
