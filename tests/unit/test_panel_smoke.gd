@@ -159,6 +159,26 @@ func test_take_damage_applies_defense_bonus() -> void:
 	assert_eq(unit.current_hp, 44, "dano nunca abaixo de 1")
 
 
+# --- Buff de hp/mp §7.2 cura imediatamente as units jogador ---
+
+func test_cooked_heal_restores_party_hp() -> void:
+	var data: UnitData = UnitData.new()
+	data.is_player = true
+	data.max_hp = 100
+	var party: Unit = Unit.new()
+	party.data = data
+	party.current_hp = 30
+	BattleManager.player_units.append(party)
+	bs._apply_cooked_heal({"hp": 20, "mp": 10})
+	assert_eq(party.current_hp, 50, "cura +20 HP")
+
+func test_cooked_heal_noop_without_bonuses() -> void:
+	# sem hp/mp no buff → nada acontece, sem erro
+	var before: Array = BattleManager.player_units.duplicate()
+	bs._apply_cooked_heal({"attack": 10})
+	assert_eq(BattleManager.player_units.size(), before.size(), "não altera party")
+
+
 # --- Toast emitido em cada ação (feedback visual) ---
 
 func test_toast_emitted_per_action() -> void:
@@ -167,5 +187,7 @@ func test_toast_emitted_per_action() -> void:
 	bs._on_cook_pressed()
 	bs._on_tavern_game_over("IA", "Jogador")
 	assert_gt(_toasts.size(), 0, "pelo menos um toast por ação")
-	assert_eq(_toasts.size(), 4, "4 toasts: travessia, camp, cook, taverna")
+	assert_eq(_toasts.size(), 5, "5 toasts: travessia, camp, cook(RECEITA+RECUPEROU), taverna")
 	assert_true(_toasts[0].begins_with("TRAVESSIA"), "toast de travessia")
+	assert_true(_toasts.any(func(t: String) -> bool: return t.begins_with("RECUPEROU")),
+		"toast de cura do cozido emitido")

@@ -845,7 +845,24 @@ func _on_recipe_crafted(recipe_name: String, bonuses: Dictionary) -> void:
  if progression_system:
   progression_system.add_experience(20)
   progression_system.add_memory(10)
+ _apply_cooked_heal(bonuses)
  _update_progression_hud()
+
+func _apply_cooked_heal(bonuses: Dictionary) -> void:
+ # §7.2: hp/mp de receita curam imediatamente as units jogador (não mexe em max)
+ var heal_hp: int = bonuses.get("hp", 0)
+ var heal_mp: int = bonuses.get("mp", 0)
+ if heal_hp <= 0 and heal_mp <= 0:
+  return
+ for unit: Unit in BattleManager.player_units:
+  if not unit.data or not unit.data.is_player:
+   continue
+  if heal_hp > 0:
+   unit.heal(heal_hp)
+  if heal_mp > 0:
+   unit.current_mp = mini(unit.data.max_mp, unit.current_mp + heal_mp)
+ if heal_hp > 0 or heal_mp > 0:
+  combat_feedback.show_status_effect(Vector2(640, 340), "RECUPEROU +%d HP / +%d MP" % [heal_hp, heal_mp])
 
 func _cooking_attack_multiplier() -> float:
  # Buff de cozinha §7.2: cada ponto de "attack" soma 10% ao dano do atacante.
