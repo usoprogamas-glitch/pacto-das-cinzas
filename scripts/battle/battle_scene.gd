@@ -428,9 +428,14 @@ func connect_signals() -> void:
  BattleManager.soul_ether_gained.connect(_on_soul_ether_gained)
 
 func create_unit_sprite(unit_name: String, color: Color, is_player: bool) -> Sprite2D:
- # Usar PixelArtRenderer para sprites detalhados
+ # HD 2D: usa textura de assets/sprites/<key>.png se existir (gerada via ComfyUI).
+ # Fallback: PixelArtRenderer procedural.
  var char_key = unit_name.to_lower().replace(" ", "_")
- 
+ var hd = _load_hd_sprite("res://assets/sprites/" + char_key + ".png")
+ if hd:
+  return hd
+
+ # Usar PixelArtRenderer para sprites detalhados
  match char_key:
   "kael":
    return pixel_art_renderer.create_kael("imp")
@@ -465,6 +470,15 @@ func create_unit_sprite(unit_name: String, color: Color, is_player: bool) -> Spr
   _:
    # Fallback para sprite procedural se não encontrado
    return _create_fallback_sprite(color, is_player)
+
+## HD 2D: carrega textura png de assets/sprites se existir; null → fallback procedural.
+func _load_hd_sprite(path: String) -> Sprite2D:
+ var img := Image.new()
+ if img.load(path) != OK:
+  return null
+ var sprite = Sprite2D.new()
+ sprite.texture = ImageTexture.create_from_image(img)
+ return sprite
 
 func _create_fallback_sprite(color: Color, is_player: bool) -> Sprite2D:
  var sprite = Sprite2D.new()
