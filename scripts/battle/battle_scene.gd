@@ -138,6 +138,7 @@ func setup_systems() -> void:
 
  # Conectar sinais dos sistemas
  combo_system.combo_activated.connect(_on_combo_activated)
+ combo_system.cp_changed.connect(func(_cp: int, _max: int) -> void: update_combo_ui())
  balance_system.mode_changed.connect(_on_balance_mode_changed)
  boss_system.boss_defeated.connect(_on_boss_defeated)
  boss_system.boss_spell_charging.connect(_on_boss_spell_charging)
@@ -796,10 +797,12 @@ func _on_tutorial_message(message: String, position: Vector2) -> void:
 
 # === Sinal handlers para sistemas avançados ===
 
-func _on_combo_activated(combo_name: String) -> void:
+func _on_combo_activated(combo_name: String, description: String) -> void:
  combat_feedback.show_status_effect(Vector2(640, 300), "COMBO: " + combo_name)
+ combat_feedback.show_status_effect(Vector2(640, 340), description)
  combat_feedback.shake_medium()
  SoundManager.play_hit()
+ update_combo_ui()
 
 func _on_balance_mode_changed(new_mode: String) -> void:
  var color: Color
@@ -1097,6 +1100,7 @@ func _create_actions_panel() -> void:
  _add_action_button(grid, "Cozinhar", _on_cook_pressed)
  _add_action_button(grid, "Taberna", _on_tavern_pressed)
  _add_action_button(grid, "Travessia", _on_traverse_pressed)
+ _add_action_button(grid, "Combo", _on_combo_pressed)
 
 
 func _add_action_button(parent: Node, label_text: String, handler: Callable) -> void:
@@ -1171,12 +1175,29 @@ func _pick_tavern_rune(player_id: String) -> String:
 
 
 func _on_traverse_pressed() -> void:
- traversal_system.setup(true, 100)
- var result: Dictionary = traversal_system.start_traversal("dash")
- if not result.get("can", false):
-  traversal_system.regen_stamina(100)
-  traversal_system.start_traversal("dash")
- # Dash é instantâneo: finaliza na hora para emitir traversal_completed
- # (que alimenta memory + XP no handler).
- traversal_system.end_traversal()
+  traversal_system.setup(true, 100)
+  var result: Dictionary = traversal_system.start_traversal("dash")
+  if not result.get("can", false):
+    traversal_system.regen_stamina(100)
+    traversal_system.start_traversal("dash")
+  # Dash é instantâneo: finaliza na hora para emitir traversal_completed
+  # (que alimenta memory + XP no handler).
+  traversal_system.end_traversal()
+
+
+func _on_combo_pressed() -> void:
+  if not _try_use_combo():
+    combat_feedback.show_status_effect(Vector2(640, 300), "COMBO: sem CP ou sem participantes")
+
+
+## §3.3 Ativa a primeira combo disponível (CP suficiente + participantes no campo).
+func _try_use_combo() -> bool:
+  var participants: Array[String] = []
+  for unit: Unit in BattleManager.player_units:
+    if unit.data and unit.data.is_player:
+      participants.append(unit.data.unit_name)
+  for combo: Dictionary in combo_system.get_available_combos(participants):
+    if combo_system.activate_combo(combo, participants):
+      return true
+  return false
 

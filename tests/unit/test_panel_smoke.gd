@@ -24,6 +24,7 @@ func before_each() -> void:
 	bs.campfire_system = preload("res://scripts/battle/campfire_system.gd").new()
 	bs.cooking_system = preload("res://scripts/battle/cooking_system.gd").new()
 	bs.tavern_minigame = preload("res://scripts/battle/tavern_minigame.gd").new()
+	bs.combo_system = preload("res://scripts/battle/combo_system.gd").new()
 	bs.traversal_system.traversal_completed.connect(bs._on_traversal_completed)
 	bs.campfire_system.rest_completed.connect(bs._on_camp_rest_completed)
 	bs.cooking_system.recipe_crafted.connect(bs._on_recipe_crafted)
@@ -207,6 +208,39 @@ func test_traversal_collects_ingredient() -> void:
 	var total_before: int = _inventory_total()
 	bs._on_traverse_pressed()
 	assert_eq(_inventory_total(), total_before + 1, "travessia coleta exatamente 1 ingrediente")
+
+
+# --- Combo §3.3: CP reage na UI (dots) e ativa combo spell ---
+
+func test_combo_ui_reacts_to_cp_changed() -> void:
+	# UI reativa: ganhar CP via earn_from_timed_hit reflete nos dots
+	bs._create_combo_ui()
+	bs.combo_system.cp_changed.connect(func(_cp: int, _max: int) -> void: bs.update_combo_ui())
+	bs.update_combo_ui()
+	var d0: ColorRect = bs.combo_dots[0]
+	assert_eq(d0.color, Color(0.3, 0.3, 0.3), "dot 0 apagado com 0 CP")
+	bs.combo_system.add_cp(1)
+	assert_eq(d0.color, Color(1.0, 0.8, 0.2), "dot 0 aceso após +1 CP")
+
+
+func test_combo_pressed_activates_with_participants() -> void:
+	# (1) gera CP + popula player_units com participantes da Erupção de Éter
+	bs.combo_system.add_cp(2)
+	var saved_units: Array[Unit] = BattleManager.player_units.duplicate()
+	BattleManager.player_units.clear()
+	for name in ["Querubim", "Kroug"]:
+		var data: UnitData = UnitData.new()
+		data.unit_name = name
+		data.is_player = true
+		data.max_hp = 100
+		var u: Unit = Unit.new()
+		u.data = data
+		BattleManager.player_units.append(u)
+	bs._on_combo_pressed()
+	assert_eq(bs.combo_system.get_cp(), 1, "Erupção custa 1, tinha 2 CP → sobra 1")
+	BattleManager.player_units.clear()
+	for u in saved_units:
+		BattleManager.player_units.append(u)
 
 
 func _inventory_total() -> int:

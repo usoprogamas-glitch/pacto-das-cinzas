@@ -9,6 +9,7 @@ extends RefCounted
 
 signal cp_changed(current: int, max_val: int)
 signal cp_spent(amount: int, combo_name: String)
+signal combo_activated(combo_name: String, description: String)
 
 const MAX_CP: int = 3
 
@@ -70,6 +71,16 @@ func spend_cp(cost: int, combo_name: String) -> bool:
 	_cp -= cost
 	cp_spent.emit(cost, combo_name)
 	cp_changed.emit(_cp, MAX_CP)
+	return true
+
+## Ativa uma combo spell (gasta CP e dispara o efeito via sinal).
+## Retorna true se a combo foi ativada.
+func activate_combo(combo: Dictionary, active_participants: Array) -> bool:
+	if not can_use_combo(combo, active_participants):
+		return false
+	if not spend_cp(combo.cost, combo.name):
+		return false
+	combo_activated.emit(combo.name, combo.description)
 	return true
 
 
