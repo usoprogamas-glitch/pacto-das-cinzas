@@ -32,6 +32,8 @@ func before_each() -> void:
 	bs.ui_layer = CanvasLayer.new()
 	bs._create_progression_hud()
 	bs._update_progression_hud()
+	# Membros que _on_turn_started toca (não montados pela UI da cena .tscn)
+	bs.turn_label = Label.new()
 	_toasts = []
 
 
@@ -108,6 +110,19 @@ func test_cook_updates_hud_and_gates() -> void:
 func test_tavern_game_over_adds_soul_to_hud() -> void:
 	bs._on_tavern_game_over("Jogador", "IA")
 	assert_eq(_soul().text, "ALMAS 1", "game_over dobra as almas nomeadas no HUD")
+
+
+# --- Buffs de cozinha §7.2 decaem por turno e expiram com toast ---
+
+func test_cook_buff_ticks_and_expires_on_turn() -> void:
+	# _on_cook_pressed crafts guisado_goblin (duration 3)
+	bs._on_cook_pressed()
+	assert_eq(bs.cooking_system.get_active_bonuses().size(), 1, "buff ativo pós-craft")
+	for i in range(3):
+		bs._on_turn_started(null)  # 3 ticks → remaining 0 → expire
+	assert_eq(bs.cooking_system.get_active_bonuses().size(), 0, "buff expirou após 3 turns")
+	assert_true(_toasts.any(func(t: String) -> bool: return t.begins_with("BUFF EXPIRADO")),
+		"toast de expiração emitido")
 
 
 # --- Toast emitido em cada ação (feedback visual) ---

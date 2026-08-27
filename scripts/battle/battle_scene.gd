@@ -673,6 +673,10 @@ func _on_turn_started(_unit: Unit) -> void:
  # Atualizar UI dos sistemas a cada turno
  update_combo_ui()
  update_balance_ui()
+ # Buffs de cozinha §7.2 decaem a cada turno; expirados viram toast
+ if cooking_system:
+  for buff_name: String in cooking_system.tick_bonuses():
+   combat_feedback.show_status_effect(Vector2(640, 300), "BUFF EXPIRADO: " + buff_name)
 
 func _on_unit_moved(unit: Unit, _from: Vector2i, to: Vector2i) -> void:
  unit.position = grid.grid_to_pixel(to)
