@@ -145,6 +145,7 @@ func setup_systems() -> void:
  balance_system.fury_changed.connect(func(_v: int) -> void: update_balance_ui())
  boss_system.boss_defeated.connect(_on_boss_defeated)
  boss_system.boss_spell_charging.connect(_on_boss_spell_charging)
+ boss_system.boss_hp_changed.connect(show_boss_hp)
 
  # §6-7 Sinais
  traversal_system.traversal_completed.connect(_on_traversal_completed)

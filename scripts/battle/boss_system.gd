@@ -10,6 +10,7 @@ signal boss_phase_changed(boss_name: String, phase: int)
 signal boss_part_broken(boss_name: String, part_name: String)
 signal boss_spell_charging(boss_name: String, spell_name: String, turns_left: int)
 signal boss_defeated(boss_name: String)
+signal boss_hp_changed(boss_name: String, hp: int, max_hp: int)
 
 ## --- Configuração dos Cinco Santos Cardeais (GDD §5) ---
 const CARDINALS: Dictionary = {
@@ -170,6 +171,7 @@ func init_cardinal(cardinal_name: String) -> void:
 		_part_hp[part.name] = part.hp
 	for spell in boss.spells:
 		_spell_counters[spell.name] = spell.charge_turns
+	boss_hp_changed.emit(_current_boss, _boss_hp, _max_hp())
 
 
 ## Inicializa Aurius para o encontro.
@@ -177,6 +179,7 @@ func init_aurius() -> void:
 	_current_boss = "Aurius"
 	_current_phase = 0
 	_load_aurius_phase(0)
+	boss_hp_changed.emit(_current_boss, _boss_hp, _max_hp())
 
 
 ## Carrega uma fase de Aurius.
@@ -234,12 +237,22 @@ func damage_part(part_name: String, damage: int) -> bool:
 ## Aplica dano direto ao boss (ignorando partes).
 func damage_boss(damage: int) -> void:
 	_boss_hp = maxi(0, _boss_hp - damage)
+	boss_hp_changed.emit(_current_boss, _boss_hp, _max_hp())
 	if _boss_hp <= 0:
 		if _current_boss == "Aurius" and _current_phase < AURIUS.phases.size() - 1:
 			## Aurius avança para próxima fase
 			_load_aurius_phase(_current_phase + 1)
 		else:
 			boss_defeated.emit(_current_boss)
+
+
+func _max_hp() -> int:
+	var data := CARDINALS.get(_current_boss)
+	if data:
+		return data.hp
+	if _current_boss == "Aurius":
+		return AURIUS.phases[0].hp
+	return 0
 
 
 ## Decrementa counters de magias (chamado no início do turno do boss).

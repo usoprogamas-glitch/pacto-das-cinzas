@@ -26,10 +26,12 @@ func before_each() -> void:
 	bs.tavern_minigame = preload("res://scripts/battle/tavern_minigame.gd").new()
 	bs.combo_system = preload("res://scripts/battle/combo_system.gd").new()
 	bs.balance_system = preload("res://scripts/battle/balance_system.gd").new()
+	bs.boss_system = preload("res://scripts/battle/boss_system.gd").new()
 	bs.traversal_system.traversal_completed.connect(bs._on_traversal_completed)
 	bs.campfire_system.rest_completed.connect(bs._on_camp_rest_completed)
 	bs.cooking_system.recipe_crafted.connect(bs._on_recipe_crafted)
 	bs.tavern_minigame.game_over.connect(bs._on_tavern_game_over)
+	bs.boss_system.boss_hp_changed.connect(bs.show_boss_hp)
 	# HUD de progressão real (labels ActLabel/MemLabel/SoulLabel/XPLabel/FormLabel)
 	bs.ui_layer = CanvasLayer.new()
 	bs._create_progression_hud()
@@ -267,6 +269,26 @@ func test_balance_label_uses_string_modes() -> void:
 	bs.balance_system.set_mode(BalanceSystem.Mode.FURY)
 	bs.update_balance_ui()
 	assert_eq(bs.balance_label.text, "Modo Fúria", "label do modo Fúria")
+
+
+# --- Boss HP §5: panel reage a init/damage via boss_hp_changed ---
+
+func test_boss_panel_shows_on_spawn_and_hp() -> void:
+	bs._create_boss_ui()
+	bs.boss_system.init_cardinal("Ignis")
+	bs.boss_system.damage_boss(100)
+	assert_true(bs.boss_panel.visible, "panel visível após spawn")
+	assert_eq(bs.boss_hp_bar.value, bs.boss_system.get_boss_hp(),
+		"barra reflete HP atual do boss")
+
+
+func test_boss_panel_updates_on_damage() -> void:
+	bs._create_boss_ui()
+	bs.boss_system.init_cardinal("Ignis")
+	var before: int = bs.boss_system.get_boss_hp()
+	bs.boss_system.damage_boss(50)
+	assert_eq(bs.boss_system.get_boss_hp(), before - 50, "HP do boss caiu")
+	assert_eq(bs.boss_hp_bar.value, before - 50, "barra acompanha damage")
 
 
 func _inventory_total() -> int:
