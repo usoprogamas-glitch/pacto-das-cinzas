@@ -125,6 +125,18 @@ func test_cook_buff_ticks_and_expires_on_turn() -> void:
 		"toast de expiração emitido")
 
 
+# --- Buff de ataque §7.2 multiplica o dano do atacante ---
+
+func test_cooking_attack_multiplier() -> void:
+	assert_eq(bs._cooking_attack_multiplier(), 1.0, "sem buffs: neutro 1.0")
+	# injeta buff de ataque direto (guisado_goblin não tem attack; usa banquete)
+	bs.cooking_system.collect_ingredient("carne_troll", 3)
+	bs.cooking_system.collect_ingredient("fruta_eterna", 1)
+	bs.cooking_system.collect_ingredient("mel_abissal", 2)
+	bs.cooking_system.craft("banquete_rei")  # attack: 10
+	assert_eq(bs._cooking_attack_multiplier(), 2.0, "+10 attack = x2.0")
+
+
 # --- Toast emitido em cada ação (feedback visual) ---
 
 func test_toast_emitted_per_action() -> void:
