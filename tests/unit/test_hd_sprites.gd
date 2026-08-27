@@ -13,16 +13,23 @@ func before_each():
 	fake_battle_scene.pixel_art_renderer = preload("res://scripts/visual/pixel_art_renderer.gd").new()
 
 
+## Usa chave ficticia (zz_test) que nunca colide com os sprites reais em assets/sprites/.
+## NUNCA apagar kael.png etc.: o proprio teste o destruiria se rodasse entre geração e commit.
 func test_hd_sprite_loaded_uses_texture():
-	var png_path = "res://assets/sprites/kael.png"
+	var png_path = "res://assets/sprites/zz_test.png"
 	var img = Image.create(64, 64, false, Image.FORMAT_RGBA8)
 	img.fill(Color.RED)
 	DirAccess.make_dir_recursive_absolute("res://assets/sprites")
 	img.save_png(png_path)
-	var sprite = fake_battle_scene.create_unit_sprite("Kael", Color.RED, true)
+	var sprite = fake_battle_scene.create_unit_sprite("Zz Test", Color.RED, true)
 	assert_not_null(sprite.texture, "Sprite deve carregar a textura HD 2D")
 	assert_eq(sprite.texture.get_width(), 64, "Textura 64px em vez do fallback procedural")
 	DirAccess.remove_absolute(png_path)
+
+
+func test_sprite_key_normalizes_apostrophe_and_accent():
+	assert_eq(fake_battle_scene._sprite_key("Thal'kor"), "thalkor", "apóstrofo removido")
+	assert_eq(fake_battle_scene._sprite_key("Mercenário"), "mercenario", "acento removido")
 
 
 ## Sem png em assets/sprites → fallback procedural (_create_fallback_sprite, não usa renderer)

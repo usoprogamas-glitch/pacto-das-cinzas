@@ -413,7 +413,7 @@ func create_unit(grid_pos: Vector2i, unit_name: String, color: Color, unit_class
 
  # Aplicar efeitos visuais avançados
  if pixel_art_renderer.has_method("apply_all_effects"):
-  pixel_art_renderer.apply_all_effects(sprite, unit_name.to_lower().replace(" ", "_"))
+  pixel_art_renderer.apply_all_effects(sprite, _sprite_key(unit_name))
 
  return unit
 
@@ -430,7 +430,7 @@ func connect_signals() -> void:
 func create_unit_sprite(unit_name: String, color: Color, is_player: bool) -> Sprite2D:
  # HD 2D: usa textura de assets/sprites/<key>.png se existir (gerada via ComfyUI).
  # Fallback: PixelArtRenderer procedural.
- var char_key = unit_name.to_lower().replace(" ", "_")
+ var char_key = _sprite_key(unit_name)
  var hd = _load_hd_sprite("res://assets/sprites/" + char_key + ".png")
  if hd:
   return hd
@@ -443,7 +443,7 @@ func create_unit_sprite(unit_name: String, color: Color, is_player: bool) -> Spr
    return pixel_art_renderer.create_kroug()
   "lira":
    return pixel_art_renderer.create_lira()
-  "thalkor":
+  "thal'kor", "thalkor":
    return pixel_art_renderer.create_thalkor()
   "mercenário", "mercenario":
    return pixel_art_renderer.create_enemy("mercenario")
@@ -470,6 +470,10 @@ func create_unit_sprite(unit_name: String, color: Color, is_player: bool) -> Spr
   _:
    # Fallback para sprite procedural se não encontrado
    return _create_fallback_sprite(color, is_player)
+
+## Normaliza nome de unidade → chave de arquivo sprite (minúsculo, sem acento/apóstrofo).
+func _sprite_key(unit_name: String) -> String:
+ return unit_name.to_lower().replace(" ", "_").replace("'", "").replace("á", "a").replace("é", "e").replace("ã", "a").replace("ç", "c")
 
 ## HD 2D: carrega textura png de assets/sprites se existir; null → fallback procedural.
 func _load_hd_sprite(path: String) -> Sprite2D:
