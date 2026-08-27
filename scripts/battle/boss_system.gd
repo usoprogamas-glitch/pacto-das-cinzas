@@ -234,6 +234,23 @@ func damage_part(part_name: String, damage: int) -> bool:
 	return false
 
 
+## Vincula o sistema a um boss já em campo (runtime §5): HP real vem da Unit
+## recém-spawnada (mapa data-driven), partes/spells vêm do cardinal.
+func spawn_runtime_boss(cardinal_name: String, hp: int) -> void:
+	init_cardinal(cardinal_name)
+	_boss_hp = hp
+	boss_hp_changed.emit(_current_boss, _boss_hp, _max_hp())
+
+
+## Sincroniza o HP do boss em campo (chamado pelo `hp_changed` da Unit).
+## Dispara boss_defeated quando a Unit real morre.
+func sync_runtime_hp(hp: int) -> void:
+	_boss_hp = hp
+	boss_hp_changed.emit(_current_boss, _boss_hp, _max_hp())
+	if _boss_hp <= 0:
+		boss_defeated.emit(_current_boss)
+
+
 ## Aplica dano direto ao boss (ignorando partes).
 func damage_boss(damage: int) -> void:
 	_boss_hp = maxi(0, _boss_hp - damage)

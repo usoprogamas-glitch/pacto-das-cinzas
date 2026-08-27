@@ -55,6 +55,9 @@ var progression_system: ProgressionSystem
 # HUD cumulativo dos sistemas §6-7
 var progression_hud: PanelContainer
 
+# §5 Boss runtime: classe de inimigo → cardinal (Vulcão do Abismo usa Ignis)
+const BOSS_CARDINAL_BY_CLASS: Dictionary = {"Boss": "Ignis"}
+
 # Painel de ações §6-7 (excita sinais já conectados)
 var actions_panel: PanelContainer
 var _camp_used: bool = false
@@ -341,7 +344,16 @@ func spawn_player_unit(grid_pos: Vector2i, unit_name: String, color: Color, unit
 func spawn_enemy_unit(grid_pos: Vector2i, unit_name: String, color: Color, unit_class: String, hp: int, atk: int, def: int, mov: int, rng: int) -> Unit:
  var unit = create_unit(grid_pos, unit_name, color, unit_class, hp, atk, def, mov, rng, false)
  BattleManager.register_unit(unit)
+ # §5 Boss runtime: classe Boss = cardeal no campo → sincroniza BossSystem (panel + HP)
+ if BOSS_CARDINAL_BY_CLASS.has(unit_class):
+  _spawn_runtime_boss(unit)
  return unit
+
+## Vincula o boss em campo ao BossSystem: nome/cardinal via classe, HP da Unit real.
+func _spawn_runtime_boss(unit: Unit) -> void:
+ var cardinal: String = BOSS_CARDINAL_BY_CLASS[unit.data.unit_class]
+ boss_system.spawn_runtime_boss(cardinal, unit.data.max_hp)
+ unit.hp_changed.connect(func(hp: int) -> void: boss_system.sync_runtime_hp(hp))
 
 func create_unit(grid_pos: Vector2i, unit_name: String, color: Color, unit_class: String, hp: int, atk: int, def: int, mov: int, rng: int, is_player: bool) -> Unit:
  var unit = Unit.new()

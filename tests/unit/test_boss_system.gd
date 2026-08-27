@@ -56,6 +56,26 @@ func test_boss_defeated():
 	assert_signal_emitted(bs, "boss_defeated", "Boss derrotado")
 
 
+func test_spawn_runtime_boss():
+	var bs = BossSystem.new()
+	# HP real da Unit do mapa (300 no santo_cardeal) sobreescreve o do cardinal (500)
+	bs.spawn_runtime_boss("Ignis", 300)
+	assert_eq(bs.get_boss_hp(), 300, "HP vem da Unit, não do cardinal")
+	assert_true(bs.is_boss_active(), "boss ativo pós-runtime")
+	watch_signals(bs)
+	bs.spawn_runtime_boss("Ignis", 300)
+	assert_signal_emitted_with_parameters(bs, "boss_hp_changed", ["Ignis", 300, 500],
+		"max do cardinal mantido = 500")
+
+
+func test_sync_runtime_hp_defeats():
+	var bs = BossSystem.new()
+	bs.spawn_runtime_boss("Ignis", 300)
+	watch_signals(bs)
+	bs.sync_runtime_hp(0)  # Unit morreu em campo
+	assert_signal_emitted(bs, "boss_defeated", "sincronizar HP 0 derrota o boss")
+
+
 func test_spell_counters_tick():
 	var bs = BossSystem.new()
 	bs.init_cardinal("Terra")
