@@ -55,6 +55,13 @@ var progression_system: ProgressionSystem
 # HUD cumulativo dos sistemas §6-7
 var progression_hud: PanelContainer
 
+# Painel de ações §6-7 (excita sinais já conectados)
+var actions_panel: PanelContainer
+var _camp_used: bool = false
+var _cook_used: bool = false
+var _tavern_running: bool = false
+var _tavern_turn_limit: int = 20
+
 # Estado de timed hit
 var _timed_hit_active: bool = false
 var _timed_hit_start_time: float = 0.0
@@ -165,6 +172,9 @@ func setup_ui() -> void:
  # HUD de Progressão §6-8 (top-right)
  _create_progression_hud()
  _update_progression_hud()
+
+ # Painel de ações §6-7 (logo abaixo do HUD de progressão)
+ _create_actions_panel()
 
 func _create_combo_ui() -> void:
  # Painel de Combo Points (canto inferior esquerdo)
@@ -988,4 +998,139 @@ func _update_progression_hud() -> void:
   xp_label.text = "XP %d" % summary.get("total_xp", 0)
  if form_label:
   form_label.text = "FORMA: %s" % summary.get("protagonist_form", "???")
+
+# === Painel de Ações §6-7 ===
+# Excita os sinais já conectados em setup_systems(), ligando o runtime ao
+# feedback visual (toast + HUD de progressão) dos sistemas Traversal/Camp/
+# Cooking/Tavern.
+
+func _create_actions_panel() -> void:
+ actions_panel = PanelContainer.new()
+ actions_panel.position = Vector2(960, 82)
+ actions_panel.size = Vector2(310, 140)
+ var style = StyleBoxFlat.new()
+ style.bg_color = Color(0.03, 0.05, 0.09, 0.88)
+ style.border_color = Color(0.6, 0.45, 0.2)
+ style.set_border_width_all(2)
+ style.set_corner_radius_all(6)
+ actions_panel.add_theme_stylebox_override("panel", style)
+ ui_layer.add_child(actions_panel)
+
+ var vbox = VBoxContainer.new()
+ vbox.add_theme_constant_override("separation", 4)
+ actions_panel.add_child(vbox)
+
+ var title = Label.new()
+ title.text = "AÇÕES §6"
+ title.add_theme_font_size_override("font_size", 12)
+ title.add_theme_color_override("font_color", Color(0.9, 0.8, 0.5))
+ title.add_theme_color_override("font_shadow_color", Color(0, 0, 0))
+ title.add_theme_constant_override("shadow_offset_x", 1)
+ title.add_theme_constant_override("shadow_offset_y", 1)
+ vbox.add_child(title)
+
+ var grid = GridContainer.new()
+ grid.columns = 2
+ grid.add_theme_constant_override("h_separation", 6)
+ grid.add_theme_constant_override("v_separation", 4)
+ vbox.add_child(grid)
+
+ _add_action_button(grid, "Acampar", _on_camp_pressed)
+ _add_action_button(grid, "Cozinhar", _on_cook_pressed)
+ _add_action_button(grid, "Taberna", _on_tavern_pressed)
+ _add_action_button(grid, "Travessia", _on_traverse_pressed)
+
+
+func _add_action_button(parent: Node, label_text: String, handler: Callable) -> void:
+ var btn = Button.new()
+ btn.text = label_text
+ btn.custom_minimum_size = Vector2(140, 30)
+ var style = StyleBoxFlat.new()
+ style.bg_color = Color(0.08, 0.1, 0.14)
+ style.border_color = Color(0.5, 0.45, 0.3)
+ style.set_border_width_all(1)
+ style.set_corner_radius_all(4)
+ btn.add_theme_stylebox_override("normal", style)
+ btn.pressed.connect(handler)
+ parent.add_child(btn)
+
+
+# --- Handlers de excitação (disparam métodos que emitem sinais §6-7) ---
+
+func _on_camp_pressed() -> void:
+ if _camp_used:
+  combat_feedback.show_status_effect(Vector2(640, 300), "ACAMPA: já usado nesta batalha")
+  return
+ _camp_used = true
+ var party: Array = BattleManager.player_units
+ campfire_system.rest_at_campfire("central", party)
+
+
+func _on_cook_pressed() -> void:
+ if _cook_used:
+  combat_feedback.show_status_effect(Vector2(640, 300), "COZINHA: já usado nesta batalha")
+  return
+ _cook_used = true
+
+ # Garantir ingredientes mínimos para o fluxo demo funcionar
+ var inventory: Dictionary = cooking_system.get_inventory()
+ _ensure_demo_ingredients(inventory)
+
+ # Cozinhar a primeira receita craftável
+ for recipe_id: String in cooking_system.RECIPES:
+  if cooking_system.can_craft(recipe_id):
+   cooking_system.craft(recipe_id)
+   return
+ combat_feedback.show_status_effect(Vector2(640, 300), "COZINHA: sem receita craftável")
+
+
+func _ensure_demo_ingredients(inventory: Dictionary) -> void:
+ # Coleta 1 de cada ingrediente se ainda não tiver (demo de cozinha)
+ var demo_ingredients := ["carne_troll", "ervas_silvestres"]
+ for ing: String in demo_ingredients:
+  if inventory.get(ing, 0) < 1:
+   cooking_system.collect_ingredient(ing, 1)
+
+
+func _on_tavern_pressed() -> void:
+ if _tavern_running:
+  return
+ _tavern_running = true
+ tavern_minigame.start_game("Jogador", "IA")
+ _run_tavern_until_end()
+
+
+func _run_tavern_until_end() -> void:
+ # ponytail: autobattler demo — ambos os lados jogam a primeira runa jogável
+ # automaticamente. Stall (ninguém pode jogar) encerra no _tavern_turn_limit.
+ # _advance_turn só roda via play_rune(), então o turno avança quando há jogo.
+ var turns := 0
+ while tavern_minigame.is_game_active() and turns < _tavern_turn_limit:
+  var current := tavern_minigame.get_current_turn()
+  var rune := _pick_tavern_rune(current)
+  if not rune.is_empty():
+   tavern_minigame.play_rune(current, rune)
+  await get_tree().create_timer(0.25).timeout
+  turns += 1
+ _tavern_running = false
+
+
+func _pick_tavern_rune(player_id: String) -> String:
+ if not tavern_minigame.is_game_active():
+  return ""
+ for rune_id: String in tavern_minigame.get_player_hand(player_id):
+  if tavern_minigame.can_play_rune(player_id, rune_id):
+   return rune_id
+ return ""
+
+
+func _on_traverse_pressed() -> void:
+ traversal_system.setup(true, 100)
+ var result: Dictionary = traversal_system.start_traversal("dash")
+ if not result.get("can", false):
+  traversal_system.regen_stamina(100)
+  traversal_system.start_traversal("dash")
+ # Dash é instantâneo: finaliza na hora para emitir traversal_completed
+ # (que alimenta memory + XP no handler).
+ traversal_system.end_traversal()
 
