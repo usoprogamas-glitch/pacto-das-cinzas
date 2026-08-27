@@ -44,7 +44,7 @@ const RECIPES: Dictionary = {
  "banquete_rei": {
   "name": "Banquete do Rei",
   "description": "Festim digno de reis",
-  "ingredients": {"carne_troll": 3, "fruta_eterna": 1, "mel_abissal": 2},
+  "ingredients": {"carne_troll": 3, "fruta_eterna": 1, "mel_abissal": 1},
   "bonuses": {"hp": 50, "mp": 50, "attack": 10, "defense": 10},
   "duration": 5,
   "category": "food",
@@ -78,6 +78,10 @@ const ELIXIRS: Dictionary = {
   "category": "elixir",
  },
 }
+
+## Peso de raridade para custo (common=1, uncommon=2, rare=3).
+const RARITY_COST: Dictionary = {"common": 1, "uncommon": 2, "rare": 3}
+
 
 ## --- Estado do sistema ---
 var _inventory: Dictionary = {}  ## {ingredient_id: amount}
@@ -207,6 +211,19 @@ func get_crafted_count(recipe_id: String) -> int:
 
 func get_all_recipes() -> Dictionary:
  return RECIPES
+
+## Custo ponderado por raridade de uma receita/elixir (common=1, uncommon=2, rare=3).
+func recipe_cost(recipe_id: String) -> int:
+ var recipe = RECIPES.get(recipe_id, {})
+ if recipe.is_empty():
+  recipe = ELIXIRS.get(recipe_id, {})
+ if recipe.is_empty():
+  return 0
+ var total: int = 0
+ for ing_id: String in recipe.ingredients:
+  var rarity: String = INGREDIENTS.get(ing_id, {}).get("rarity", "common")
+  total += RARITY_COST.get(rarity, 1) * recipe.ingredients[ing_id]
+ return total
 
 func get_all_elixirs() -> Dictionary:
  return ELIXIRS

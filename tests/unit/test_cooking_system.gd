@@ -168,6 +168,28 @@ func test_get_all_recipes():
 	assert_true(recipes.has("guisado_goblin"), "Tem guisado")
 
 
+## Balanceamento §7.2: prato mais caro (raridade-ponderada) deve dar bônus maiores.
+func test_luxury_food_cost_proportional():
+	var cs = CookingSystem.new()
+	assert_gt(cs.recipe_cost("banquete_rei"), cs.recipe_cost("guisado_goblin"),
+		"banquete custa mais que guisado (raridade-ponderada)")
+	assert_gt(cs.recipe_cost("banquete_rei"), cs.recipe_cost("sopa_luminosa"),
+		"banquete custa mais que sopa")
+	var banquete = cs.get_all_recipes()["banquete_rei"].bonuses
+	var guisado = cs.get_all_recipes()["guisado_goblin"].bonuses
+	var banquete_value = banquete.hp + banquete.mp + banquete.attack + banquete.defense
+	var guisado_value = guisado.hp + guisado.defense
+	assert_gt(banquete_value, guisado_value, "banquete dá mais benefício que guisado")
+
+
+func test_recipe_cost_derives_from_rarity():
+	var cs = CookingSystem.new()
+	# guisado: 2 carne(1) + 1 erva(1) = 3
+	assert_eq(cs.recipe_cost("guisado_goblin"), 3, "guisado = 3")
+	# elixir_etereo: 2 pedra(uncommon=2) + 1 lagrima(rare=3) = 7
+	assert_eq(cs.recipe_cost("elixir_etereo"), 7, "elixir = 7")
+
+
 func test_get_all_elixirs():
 	var cs = CookingSystem.new()
 	var elixirs = cs.get_all_elixirs()
