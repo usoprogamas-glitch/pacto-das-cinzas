@@ -25,6 +25,7 @@ func before_each() -> void:
 	bs.cooking_system = preload("res://scripts/battle/cooking_system.gd").new()
 	bs.tavern_minigame = preload("res://scripts/battle/tavern_minigame.gd").new()
 	bs.combo_system = preload("res://scripts/battle/combo_system.gd").new()
+	bs.balance_system = preload("res://scripts/battle/balance_system.gd").new()
 	bs.traversal_system.traversal_completed.connect(bs._on_traversal_completed)
 	bs.campfire_system.rest_completed.connect(bs._on_camp_rest_completed)
 	bs.cooking_system.recipe_crafted.connect(bs._on_recipe_crafted)
@@ -241,6 +242,31 @@ func test_combo_pressed_activates_with_participants() -> void:
 	BattleManager.player_units.clear()
 	for u in saved_units:
 		BattleManager.player_units.append(u)
+
+
+# --- Éter/Fúria §3.3: barra bipolar reage a ether/fury/modo ---
+
+func test_balance_bar_bipolar_position() -> void:
+	bs._create_balance_ui()
+	bs.balance_system.perform_ether_action("heal")  # +10 ether
+	bs.balance_system.perform_fury_action("execute")  # +15 fury
+	bs.update_balance_ui()
+	# Com ether != fury, value foge do centro 50
+	assert_ne(bs.balance_bar.value, 50, "desequilibrado foge do centro")
+	assert_eq(bs.balance_bar.value, 50 + (bs.balance_system.get_ether() - bs.balance_system.get_fury()) / 2,
+		"total bipolar = 50 + (ether - fury)/2")
+
+
+func test_balance_label_uses_string_modes() -> void:
+	bs._create_balance_ui()
+	bs.update_balance_ui()
+	assert_eq(bs.balance_label.text, "Neutro", "default Neutro")
+	bs.balance_system.set_mode(BalanceSystem.Mode.ETHER)
+	bs.update_balance_ui()
+	assert_eq(bs.balance_label.text, "Modo Éter", "label do modo Éter")
+	bs.balance_system.set_mode(BalanceSystem.Mode.FURY)
+	bs.update_balance_ui()
+	assert_eq(bs.balance_label.text, "Modo Fúria", "label do modo Fúria")
 
 
 func _inventory_total() -> int:

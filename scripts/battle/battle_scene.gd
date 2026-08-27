@@ -140,6 +140,9 @@ func setup_systems() -> void:
  combo_system.combo_activated.connect(_on_combo_activated)
  combo_system.cp_changed.connect(func(_cp: int, _max: int) -> void: update_combo_ui())
  balance_system.mode_changed.connect(_on_balance_mode_changed)
+ balance_system.mode_changed.connect(func(_mode: String) -> void: update_balance_ui())
+ balance_system.ether_changed.connect(func(_v: int) -> void: update_balance_ui())
+ balance_system.fury_changed.connect(func(_v: int) -> void: update_balance_ui())
  boss_system.boss_defeated.connect(_on_boss_defeated)
  boss_system.boss_spell_charging.connect(_on_boss_spell_charging)
 
@@ -807,11 +810,12 @@ func _on_combo_activated(combo_name: String, description: String) -> void:
 func _on_balance_mode_changed(new_mode: String) -> void:
  var color: Color
  match new_mode:
-  "ETER": color = Color(0.3, 0.7, 1.0)
-  "FURIA": color = Color(1.0, 0.3, 0.2)
-  "SIMBIOSE": color = Color(0.8, 0.5, 1.0)
+  "ETHER": color = Color(0.3, 0.7, 1.0)
+  "FURY": color = Color(1.0, 0.3, 0.2)
+  "SYMBIOSIS": color = Color(0.8, 0.5, 1.0)
   _: color = Color.WHITE
  combat_feedback.show_status_effect(Vector2(640, 50), new_mode)
+ update_balance_ui()
 
 func _on_boss_defeated(boss_name: String) -> void:
  can_interact = false
@@ -925,26 +929,27 @@ func update_combo_ui() -> void:
 func update_balance_ui() -> void:
  if not balance_bar or not balance_label:
   return
- var ether = balance_system.get_ether()
- var fury = balance_system.get_fury()
- var mode = balance_system.get_current_mode()
+ var ether: int = balance_system.get_ether()
+ var fury: int = balance_system.get_fury()
+ var mode: String = balance_system.get_current_mode()
 
- # Barra mostra posição bipolar (Éter esquerda, Fúria direita)
- balance_bar.value = ether
+ # Barra bipolar: equilíbrio (ether == fury) no centro 50; Éter puxa p/ esquerda,
+ # Fúria p/ direita. Escala 0..100 (MAX_VALUE).
+ balance_bar.value = 50 + (ether - fury) / 2
 
- # Label do modo
+ # Label do modo (get_current_mode retorna String)
  match mode:
-  0: balance_label.text = "Neutro"
-  1: balance_label.text = "Modo Éter"
-  2: balance_label.text = "Modo Fúria"
-  3: balance_label.text = "SIMBIOSE!"
+  "NEUTRAL": balance_label.text = "Neutro"
+  "ETHER": balance_label.text = "Modo Éter"
+  "FURY": balance_label.text = "Modo Fúria"
+  "SYMBIOSIS": balance_label.text = "SIMBIOSE!"
 
  # Cor da barra baseada no modo
  var bar_fill = StyleBoxFlat.new()
  match mode:
-  1: bar_fill.bg_color = Color(0.3, 0.7, 1.0)  # Azul para Éter
-  2: bar_fill.bg_color = Color(1.0, 0.3, 0.2)  # Vermelho para Fúria
-  3: bar_fill.bg_color = Color(0.8, 0.5, 1.0)  # Roxo para Simbiose
+  "ETHER": bar_fill.bg_color = Color(0.3, 0.7, 1.0)  # Azul para Éter
+  "FURY": bar_fill.bg_color = Color(1.0, 0.3, 0.2)  # Vermelho para Fúria
+  "SYMBIOSIS": bar_fill.bg_color = Color(0.8, 0.5, 1.0)  # Roxo para Simbiose
   _: bar_fill.bg_color = Color(0.5, 0.5, 0.5)  # Cinza para Neutro
  balance_bar.add_theme_stylebox_override("fill", bar_fill)
 
