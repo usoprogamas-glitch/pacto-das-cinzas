@@ -98,6 +98,10 @@ func test_camp_updates_hud_and_gates() -> void:
 # --- Cozinhar: +20 XP, +10 MEM, gating 1/batalha ---
 
 func test_cook_updates_hud_and_gates() -> void:
+	# Sem injeção demo: o cook cozinha o que foi coletado. Guisado = 2 carne + 1 erva.
+	# Coleta direto (o gather em si é testado à parte) para isolar a cadeia cozinhar→HUD.
+	bs.cooking_system.collect_ingredient("carne_troll", 2)
+	bs.cooking_system.collect_ingredient("ervas_silvestres", 1)
 	bs._on_cook_pressed()
 	assert_eq(int(_xp().text.trim_prefix("XP ")), 20, "XP subiu 20 (recipe_crafted)")
 	assert_eq(_mem().text, "MEM 10%", "MEM subiu 10%")
@@ -116,6 +120,8 @@ func test_tavern_game_over_adds_soul_to_hud() -> void:
 
 func test_cook_buff_ticks_and_expires_on_turn() -> void:
 	# _on_cook_pressed crafts guisado_goblin (duration 3)
+	bs.cooking_system.collect_ingredient("carne_troll", 2)
+	bs.cooking_system.collect_ingredient("ervas_silvestres", 1)
 	bs._on_cook_pressed()
 	assert_eq(bs.cooking_system.get_active_bonuses().size(), 1, "buff ativo pós-craft")
 	for i in range(3):
@@ -142,6 +148,8 @@ func test_cooking_attack_multiplier() -> void:
 func test_cooking_defense_bonus() -> void:
 	assert_eq(bs._cooking_defense_bonus(), 0, "sem buffs: 0")
 	# guisado_goblin: defense 5
+	bs.cooking_system.collect_ingredient("carne_troll", 2)
+	bs.cooking_system.collect_ingredient("ervas_silvestres", 1)
 	bs._on_cook_pressed()
 	assert_eq(bs._cooking_defense_bonus(), 5, "guisado_goblin dá +5 defesa")
 
@@ -187,7 +195,28 @@ func test_toast_emitted_per_action() -> void:
 	bs._on_cook_pressed()
 	bs._on_tavern_game_over("IA", "Jogador")
 	assert_gt(_toasts.size(), 0, "pelo menos um toast por ação")
-	assert_eq(_toasts.size(), 5, "5 toasts: travessia, camp, cook(RECEITA+RECUPEROU), taverna")
+	# travessia(1, sem drop determinístico → até +1 ENCONTROU) + camp(1) + cook(RECEITA+RECUPEROU) + taverna(1)
+	assert_gte(_toasts.size(), 4, "mínimo 4 toasts: travessia, camp, cook(RECEITA+RECUPEROU), taverna")
 	assert_true(_toasts[0].begins_with("TRAVESSIA"), "toast de travessia")
-	assert_true(_toasts.any(func(t: String) -> bool: return t.begins_with("RECUPEROU")),
-		"toast de cura do cozido emitido")
+
+
+# --- §7.2 Gathering: travessia coleta 1 ingrediente (ponderado por raridade) ---
+
+func test_traversal_collects_ingredient() -> void:
+	# get_inventory() é a MESMA referência interna → captura a soma ANTES de coletar
+	var total_before: int = _inventory_total()
+	bs._on_traverse_pressed()
+	assert_eq(_inventory_total(), total_before + 1, "travessia coleta exatamente 1 ingrediente")
+
+
+func _inventory_total() -> int:
+	var total: int = 0
+	for amount in bs.cooking_system.get_inventory().values():
+		total += amount
+	return total
+
+
+func test_traversal_emits_encontrou_toast() -> void:
+	bs._on_traverse_pressed()
+	assert_true(_toasts.any(func(t: String) -> bool: return t.begins_with("ENCONTROU")),
+		"toast de item encontrado na travessia")

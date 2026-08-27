@@ -824,11 +824,31 @@ func _on_boss_spell_charging(_boss_name: String, spell_name: String, _turns_left
 # === Handlers sistemas §6-7 ===
 
 func _on_traversal_completed(traversal_type: String) -> void:
- combat_feedback.show_status_effect(Vector2(640, 300), "TRAVESSIA: " + traversal_type)
- if progression_system:
-  progression_system.add_memory(10)
-  progression_system.add_experience(25)
- _update_progression_hud()
+  combat_feedback.show_status_effect(Vector2(640, 300), "TRAVESSIA: " + traversal_type)
+  if progression_system:
+    progression_system.add_memory(10)
+    progression_system.add_experience(25)
+  _collect_traversal_loot()
+  _update_progression_hud()
+
+## §7.2 Coleta de ingredientes: a travessia é a exploração do mundo.
+## Drop ponderado por raridade (common 60% / uncommon 30% / rare 10%).
+func _collect_traversal_loot() -> void:
+  var roll: float = randf() * 100.0
+  var target_rarity: String = "common"
+  if roll >= 90.0:
+    target_rarity = "rare"
+  elif roll >= 60.0:
+    target_rarity = "uncommon"
+  var pool: Array[String] = []
+  for ing_id: String in cooking_system.INGREDIENTS:
+    if cooking_system.INGREDIENTS[ing_id]["rarity"] == target_rarity:
+      pool.append(ing_id)
+  if pool.is_empty():
+    return
+  var picked: String = pool[randi() % pool.size()]
+  cooking_system.collect_ingredient(picked, 1)
+  combat_feedback.show_status_effect(Vector2(640, 340), "ENCONTROU: " + cooking_system.INGREDIENTS[picked]["name"])
 
 func _on_camp_rest_completed(healed_units: Array) -> void:
  combat_feedback.show_status_effect(Vector2(640, 300), "ACAMPAMENTO: %d unidades restauradas" % healed_units.size())
@@ -1110,27 +1130,12 @@ func _on_cook_pressed() -> void:
   return
  _cook_used = true
 
- # Garantir ingredientes mínimos para o fluxo demo funcionar
- var inventory: Dictionary = cooking_system.get_inventory()
- _ensure_demo_ingredients(inventory)
-
- # Cozinhar a primeira receita craftável
+ # Cozinhar a primeira receita craftável com o que foi coletado nas travessias
  for recipe_id: String in cooking_system.RECIPES:
   if cooking_system.can_craft(recipe_id):
    cooking_system.craft(recipe_id)
    return
  combat_feedback.show_status_effect(Vector2(640, 300), "COZINHA: sem receita craftável")
-
-
-func _ensure_demo_ingredients(inventory: Dictionary) -> void:
- # Garante os ingredientes da receita demo (guisado_goblin) a partir da
- # própria tabela do cooking_system — não hardcoda quantidades por fora.
- var recipe: Dictionary = cooking_system.RECIPES["guisado_goblin"]
- for ing: String in recipe["ingredients"]:
-  var needed: int = recipe["ingredients"][ing]
-  var have: int = inventory.get(ing, 0)
-  if have < needed:
-   cooking_system.collect_ingredient(ing, needed - have)
 
 
 func _on_tavern_pressed() -> void:
