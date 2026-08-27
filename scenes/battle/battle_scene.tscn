@@ -1,4 +1,4 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=3 format=3 uid="uid://b514mh8s4a165"]
 
 [ext_resource type="Script" path="res://scripts/battle/battle_scene.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/battle/grid.gd" id="2"]
@@ -17,8 +17,8 @@ script = ExtResource("2")
 [node name="UnitContainer" type="Node2D" parent="."]
 
 [node name="Camera2D" type="Camera2D" parent="."]
-zoom = Vector2(1.5, 1.5)
 position = Vector2(192, 192)
+zoom = Vector2(1.5, 1.5)
 
 [node name="UILayer" type="CanvasLayer" parent="."]
 

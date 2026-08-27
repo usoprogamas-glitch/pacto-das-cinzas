@@ -114,6 +114,16 @@ func test_100_percent_memory_unlocks_act_4() -> void:
 	assert_eq(progression.current_act, 4, "100% de memória deve desbloquear Ato 4")
 
 
+func test_memory_threshold_emitted_only_once_on_crossing() -> void:
+	watch_signals(progression)
+	progression.add_memory(26)  # cruza 25 (emite 25 uma vez)
+	progression.add_memory(5)   # total 31 — não cruza threshold novo
+
+	# Nenhum threshold novo cruzou na 2ª chamada: total de emissões deve ser 1
+	assert_signal_emit_count(progression, "memory_threshold_reached", 1,
+		"Threshold não deve ser re-emitido em chamadas posteriores")
+
+
 # === Almas Nomeadas ===
 
 func test_add_named_soul_increases_count() -> void:
@@ -127,9 +137,16 @@ func test_10_named_souls_unlock_act_2() -> void:
 	for i in range(10):
 		progression.add_named_soul()
 
-	# 10 almas permitem unlock de Ato 2
-	var can_unlock = progression.try_advance_to_act(2)
-	assert_true(can_unlock, "10 almas devem permitir unlock do Ato 2")
+	# 10 almas auto-avançam para o Ato 2 (caminho de souls do GDD)
+	assert_eq(progression.current_act, 2, "10 almas devem destravar o Ato 2 automaticamente")
+
+
+func test_named_souls_auto_advance_act_3() -> void:
+	for i in range(100):
+		progression.add_named_soul()
+
+	# 100 almas devem destravar o Ato 3 automaticamente
+	assert_eq(progression.current_act, 3, "100 almas devem destravar o Ato 3")
 
 
 func test_named_souls_grant_faith_to_apostles() -> void:

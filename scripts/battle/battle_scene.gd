@@ -114,30 +114,20 @@ func setup_systems() -> void:
  kaelen_system = KaelenSystem.new()
  boss_system = BossSystem.new()
 
- # §8 Progressão Global
+ # §8 Progressão Global (RefCounted — sem add_child)
  progression_system = ProgressionSystem.new()
- progression_system.name = "ProgressionSystem"
- add_child(progression_system)
 
- # §6.1 Travessia Dinâmica
+ # §6.1 Travessia Dinâmica (RefCounted)
  traversal_system = TraversalSystem.new()
- traversal_system.name = "TraversalSystem"
- add_child(traversal_system)
 
- # §7.1 Acampamento
+ # §7.1 Acampamento (RefCounted)
  campfire_system = CampfireSystem.new()
- campfire_system.name = "CampfireSystem"
- add_child(campfire_system)
 
- # §7.2 Culinária e Elixires
+ # §7.2 Culinária e Elixires (RefCounted)
  cooking_system = CookingSystem.new()
- cooking_system.name = "CookingSystem"
- add_child(cooking_system)
 
- # §7.3 Minigame Taberna
+ # §7.3 Minigame Taberna (RefCounted)
  tavern_minigame = TavernMinigame.new()
- tavern_minigame.name = "TavernMinigame"
- add_child(tavern_minigame)
 
  # Conectar sinais dos sistemas
  combo_system.combo_activated.connect(_on_combo_activated)
@@ -612,7 +602,7 @@ func _apply_attack_result(target: Unit, multiplier: float, grade: String) -> voi
 
  # Ganhar CP por Perfect
  if grade == "PERFECT":
-  combo_system.earn_from_timed_hit()
+  combo_system.earn_from_timed_hit(grade)
   update_combo_ui()
 
  selected_unit.has_acted = true
@@ -804,7 +794,7 @@ func _on_balance_mode_changed(new_mode: String) -> void:
   "FURIA": color = Color(1.0, 0.3, 0.2)
   "SIMBIOSE": color = Color(0.8, 0.5, 1.0)
   _: color = Color.WHITE
- combat_feedback.show_status_effect(Vector2(640, 50), new_mode, color)
+ combat_feedback.show_status_effect(Vector2(640, 50), new_mode)
 
 func _on_boss_defeated(boss_name: String) -> void:
  can_interact = false
@@ -976,8 +966,6 @@ func _create_progression_hud() -> void:
  form_label.add_theme_constant_override("shadow_offset_x", 1)
  form_label.add_theme_constant_override("shadow_offset_y", 1)
  row2.add_child(form_label)
-
- progression_hud_label = Label.new()
 
 func _update_progression_hud() -> void:
  if not progression_hud or not progression_system:

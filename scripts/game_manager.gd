@@ -27,7 +27,7 @@ var game_data: Dictionary = {
  "difficulty": "normal",
  "knowledge_bonus": false,
  "first_pact": false,
-  "progression": {}
+ "progression": {}
 }
 
 func _ready() -> void:
@@ -48,8 +48,7 @@ func initialize_systems() -> void:
  add_child(ability_system)
 
  progression_system = ProgressionSystem.new()
- progression_system.name = "ProgressionSystem"
- add_child(progression_system)
+ # ProgressionSystem extends RefCounted (não Node) — só guarda a referência, não add_child
 
  var intro_script = load("res://scripts/ui/intro_story.gd")
  if intro_script:
@@ -156,12 +155,13 @@ func load_game() -> bool:
   file.close()
 
   if result == OK:
-    var save_data = json.data
-    game_data = save_data.game_data
-    faith_system.faith_data = save_data.faith_data
-    building_system.buildings = save_data.buildings
-    building_system.resources = save_data.resources
-    if progression_system and save_data.game_data.has("progression"):
-      progression_system.deserialize(save_data.game_data.progression)
-    return true
+   var save_data = json.data
+   game_data = save_data.game_data
+   faith_system.faith_data = save_data.faith_data
+   building_system.buildings = save_data.buildings
+   building_system.resources = save_data.resources
+   if progression_system and save_data.game_data.has("progression"):
+    progression_system.deserialize(save_data.game_data.progression)
+   return true
   return false
+ return false

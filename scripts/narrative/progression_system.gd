@@ -121,12 +121,13 @@ func _force_advance_to_act(act_number: int) -> void:
 
 
 func add_memory(percent: int) -> void:
+	var old_memory: int = total_memory
 	total_memory = mini(total_memory + percent, 100)
 
-	# Verificar thresholds de memória (25%, 50%, 75%, 100%)
+	# Dispara cada threshold UMA vez, apenas ao cruzá-lo (não re-emite em chamadas posteriores)
 	var thresholds: Array = [25, 50, 75, 100]
 	for threshold in thresholds:
-		if total_memory >= threshold:
+		if old_memory < threshold and total_memory >= threshold:
 			memory_threshold_reached.emit(threshold)
 
 			# Avançar de Ato baseado em memória
@@ -147,6 +148,14 @@ func add_named_soul() -> void:
 		for apostle_id in _character_progression.apostle_progression:
 			_character_progression.add_apostle_faith(apostle_id, 5)
 			apostle_faith_gained.emit(apostle_id, _character_progression.apostle_progression[apostle_id].faith)
+
+	# Caminho alternativo do GDD: almas nomeadas destravam Atos sozinhas (10/100/1000)
+	if named_souls >= 1000:
+		try_advance_to_act(4)
+	elif named_souls >= 100:
+		try_advance_to_act(3)
+	elif named_souls >= 10:
+		try_advance_to_act(2)
 
 
 func try_advance_to_act(act_number: int) -> bool:
