@@ -25,3 +25,12 @@ desktop.ini
 
 # Logs
 *.log
+
+# ComfyUI experiment scratch (not project code)
+comfy_automate.py
+comfy_automate.py.bak
+test_comfy.py
+workflow_api.json
+*_workflow.json
+.env
+__pycache__/

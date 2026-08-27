@@ -982,11 +982,12 @@ func _update_progression_hud() -> void:
   return
  var summary: Dictionary = progression_system.get_progress_summary()
 
- var act_label = progression_hud.get_node_or_null("VBoxContainer/ActLabel") as Label
- var mem_label = progression_hud.get_node_or_null("VBoxContainer/MemLabel") as Label
- var soul_label = progression_hud.get_node_or_null("VBoxContainer/SoulLabel") as Label
- var xp_label = progression_hud.get_node_or_null("VBoxContainer/XPLabel") as Label
- var form_label = progression_hud.get_node_or_null("VBoxContainer/FormLabel") as Label
+ # Labels ficam em HBox aninhados; find_child por nome evita path frágil
+ var act_label = progression_hud.find_child("ActLabel", true, false) as Label
+ var mem_label = progression_hud.find_child("MemLabel", true, false) as Label
+ var soul_label = progression_hud.find_child("SoulLabel", true, false) as Label
+ var xp_label = progression_hud.find_child("XPLabel", true, false) as Label
+ var form_label = progression_hud.find_child("FormLabel", true, false) as Label
 
  if act_label:
   act_label.text = "ATO %d" % summary.get("current_act", 1)
@@ -1085,11 +1086,14 @@ func _on_cook_pressed() -> void:
 
 
 func _ensure_demo_ingredients(inventory: Dictionary) -> void:
- # Coleta 1 de cada ingrediente se ainda não tiver (demo de cozinha)
- var demo_ingredients := ["carne_troll", "ervas_silvestres"]
- for ing: String in demo_ingredients:
-  if inventory.get(ing, 0) < 1:
-   cooking_system.collect_ingredient(ing, 1)
+ # Garante os ingredientes da receita demo (guisado_goblin) a partir da
+ # própria tabela do cooking_system — não hardcoda quantidades por fora.
+ var recipe: Dictionary = cooking_system.RECIPES["guisado_goblin"]
+ for ing: String in recipe["ingredients"]:
+  var needed: int = recipe["ingredients"][ing]
+  var have: int = inventory.get(ing, 0)
+  if have < needed:
+   cooking_system.collect_ingredient(ing, needed - have)
 
 
 func _on_tavern_pressed() -> void:
