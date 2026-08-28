@@ -26,22 +26,35 @@ anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 100.0
-offset_top = 50.0
+offset_top = 40.0
 offset_right = -100.0
-offset_bottom = -50.0
+offset_bottom = -60.0
 grow_horizontal = 2
 grow_vertical = 2
 
 [node name="KaelenPortrait" type="TextureRect" parent="VBoxContainer"]
-custom_minimum_size = Vector2(120, 120)
+custom_minimum_size = Vector2(220, 220)
 layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
 
 [node name="TextLabel" type="Label" parent="VBoxContainer"]
-custom_minimum_size = Vector2(0, 300)
+custom_minimum_size = Vector2(0, 320)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.84, 0.9, 1)
+theme_override_font_sizes/font_size = 22
 text = "Carregando..."
+horizontal_alignment = 1
+vertical_alignment = 1
 autowrap_mode = 3
 
 [node name="ChoiceContainer" type="HBoxContainer" parent="VBoxContainer"]
 layout_mode = 2
 alignment = 1
+
+[node name="SkipHint" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.5, 0.55, 1)
+theme_override_font_sizes/font_size = 14
+text = "Pressione ESC para pular a introdução"
+horizontal_alignment = 1
