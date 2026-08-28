@@ -793,6 +793,12 @@ func _commit_progression() -> void:
   gm_prog.add_experience(progression_system.total_experience)
  for i in progression_system.named_souls:
   gm_prog.add_named_soul()
+ # Fé: cada vitória fortalece o pacto — todos os apóstolos registrados ganham lealdade
+ # (reusa add_faith, que emite faith_changed/faith_level_up; antes a fé era estática)
+ var faith: FaithSystem = GameManager.faith_system
+ if faith:
+  for apostle in faith.get_all_apostles():
+   faith.add_faith(apostle, 10)
 
 func _on_soul_ether_gained(amount: int) -> void:
  soul_ether_label.text = "Soul Éter: %d" % BattleManager.soul_ether
