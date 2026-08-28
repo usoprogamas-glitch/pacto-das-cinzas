@@ -18,6 +18,11 @@ func _ready() -> void:
  text_label = get_node("VBoxContainer/TextLabel") as Label
  choice_container = get_node("VBoxContainer/ChoiceContainer") as HBoxContainer
  kaelen_portrait = get_node("VBoxContainer/KaelenPortrait") as TextureRect
+ # Auto-conectar ao GameManager: a main scene NÃO declara conexões e o connect
+ # costumava ficar numa instância duplicada do próprio GameManager — o sinal da
+ # tela visível caía no vazio e o jogo nunca iniciava (tela preta após a escolha).
+ if GameManager:
+  GameManager.connect_intro_story(self)
  setup_story()
  show_current_step()
 
@@ -174,29 +179,31 @@ func _advance_step() -> void:
 
 func _on_choice_selected(choice: Dictionary) -> void:
  player_choices[story_text[current_step].text] = choice
- 
- # Aplicar consequência imediata
+
+ # Gravar apenas a ESCOLHA; quem aplica as consequências de verdade é o handler
+ # do GameManager (roda sincronamente no emit), fonte de verdade única. Antes a
+ # mana era mexida aqui E no handler → dupla aplicação (e.g. -15 duas vezes).
  match choice.consequence:
   "first_pact":
    player_choices["starting_ally"] = "kroug"
    player_choices["first_pact"] = true
-   GameManager.game_data["mana"] = max(0, GameManager.game_data.get("mana", 120) - 15)
   "lone_survivor":
    player_choices["starting_ally"] = "none"
    player_choices["kaelen_approval"] = -10
-   GameManager.game_data["mana"] = GameManager.game_data.get("mana", 120)
    player_choices["difficulty"] = "hard"
   "cautious_start":
    player_choices["starting_ally"] = "none"
    player_choices["knowledge_bonus"] = true
-   GameManager.game_data["mana"] = GameManager.game_data.get("mana", 120) + 10
    player_choices["difficulty"] = "normal"
- 
+
  _advance_step()
 
 func complete_intro() -> void:
  intro_completed.emit(player_choices)
  visible = false
+ # Próxima cena jogável (mesmo idiom do main_menu): o emit acima roda sincronamente,
+ # então o GameManager já aplicou as escolhas e chamou start_new_game().
+ SceneManager.go_to_map_select()
 
 func skip_intro() -> void:
  player_choices["skipped"] = true

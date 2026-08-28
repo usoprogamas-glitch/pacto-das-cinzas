@@ -13,7 +13,6 @@ var ability_system: AbilitySystem
 var progression_system: ProgressionSystem
 var character_progression: CharacterProgression  # conectado ao ProgressionSystem p/ evolução de forma
 var lineage_system: LineageSystem  # canônico (RefCounted): evolução dos apóstolos por ato
-var intro_story: Control  # Instância de IntroStory (evita dependência circular de class_name)
 
 var current_scene: String = "intro"
 var game_data: Dictionary = {
@@ -34,7 +33,6 @@ var game_data: Dictionary = {
 
 func _ready() -> void:
  initialize_systems()
- connect_intro_story()
 
 func initialize_systems() -> void:
  faith_system = FaithSystem.new()
@@ -63,20 +61,21 @@ func initialize_systems() -> void:
   lineage_system.register_creature(creature_name)
  progression_system.set_lineage_system(lineage_system)
 
- var intro_script = load("res://scripts/ui/intro_story.gd")
- if intro_script:
-  intro_story = intro_script.new()
-  intro_story.name = "IntroStory"
-  add_child(intro_story)
-
-func connect_intro_story() -> void:
- if intro_story and intro_story.has_signal("intro_completed"):
-  intro_story.intro_completed.connect(_on_intro_completed)
+# A intro canônica é a main scene (intro_story.tscn), que se auto-conecta no _ready.
+# Antes havia um IntroStory DUPLICADO instanciado aqui (script.new()): a intro que o
+# jogador via emitia intro_completed para zero listeners → tela preta, game nunca
+# iniciava. Quem quer que carregue a intro (main scene) passa a própria instância.
+func connect_intro_story(story) -> void:
+ if story and story.has_signal("intro_completed"):
+  story.intro_completed.connect(_on_intro_completed)
 
 func _on_intro_completed(choices: Dictionary) -> void:
- # Aplicar escolhas do jogador
+ # Aplicar escolhas do jogador. Só os dicts de escolha têm "consequence"; o emit
+ # também carrega chaves auxiliares (starting_ally/knowledge_bonus/skipped) —
+ # filtrar evita crash (`"kroug".consequence` era erro de runtime).
  for key in choices:
   var choice = choices[key]
+  if not (choice is Dictionary): continue
   if choice.consequence == "first_pact":
    game_data.starting_ally = "kroug"
    game_data.first_pact = true
