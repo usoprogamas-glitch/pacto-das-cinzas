@@ -52,9 +52,16 @@ autowrap_mode = 3
 layout_mode = 2
 alignment = 1
 
-[node name="SkipHint" type="Label" parent="VBoxContainer"]
+[node name="PageCounter" type="Label" parent="VBoxContainer"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.5, 0.5, 0.55, 1)
 theme_override_font_sizes/font_size = 14
-text = "Pressione ESC para pular a introdução"
+text = "1/13"
+horizontal_alignment = 1
+
+[node name="ControlsHint" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.5, 0.55, 1)
+theme_override_font_sizes/font_size = 14
+text = "A: avançar  |  Start: pular  |  ESC: pular"
 horizontal_alignment = 1

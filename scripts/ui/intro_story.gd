@@ -12,10 +12,13 @@ var background: ColorRect
 var text_label: Label
 var choice_container: HBoxContainer
 var kaelen_portrait: TextureRect
+var page_counter: Label
+var controls_hint: Label
 
 var current_step: int = 0
 var story_text: Array[Dictionary] = []
 var player_choices: Dictionary = {}
+var _advance_tween: Tween
 
 func _ready() -> void:
  _build_ui_if_missing()
@@ -23,6 +26,8 @@ func _ready() -> void:
  text_label = get_node("VBoxContainer/TextLabel") as Label
  choice_container = get_node("VBoxContainer/ChoiceContainer") as HBoxContainer
  kaelen_portrait = get_node("VBoxContainer/KaelenPortrait") as TextureRect
+ page_counter = get_node("VBoxContainer/PageCounter") as Label
+ controls_hint = get_node("VBoxContainer/ControlsHint") as Label
  # Auto-conectar ao GameManager: a main scene NÃO declara conexões e o connect
  # costumava ficar numa instância duplicada do próprio GameManager — o sinal da
  # tela visível caía no vazio e o jogo nunca iniciava (tela preta após a escolha).
@@ -67,6 +72,20 @@ func _build_ui_if_missing() -> void:
   choices.alignment = BoxContainer.ALIGNMENT_CENTER
   choices.add_theme_constant_override("separation", 30)
   vbox.add_child(choices)
+
+  var counter = Label.new()
+  counter.name = "PageCounter"
+  counter.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+  counter.add_theme_color_override("font_color", Color(0.5, 0.5, 0.55, 1))
+  vbox.add_child(counter)
+
+  var hint = Label.new()
+  hint.name = "ControlsHint"
+  hint.text = "A: avançar  |  Start/ESC: pular"
+  hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+  hint.add_theme_color_override("font_color", Color(0.5, 0.5, 0.55, 1))
+  hint.add_theme_font_size_override("font_size", 14)
+  vbox.add_child(hint)
 
 func setup_story() -> void:
  story_text = [
@@ -144,14 +163,19 @@ func setup_story() -> void:
  ]
 
 func show_current_step() -> void:
+ _kill_advance_tween()
+
  if current_step >= story_text.size():
   complete_intro()
   return
 
  var step = story_text[current_step]
- 
+
  text_label.text = step.text
  text_label.visible = true
+
+ if page_counter:
+  page_counter.text = "%d/%d" % [current_step + 1, story_text.size()]
  
  # Atualizar retrato
  if step.portrait == "kaelen":
@@ -176,12 +200,23 @@ func show_current_step() -> void:
   choice_container.visible = false
   # Auto-advance para texto sem escolhas. A escolha é um passoação do jogador;
   # narração usa um intervalo de leitura (antes: callback no frame seguinte →
-  # história imperceptível).
-  var tween = create_tween()
-  tween.tween_interval(AUTO_ADVANCE_SECONDS)
-  tween.tween_callback(func(): _advance_step())
+  # história imperceptível). Se o jogador apertar A no meio, o tween é morto e o
+  # slide avança na hora — sem esperar o resto do intervalo.
+  # (guard: tweens só existem dentro da árvore — fora dela não há auto-advance.)
+  if is_inside_tree():
+   _advance_tween = create_tween()
+   _advance_tween.tween_interval(AUTO_ADVANCE_SECONDS)
+   _advance_tween.tween_callback(func(): _advance_step())
+
+func _kill_advance_tween() -> void:
+ if _advance_tween:
+  _advance_tween.kill()
+  _advance_tween = null
 
 func _advance_step() -> void:
+ if current_step >= story_text.size():
+  complete_intro()
+  return
  current_step += 1
  show_current_step()
 
@@ -218,5 +253,8 @@ func skip_intro() -> void:
  complete_intro()
 
 func _input(event: InputEvent) -> void:
- if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
+ if event.is_action_pressed("intro_next"):
+  _advance_step()
+ # Start/ESC: pula a intro inteira
+ elif event.is_action_pressed("intro_skip"):
   skip_intro()

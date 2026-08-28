@@ -35,11 +35,18 @@ func test_text_label_present_and_legible():
 	assert_eq(label.autowrap_mode, TextServer.AUTOWRAP_WORD_SMART, "autowrap do texto")
 
 
-func test_skip_hint_visible():
+func test_controls_hint_visible():
 	var node = _open()
-	var hint = node.get_node("VBoxContainer/SkipHint") as Label
-	assert_not_null(hint, "SkipHint (dica de pular) deve existir")
-	assert_true(hint.text.contains("ESC"), "dica menciona a tecla ESC: '%s'" % hint.text)
+	var hint = node.get_node("VBoxContainer/ControlsHint") as Label
+	assert_not_null(hint, "ControlsHint (dica de controles) deve existir")
+	assert_true(hint.text.contains("A"), "dica menciona a tecla A: '%s'" % hint.text)
+	assert_true(hint.text.contains("pular"), "dica menciona pular: '%s'" % hint.text)
+
+
+func test_page_counter_present():
+	var node = _open()
+	var counter = node.get_node("VBoxContainer/PageCounter") as Label
+	assert_not_null(counter, "PageCounter deve existir no .tscn")
 
 
 # === Retrato do Kaelen ===
