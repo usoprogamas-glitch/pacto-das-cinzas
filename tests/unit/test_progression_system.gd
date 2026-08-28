@@ -149,16 +149,6 @@ func test_named_souls_auto_advance_act_3() -> void:
 	assert_eq(progression.current_act, 3, "100 almas devem destravar o Ato 3")
 
 
-func test_named_souls_grant_faith_to_apostles() -> void:
-	watch_signals(progression)
-
-	# Adicionar 10 almas (múltiplo de 10 dá fé aos apóstolos)
-	for i in range(10):
-		progression.add_named_soul()
-
-	assert_signal_emitted(progression, "apostle_faith_gained")
-
-
 # === Integração com CharacterProgression ===
 
 func test_act_advancement_evolves_protagonist_form() -> void:

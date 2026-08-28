@@ -3,7 +3,6 @@ extends Node
 
 signal faith_changed(unit_name: String, new_faith: int)
 signal faith_level_up(unit_name: String, level: String)
-signal apostle_evolved(unit_name: String, new_form: String)
 
 var faith_data: Dictionary = {}
 
@@ -32,8 +31,6 @@ func add_faith(unit_name: String, amount: int) -> void:
   faith_data[unit_name].level = new_level
   apply_faith_bonuses(unit_name, new_level)
   faith_level_up.emit(unit_name, new_level)
-
-  check_evolution(unit_name, new_faith)
 
 func get_faith(unit_name: String) -> int:
  if faith_data.has(unit_name):
@@ -80,23 +77,6 @@ func get_faith_bonuses(unit_name: String) -> Dictionary:
 func apply_faith_bonuses(unit_name: String, level: String) -> void:
  var bonuses = get_faith_bonuses(unit_name)
  faith_data[unit_name].bonuses = bonuses
-
-func check_evolution(unit_name: String, faith: int) -> void:
- if faith >= 90:
-  var evolution = get_evolution_form(unit_name)
-  if evolution != "":
-   apostle_evolved.emit(unit_name, evolution)
-
-func get_evolution_form(unit_name: String) -> String:
- match unit_name:
-  "Kroug":
-   return "Ogro de Guerra"
-  "Lira":
-   return "Ent Primordial"
-  "Thal'kor":
-   return "Cavaleiro Negro"
-  _:
-   return ""
 
 func get_all_apostles() -> Array:
  return faith_data.keys()

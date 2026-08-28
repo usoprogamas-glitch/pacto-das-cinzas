@@ -6,7 +6,6 @@ extends RefCounted
 
 signal act_unlocked(act_number: int)
 signal memory_threshold_reached(percentage: int)
-signal apostle_faith_gained(apostle_id: String, total_faith: int)
 
 # Tabela de Progressão por Ato (GDD v2 §8)
 const ACTS: Dictionary = {
@@ -154,12 +153,6 @@ func add_memory(percent: int) -> void:
 
 func add_named_soul() -> void:
 	named_souls += 1
-
-	# A cada 10 almas nomeadas, ganhar bônus de fé para apóstolos
-	if named_souls % 10 == 0 and _character_progression:
-		for apostle_id in _character_progression.apostle_progression:
-			_character_progression.add_apostle_faith(apostle_id, 5)
-			apostle_faith_gained.emit(apostle_id, _character_progression.apostle_progression[apostle_id].faith)
 
 	# Caminho alternativo do GDD: almas nomeadas destravam Atos sozinhas (10/100/1000)
 	if named_souls >= 1000:

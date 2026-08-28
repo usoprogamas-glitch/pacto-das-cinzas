@@ -65,45 +65,6 @@ var forms: Dictionary = {
  }
 }
 
-var apostle_progression: Dictionary = {
- "kroug": {
-  "name": "Kroug",
-  "title": "O Escudo",
-  "forms": [
-   {"name": "Goblin da Lama", "level": 1, "stats": {"hp": 80, "attack": 10, "defense": 15}},
-   {"name": "Hobgoblin de Ferro", "level": 3, "stats": {"hp": 120, "attack": 18, "defense": 25}},
-   {"name": "Ogro de Guerra", "level": 6, "stats": {"hp": 200, "attack": 30, "defense": 40}},
-   {"name": "Rei Ogro de Fogo", "level": 10, "stats": {"hp": 350, "attack": 45, "defense": 60}}
-  ],
-  "current_form": 0,
-  "faith": 0
- },
- "lira": {
-  "name": "Lira",
-  "title": "A Sacerdotisa",
-  "forms": [
-   {"name": "Muda Mágica", "level": 1, "stats": {"hp": 50, "magic": 15, "defense": 8}},
-   {"name": "Dryade Jovem", "level": 3, "stats": {"hp": 80, "magic": 25, "defense": 15}},
-   {"name": "Ent Primordial", "level": 6, "stats": {"hp": 140, "magic": 40, "defense": 25}},
-   {"name": "Rainha dos Bosques", "level": 10, "stats": {"hp": 250, "magic": 60, "defense": 40}}
-  ],
-  "current_form": 0,
-  "faith": 0
- },
- "thalkor": {
-  "name": "Thal'kor",
-  "title": "A Lâmina Cega",
-  "forms": [
-   {"name": "Anjo Caído", "level": 1, "stats": {"hp": 60, "attack": 25, "speed": 18}},
-   {"name": "Seraphim Ferido", "level": 3, "stats": {"hp": 90, "attack": 35, "speed": 20}},
-   {"name": "Cavaleiro Negro", "level": 6, "stats": {"hp": 130, "attack": 50, "speed": 22}},
-   {"name": "Serafim das Sombras", "level": 10, "stats": {"hp": 200, "attack": 70, "speed": 25}}
-  ],
-  "current_form": 0,
-  "faith": 0
- }
-}
-
 func _ready() -> void:
  pass
 
@@ -154,35 +115,6 @@ func get_base_stat(stat: String) -> int:
   "speed": return 12
  return 0
 
-func add_apostle_faith(apostle_id: String, amount: int) -> void:
- if apostle_progression.has(apostle_id):
-  apostle_progression[apostle_id].faith += amount
-  check_apostle_evolution(apostle_id)
-
-func check_apostle_evolution(apostle_id: String) -> void:
- var apostle = apostle_progression[apostle_id]
- var current_form_index = apostle.current_form
-
- if current_form_index < apostle.forms.size() - 1:
-  var next_form = apostle.forms[current_form_index + 1]
-  if apostle.faith >= get_faith_required(next_form.level):
-   apostle.current_form = current_form_index + 1
-
-func get_faith_required(level: int) -> int:
- return level * 10
-
-func get_apostle_stats(apostle_id: String) -> Dictionary:
- if apostle_progression.has(apostle_id):
-  var apostle = apostle_progression[apostle_id]
-  return apostle.forms[apostle.current_form].stats
- return {}
-
-func get_apostle_form(apostle_id: String) -> String:
- if apostle_progression.has(apostle_id):
-  var apostle = apostle_progression[apostle_id]
-  return apostle.forms[apostle.current_form].name
- return ""
-
 func get_protagonist_stats() -> Dictionary:
  return protagonist_stats.stats.duplicate()
 
@@ -195,13 +127,8 @@ func get_form_info(form_name: String) -> Dictionary:
 
 # Para uso em save/load (espelha padrão do ProgressionSystem)
 func serialize() -> Dictionary:
- var apostle_snapshots := {}
- for id in apostle_progression:
-  var a = apostle_progression[id]
-  apostle_snapshots[id] = {"current_form": a.current_form, "faith": a.faith}
  return {
-  "protagonist_stats": protagonist_stats.duplicate(true),
-  "apostle_progression": apostle_snapshots
+  "protagonist_stats": protagonist_stats.duplicate(true)
  }
 
 
@@ -209,8 +136,3 @@ func deserialize(data: Dictionary) -> void:
  var proto = data.get("protagonist_stats", {})
  if proto:
   protagonist_stats = proto
- var apo = data.get("apostle_progression", {})
- for id in apo:
-  if apostle_progression.has(id):
-   apostle_progression[id].current_form = apo[id].get("current_form", 0)
-   apostle_progression[id].faith = apo[id].get("faith", 0)
