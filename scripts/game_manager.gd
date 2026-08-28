@@ -12,6 +12,7 @@ var building_system: BuildingSystem
 var ability_system: AbilitySystem
 var progression_system: ProgressionSystem
 var character_progression: CharacterProgression  # conectado ao ProgressionSystem p/ evolução de forma
+var lineage_system: LineageSystem  # canônico (RefCounted): evolução dos apóstolos por ato
 var intro_story: Control  # Instância de IntroStory (evita dependência circular de class_name)
 
 var current_scene: String = "intro"
@@ -55,6 +56,12 @@ func initialize_systems() -> void:
  character_progression.name = "CharacterProgression"
  add_child(character_progression)
  progression_system.set_character_progression(character_progression)
+
+ # LineageSystem canônico (RefCounted) — registrar os 4 apóstolos e conectar à evolução por ato
+ lineage_system = LineageSystem.new()
+ for creature_name in LineageSystem.APOSTLE_EVOLUTIONS:
+  lineage_system.register_creature(creature_name)
+ progression_system.set_lineage_system(lineage_system)
 
  var intro_script = load("res://scripts/ui/intro_story.gd")
  if intro_script:
@@ -144,7 +151,8 @@ func save_game() -> void:
   "faith_data": faith_system.faith_data,
   "buildings": building_system.buildings,
   "resources": building_system.resources,
-  "character_progression": character_progression.serialize()
+  "character_progression": character_progression.serialize(),
+  "lineage_system": lineage_system.serialize()
  }
  var file = FileAccess.open("user://save_game.json", FileAccess.WRITE)
  if file:
@@ -171,6 +179,8 @@ func load_game() -> bool:
     progression_system.deserialize(save_data.game_data.progression)
    if character_progression and save_data.has("character_progression"):
     character_progression.deserialize(save_data.character_progression)
+   if lineage_system and save_data.has("lineage_system"):
+    lineage_system.deserialize(save_data.lineage_system)
    return true
   return false
  return false

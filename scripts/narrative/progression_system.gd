@@ -62,6 +62,9 @@ var total_experience: int = 0
 # Referência ao sistema de progressão de personagem existente
 var _character_progression: CharacterProgression = null
 
+# Referência ao LineageSystem canônico (GDD §3.4/§4) — evolui os apóstolos no avanço de ato
+var _lineage_system: LineageSystem = null
+
 
 func _init(char_progression: CharacterProgression = null) -> void:
 	_character_progression = char_progression
@@ -69,6 +72,10 @@ func _init(char_progression: CharacterProgression = null) -> void:
 
 func set_character_progression(char_progression: CharacterProgression) -> void:
 	_character_progression = char_progression
+
+
+func set_lineage_system(lineage_system: LineageSystem) -> void:
+	_lineage_system = lineage_system
 
 
 func get_xp_for_level(level: int) -> int:
@@ -113,6 +120,11 @@ func _force_advance_to_act(act_number: int) -> void:
 
 	current_act = act_number
 	act_unlocked.emit(act_number)
+
+	# Evoluir os apóstolos (gates de ato respeitados por evolve_creature; idempotente)
+	if _lineage_system:
+		for creature in _lineage_system.get_all_creatures():
+			_lineage_system.evolve_creature(creature, act_number)
 
 	if _character_progression:
 		var form_name: String = ACTS[act_number]["protagonist_form"]
@@ -167,6 +179,11 @@ func try_advance_to_act(act_number: int) -> bool:
 
 	current_act = act_number
 	act_unlocked.emit(act_number)
+
+	# Evoluir os apóstolos (gates de ato respeitados; idempotente em re-chamadas)
+	if _lineage_system:
+		for creature in _lineage_system.get_all_creatures():
+			_lineage_system.evolve_creature(creature, act_number)
 
 	# Atualizar forma do protagonista no CharacterProgression
 	if _character_progression:

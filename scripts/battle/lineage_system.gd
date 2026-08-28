@@ -214,3 +214,16 @@ func get_creature_state(creature_name: String) -> Dictionary:
 ## Retorna todas as criaturas registradas.
 func get_all_creatures() -> Array:
 	return _creature_states.keys()
+
+
+# Para uso em save/load
+func serialize() -> Dictionary:
+	return _creature_states.duplicate(true)
+
+
+func deserialize(data: Dictionary) -> void:
+	for name in data:
+		if _creature_states.has(name):
+			var s = _creature_states[name]
+			s.current_form_index = data[name].get("current_form_index", 0)
+			s.branch = data[name].get("branch", null)
