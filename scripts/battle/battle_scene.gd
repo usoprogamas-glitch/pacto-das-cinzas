@@ -39,7 +39,6 @@ var timed_combat: TimedCombatSystem
 var lock_system: LockSystem
 var combo_system: ComboSystem
 var balance_system: BalanceSystem
-var lineage_system: LineageSystem
 var kaelen_system: KaelenSystem
 var boss_system: BossSystem
 
@@ -120,7 +119,6 @@ func setup_systems() -> void:
  lock_system = LockSystem.new()
  combo_system = ComboSystem.new()
  balance_system = BalanceSystem.new()
- lineage_system = LineageSystem.new()
  kaelen_system = KaelenSystem.new()
  boss_system = BossSystem.new()
 
