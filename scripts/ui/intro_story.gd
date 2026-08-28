@@ -3,6 +3,11 @@ extends Control
 
 signal intro_completed(choices: Dictionary)
 
+# Tempo (s) que cada slide de narração fica em tela antes do auto-advance.
+# Antes: tween sem intervalo disparava no frame seguinte → 13 slides em ~0.2s,
+# história imperceptível (jogo caía direto na escolha).
+const AUTO_ADVANCE_SECONDS := 3.5
+
 var background: ColorRect
 var text_label: Label
 var choice_container: HBoxContainer
@@ -169,8 +174,11 @@ func show_current_step() -> void:
    choice_container.add_child(btn)
  else:
   choice_container.visible = false
-  # Auto-advance para texto sem escolhas
+  # Auto-advance para texto sem escolhas. A escolha é um passoação do jogador;
+  # narração usa um intervalo de leitura (antes: callback no frame seguinte →
+  # história imperceptível).
   var tween = create_tween()
+  tween.tween_interval(AUTO_ADVANCE_SECONDS)
   tween.tween_callback(func(): _advance_step())
 
 func _advance_step() -> void:
