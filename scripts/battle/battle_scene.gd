@@ -759,6 +759,7 @@ func check_battle_end() -> void:
   BattleManager.battle_won.emit()
 
 func _on_battle_won() -> void:
+ _commit_progression()  # persiste progresso da batalha no GameManager antes de sair
  can_interact = false
 
  # Efeitos visuais
@@ -779,6 +780,21 @@ func _on_battle_lost() -> void:
  # Mostrar tela de derrota
  await get_tree().create_timer(1.5).timeout
  show_defeat_screen()
+
+func _commit_progression() -> void:
+ # autoload ausente em teste isolado → no-op seguro (mesmo padrão das linhas 316)
+ if not GameManager or not progression_system:
+  return
+ var gm_prog: ProgressionSystem = GameManager.progression_system
+ if not gm_prog:
+  return
+ # Transferir o acumulado da batalha para o sistema persistente do save
+ if progression_system.total_memory > 0:
+  gm_prog.add_memory(progression_system.total_memory)
+ if progression_system.total_experience > 0:
+  gm_prog.add_experience(progression_system.total_experience)
+ for i in progression_system.named_souls:
+  gm_prog.add_named_soul()
 
 func _on_soul_ether_gained(amount: int) -> void:
  soul_ether_label.text = "Soul Éter: %d" % BattleManager.soul_ether
