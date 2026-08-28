@@ -11,6 +11,7 @@ var faith_system: FaithSystem
 var building_system: BuildingSystem
 var ability_system: AbilitySystem
 var progression_system: ProgressionSystem
+var character_progression: CharacterProgression  # conectado ao ProgressionSystem p/ evolução de forma
 var intro_story: Control  # Instância de IntroStory (evita dependência circular de class_name)
 
 var current_scene: String = "intro"
@@ -49,6 +50,11 @@ func initialize_systems() -> void:
 
  progression_system = ProgressionSystem.new()
  # ProgressionSystem extends RefCounted (não Node) — só guarda a referência, não add_child
+
+ character_progression = CharacterProgression.new()
+ character_progression.name = "CharacterProgression"
+ add_child(character_progression)
+ progression_system.set_character_progression(character_progression)
 
  var intro_script = load("res://scripts/ui/intro_story.gd")
  if intro_script:
@@ -137,7 +143,8 @@ func save_game() -> void:
   "game_data": game_data,
   "faith_data": faith_system.faith_data,
   "buildings": building_system.buildings,
-  "resources": building_system.resources
+  "resources": building_system.resources,
+  "character_progression": character_progression.serialize()
  }
  var file = FileAccess.open("user://save_game.json", FileAccess.WRITE)
  if file:
@@ -162,6 +169,8 @@ func load_game() -> bool:
    building_system.resources = save_data.resources
    if progression_system and save_data.game_data.has("progression"):
     progression_system.deserialize(save_data.game_data.progression)
+   if character_progression and save_data.has("character_progression"):
+    character_progression.deserialize(save_data.character_progression)
    return true
   return false
  return false

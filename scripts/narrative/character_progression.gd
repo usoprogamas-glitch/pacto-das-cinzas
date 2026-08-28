@@ -191,3 +191,26 @@ func get_protagonist_abilities() -> Array:
 
 func get_form_info(form_name: String) -> Dictionary:
  return forms.get(form_name, {})
+
+
+# Para uso em save/load (espelha padrão do ProgressionSystem)
+func serialize() -> Dictionary:
+ var apostle_snapshots := {}
+ for id in apostle_progression:
+  var a = apostle_progression[id]
+  apostle_snapshots[id] = {"current_form": a.current_form, "faith": a.faith}
+ return {
+  "protagonist_stats": protagonist_stats.duplicate(true),
+  "apostle_progression": apostle_snapshots
+ }
+
+
+func deserialize(data: Dictionary) -> void:
+ var proto = data.get("protagonist_stats", {})
+ if proto:
+  protagonist_stats = proto
+ var apo = data.get("apostle_progression", {})
+ for id in apo:
+  if apostle_progression.has(id):
+   apostle_progression[id].current_form = apo[id].get("current_form", 0)
+   apostle_progression[id].faith = apo[id].get("faith", 0)
