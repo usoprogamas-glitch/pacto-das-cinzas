@@ -27,7 +27,7 @@ Agente auditoria (per-aspect):
 |---|---|---|---|---|
 | 1 | **Morte por magia não encerra batalha** | BattleManager.cast_magic | ✅ feito (`e21bd99`) | Caster mata alvo → HP 0 fica no grid, sem `unit_died`/soul_ether; `battle_won` pode não disparar |
 | 2 | **Fluxo de campanha (atos)** | — | ⚪ | Hoje: 1 batalha + sandbox. Falta: encadeamento intro→ato→batalhas→chefes→créditos |
-| 3 | **Naming/Pacto de Alma como mecânica viva** | NamingSystem+NamingUI | 🟡 morto | A mecânica-assinatura do lore NUNCA roda: nomear um monstro caído, ganhar apóstolo, metamorfose |
+| 3 | **Naming/Pacto de Alma como mecânica viva** | NamingSystem+NamingUI | ✅ feito (`6dc5626`) — GameManager dono + save + 1º Pacto nomeia Kroug | A mecânica-assinatura do lore NUNCA rodava: nomear um monstro, ganhar apóstolo, metamorfose. Agora o 1º pacto (intro) nomeia Kroug de verdade; nomear um caído pós-batalha (fluxo de "soul capturado") fica p/ a campanha (#2) |
 | 4 | **Overworld + desbloqueio de mapa por ato** | map_select | 🟡 gated hardcoded | `unlocked:false` sem condição; batalhas não destravam o próximo mapa |
 | 5 | **Kaelen HUD** (análise bio/psi/tática, "nome sugerido") | KaelenSystem | 🟡 morto | GDD §3.4 inteiro está inalcançável (instanciado, sinais nunca conectados) |
 | 6 | **Feedback de evolução de forma** | CharacterProgression | 🟡 parcial | Evoluir muda só estado interno/atalho no HUD — nada muda no mundo (stats/visual/inimigos) |
