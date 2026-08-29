@@ -15,7 +15,9 @@ var naming_system: NamingSystem
 var selected_soul_type: String = ""
 
 func _ready() -> void:
- naming_system = NamingSystem.new()
+ # Usar o NamingSystem persistente do GameManager quando presente (runtime); senão
+ # cria um próprio p/ preview/teste isolado. Antes criava sempre um novo → órfão.
+ naming_system = GameManager.naming_system if (GameManager and GameManager.naming_system) else NamingSystem.new()
  populate_soul_list()
  name_button.pressed.connect(_on_name_pressed)
  back_button.pressed.connect(_on_back)

@@ -13,6 +13,7 @@ var ability_system: AbilitySystem
 var progression_system: ProgressionSystem
 var character_progression: CharacterProgression  # conectado ao ProgressionSystem p/ evolução de forma
 var lineage_system: LineageSystem  # canônico (RefCounted): evolução dos apóstolos por ato
+var naming_system: NamingSystem  # Pacto de Alma (GDD §2.1/§4): nomear criaturas → apóstolos
 
 var current_scene: String = "intro"
 var game_data: Dictionary = {
@@ -60,6 +61,12 @@ func initialize_systems() -> void:
  for creature_name in LineageSystem.APOSTLE_EVOLUTIONS:
   lineage_system.register_creature(creature_name)
  progression_system.set_lineage_system(lineage_system)
+
+ # NamingSystem (Pacto de Alma, GDD §2.1/§4): dono persistente do sistema órfão —
+ # nomear criaturas derrotadas vira apóstolo no save.
+ naming_system = NamingSystem.new()
+ naming_system.name = "NamingSystem"
+ add_child(naming_system)
 
 # A intro canônica é a main scene (intro_story.tscn), que se auto-conecta no _ready.
 # Antes havia um IntroStory DUPLICADO instanciado aqui (script.new()): a intro que o
@@ -116,9 +123,12 @@ func start_new_game() -> void:
 
  # Registrar aliados baseado na escolha
  if game_data.starting_ally == "kroug":
-  faith_system.register_apostle("Kroug")
-  # K25 de fé inicial por ser o primeiro pacto
-  faith_system.add_faith("Kroug", 25)
+  # Pacto de Alma vivo (GDD §2.1): nomear Kroug forja o 1º pacto + vira apóstolo
+  var res = naming_system.name_soul("goblin_lama", "Kroug")
+  if res.success:
+   faith_system.register_apostle("Kroug")
+   # +25 de fé inicial por ser o primeiro pacto
+   faith_system.add_faith("Kroug", 25)
  elif game_data.starting_ally == "none":
   # Sem aliado inicial
   pass
@@ -151,7 +161,8 @@ func save_game() -> void:
   "buildings": building_system.buildings,
   "resources": building_system.resources,
   "character_progression": character_progression.serialize(),
-  "lineage_system": lineage_system.serialize()
+  "lineage_system": lineage_system.serialize(),
+  "naming_system": naming_system.save_data()
  }
  var file = FileAccess.open("user://save_game.json", FileAccess.WRITE)
  if file:
@@ -180,6 +191,8 @@ func load_game() -> bool:
     character_progression.deserialize(save_data.character_progression)
    if lineage_system and save_data.has("lineage_system"):
     lineage_system.deserialize(save_data.lineage_system)
+   if naming_system and save_data.has("naming_system"):
+    naming_system.load_data(save_data.naming_system)
    return true
   return false
  return false
