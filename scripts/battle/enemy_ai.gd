@@ -73,6 +73,16 @@ static func caster_ai(enemy: Unit, target: Unit, all_units: Array, grid: BattleG
  if not target:
   return {"action": "wait"}
 
+ # Caster real (GDD v2 §3.3): tenta lançar feitiço se tem MP e o alvo está no
+ # alcance do spell. Sem MP/alcance, cai no ataque/movimento same de sempre.
+ var spell_id := get_cast_spell(enemy)
+ var spell: Dictionary = MagicSystem.new().get_spell(spell_id)
+ if not spell.is_empty() and enemy.current_mp >= spell.mp_cost:
+  var dist := enemy.grid_position.distance_to(target.grid_position)
+  var spell_range: int = spell.get("range", enemy.data.attack_range)
+  if dist <= spell_range:
+   return {"action": "cast", "spell_id": spell_id, "target": target}
+
  var allies_near = count_allies_near(target, all_units)
 
  if allies_near >= 2:
@@ -86,6 +96,10 @@ static func caster_ai(enemy: Unit, target: Unit, all_units: Array, grid: BattleG
   if move_pos != enemy.grid_position:
    return {"action": "move", "position": move_pos}
   return {"action": "wait"}
+
+static func get_cast_spell(enemy: Unit) -> String:
+ # Spell configurado na Unidade, ou default genérico de mago (GDD v2 §3.3).
+ return enemy.data.spell if not enemy.data.spell.is_empty() else "fire_bolt"
 
 static func tank_ai(enemy: Unit, target: Unit, ally: Unit, grid: BattleGrid) -> Dictionary:
  if ally and ally.current_hp < ally.data.max_hp * 0.3:

@@ -45,6 +45,7 @@ static var enemies: Dictionary = {
   "color": Color(0.2, 0.3, 0.7),
   "soul_ether": 30,
   "ai_type": "caster",
+  "spell": "shadow_bolt",
   "description": "Mago fanático com correntes rúnicas"
  },
  "paladino": {
@@ -163,6 +164,9 @@ static func create_enemy_data(type: String) -> UnitData:
  data.attack = enemy.atk
  data.defense = enemy.def
  data.magic = enemy.mag
+ data.max_mp = enemy.get("mag", 0)
+ data.current_mp = enemy.get("mag", 0)
+ data.spell = enemy.get("spell", "fire_bolt")
  data.speed = enemy.spd
  data.move_range = enemy.mov
  data.attack_range = enemy.rng

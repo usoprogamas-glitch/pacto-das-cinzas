@@ -264,7 +264,7 @@ func cast_spell(caster: Unit, spell_id: String, targets: Array) -> Dictionary:
 
  var results = []
  for target in targets:
-  if spell.heal:
+  if spell.get("heal", false):
    var heal_amount = calculate_spell_damage(spell, caster, target)
    target.heal(heal_amount)
    results.append({"target": target, "heal": heal_amount})

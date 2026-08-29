@@ -32,6 +32,7 @@ var _terrain_system: TerrainEffectSystem = TerrainEffectSystem.new()
 var _flanking_system: FlankingSystem = FlankingSystem.new()
 var _adjacency_system: AdjacencySystem = AdjacencySystem.new()
 var _timed_combat_system: TimedCombatSystem = TimedCombatSystem.new()
+var _magic_system: MagicSystem = MagicSystem.new()
 
 # Ordem de turnos velocity-based (GDD v2 §5.1): quem é mais rápido age primeiro.
 # Quando ativo, cada unidade tem seu próprio turno dentro do round.
@@ -124,8 +125,26 @@ func execute_enemy_ai(enemy: Unit) -> void:
       await get_tree().create_timer(0.2).timeout
       if enemy.grid_position.distance_to(action.target.grid_position) <= enemy.data.attack_range:
        attack_unit(enemy, action.target)
+  "cast":
+   if action.has("spell_id") and action.has("target") and action.target.current_hp > 0:
+    cast_magic(enemy, action.spell_id, action.target)
   "wait":
    pass
+
+## Lança magia via MagicSystem no turno inimigo. Libera a UI (unit_attacked) pro
+## dano aparecer; se falhar (sem MP / spell desconhecido), nada acontece.
+## ponytail: morte por magia não desregistra a unidade (unit_died/soul_ether) —
+## segue o escopo do plano (emit unit_attacked); unificar com attack_unit quando
+## morte por spell for testada.
+func cast_magic(enemy: Unit, spell_id: String, target: Unit) -> void:
+ var spell = _magic_system.get_spell(spell_id)
+ if spell.is_empty() or enemy.current_mp < spell.mp_cost:
+  return
+ var result = _magic_system.cast_spell(enemy, spell_id, [target])
+ if result.success:
+  for r in result.results:
+   if r.has("damage"):
+    unit_attacked.emit(enemy, target, r.damage)
 
 func get_closer_position(enemy: Unit, target: Unit) -> Vector2i:
  var best_pos = enemy.grid_position
