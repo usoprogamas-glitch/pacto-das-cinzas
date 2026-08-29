@@ -1,14 +1,19 @@
 extends "res://addons/gut/test.gd"
-## Regressão: o auto-advance da narração rodava no FRAME SEGUINTE (tween sem
-## intervalo) → os 13 slides passavam em ~0.2s e o jogo caía direto na tela de
-## escolha. Agora cada slide de narração espera AUTO_ADVANCE_SECONDS.
+## Regressão: O auto-advance via tween foi REMOVIDO — slides só avançam no input do
+## player (A = intro_next). Este teste verifica que NÃO há mais avanço automático
+## por tempo: o slide 0 permanece após 4s (antes de 3.5s) e só avança via _input.
 
-func test_auto_advance_waits_before_advancing():
+func test_no_auto_advance_timing():
 	var story = load("res://scripts/ui/intro_story.gd").new()
-	add_child_autofree(story)  # _ready → setup_story + show_current_step (1 tween)
+	add_child_autofree(story)  # _ready → setup_story + show_current_step
 
-	await wait_seconds(0.4)    # bem antes de AUTO_ADVANCE_SECONDS (3.5)
-	assert_eq(story.current_step, 0, "slide de narração ainda em tela após 0.4s")
+	# slide de narração ainda em tela após 4s (sem auto-advance)
+	await wait_seconds(4.0)
+	assert_eq(story.current_step, 0, "sem auto-advance, slide 0 permanece após 4s")
 
-	await wait_seconds(3.3)    # 0.4 + 3.3 = 3.7 > 3.5 (margem)
-	assert_eq(story.current_step, 1, "avançou para o slide 1 só depois do intervalo")
+	# Só avança quando o player aperta A
+	var ev = InputEventAction.new()
+	ev.action = "intro_next"
+	ev.pressed = true
+	story._input(ev)
+	assert_eq(story.current_step, 1, "A (intro_next) avança para o slide 1 na hora")

@@ -198,15 +198,9 @@ func show_current_step() -> void:
    choice_container.add_child(btn)
  else:
   choice_container.visible = false
-  # Auto-advance para texto sem escolhas. A escolha é um passoação do jogador;
-  # narração usa um intervalo de leitura (antes: callback no frame seguinte →
-  # história imperceptível). Se o jogador apertar A no meio, o tween é morto e o
-  # slide avança na hora — sem esperar o resto do intervalo.
-  # (guard: tweens só existem dentro da árvore — fora dela não há auto-advance.)
-  if is_inside_tree():
-   _advance_tween = create_tween()
-   _advance_tween.tween_interval(AUTO_ADVANCE_SECONDS)
-   _advance_tween.tween_callback(func(): _advance_step())
+  # Narrativa sem escolha: aguarda o player apertar A (intro_next).
+  # Auto-advance removido — player pediu para avançar SOMENTE no input.
+  _kill_advance_tween()
 
 func _kill_advance_tween() -> void:
  if _advance_tween:
