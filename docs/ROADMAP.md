@@ -25,7 +25,7 @@ Agente auditoria (per-aspect):
 
 | # | Pendência | Sistema(s) | Estado | Por que importa |
 |---|---|---|---|---|
-| 1 | **Morte por magia não encerra batalha** | BattleManager.cast_magic | 🟡 bug real | Caster mata alvo → HP 0 fica no grid, sem `unit_died`/soul_ether; `battle_won` pode não disparar |
+| 1 | **Morte por magia não encerra batalha** | BattleManager.cast_magic | ✅ feito (`e21bd99`) | Caster mata alvo → HP 0 fica no grid, sem `unit_died`/soul_ether; `battle_won` pode não disparar |
 | 2 | **Fluxo de campanha (atos)** | — | ⚪ | Hoje: 1 batalha + sandbox. Falta: encadeamento intro→ato→batalhas→chefes→créditos |
 | 3 | **Naming/Pacto de Alma como mecânica viva** | NamingSystem+NamingUI | 🟡 morto | A mecânica-assinatura do lore NUNCA roda: nomear um monstro caído, ganhar apóstolo, metamorfose |
 | 4 | **Overworld + desbloqueio de mapa por ato** | map_select | 🟡 gated hardcoded | `unlocked:false` sem condição; batalhas não destravam o próximo mapa |
