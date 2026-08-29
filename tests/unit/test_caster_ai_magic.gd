@@ -124,3 +124,43 @@ func test_cast_magic_silent_when_not_enough_mp():
 	bm.cast_magic(enemy, "fire_bolt", player)
 	assert_eq(enemy.current_mp, 5, "cast não consomue MP")
 	assert_signal_not_emitted(bm, "unit_attacked", "sem dano emitido sem cast real")
+
+
+func test_cast_magic_kill_resolves_death_and_battle():
+	var enemy := _make_unit(false, {"magic": 25, "mp": 40, "spell": "fire_bolt"})
+	var player := _make_unit(true, {"hp": 1})
+	player.grid_position = Vector2i(2, 4)
+	bm.register_unit(enemy)
+	bm.register_unit(player)
+	bm.soul_ether = 0
+
+	watch_signals(bm)
+	bm.cast_magic(enemy, "fire_bolt", player)
+	assert_eq(player.current_hp, 0, "spell mata o jogador (hp 1)")
+	assert_signal_emitted(bm, "unit_died", "morte por magia emite unit_died")
+	assert_eq(bm.player_units.size(), 0, "morto sai das listas de combate")
+	assert_eq(bm.get_tile_at(Vector2i(2, 4)), null, "tile do morto fica vazio")
+	assert_signal_emitted(bm, "battle_lost", "sem player units -> battle_lost")
+	assert_eq(bm.soul_ether, 10, "alma do morto é ganha mesmo sendo player (default 10), igual ao ataque físico")
+
+
+func test_cast_magic_kill_of_enemy_emits_soul_ether_and_victory():
+	var enemy := _make_unit(false, {"magic": 25, "mp": 40, "spell": "fire_bolt"})
+	var last_player := _make_unit(true, {"hp": 1})
+	var target := _make_unit(false, {"hp": 1})
+	target.data.soul_ether_value = 30
+	last_player.grid_position = Vector2i(2, 4)
+	target.grid_position = Vector2i(2, 5)
+	bm.register_unit(enemy)       # inimigo (caster) — sobrevive
+	bm.register_unit(last_player)
+	bm.register_unit(target)      # inimigo auxiliar morto pelo cast
+	bm.soul_ether = 0
+
+	watch_signals(bm)
+	bm.cast_magic(enemy, "fire_bolt", target)
+	assert_eq(target.current_hp, 0, "inimigo morto pelo cast")
+	assert_signal_emitted(bm, "unit_died", "morte por magia de inimigo emite unit_died")
+	assert_eq(bm.enemy_units.size(), 1, "somente o caster continua inimigo")
+	assert_eq(bm.get_tile_at(Vector2i(2, 5)), null, "tile do morto vazio")
+	assert_signal_not_emitted(bm, "battle_lost", "ainda ha player vivo")
+	assert_eq(bm.soul_ether, 30, "alma do inimigo derrotado é ganha")

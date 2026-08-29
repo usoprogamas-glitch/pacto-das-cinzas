@@ -132,10 +132,9 @@ func execute_enemy_ai(enemy: Unit) -> void:
    pass
 
 ## Lança magia via MagicSystem no turno inimigo. Libera a UI (unit_attacked) pro
-## dano aparecer; se falhar (sem MP / spell desconhecido), nada acontece.
-## ponytail: morte por magia não desregistra a unidade (unit_died/soul_ether) —
-## segue o escopo do plano (emit unit_attacked); unificar com attack_unit quando
-## morte por spell for testada.
+## dano aparecer; se matar o alvo, resolve a morte igual ao ataque físico
+## (unit_died + unregister + soul_ether) pra batalha poder acabar. Se falhar
+## (sem MP / spell desconhecido), nada acontece.
 func cast_magic(enemy: Unit, spell_id: String, target: Unit) -> void:
  var spell = _magic_system.get_spell(spell_id)
  if spell.is_empty() or enemy.current_mp < spell.mp_cost:
@@ -145,6 +144,12 @@ func cast_magic(enemy: Unit, spell_id: String, target: Unit) -> void:
   for r in result.results:
    if r.has("damage"):
     unit_attacked.emit(enemy, target, r.damage)
+  if target.current_hp <= 0:
+   unit_died.emit(target)
+   unregister_unit(target)
+   soul_ether_gained.emit(target.data.soul_ether_value)
+   soul_ether += target.data.soul_ether_value
+   check_battle_end()
 
 func get_closer_position(enemy: Unit, target: Unit) -> Vector2i:
  var best_pos = enemy.grid_position
