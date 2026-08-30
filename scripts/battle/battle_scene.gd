@@ -232,7 +232,7 @@ func _create_kaelen_hud() -> void:
 
  # Separator
  var sep1 = HSeparator.new()
- sep1.color = Color(0.2, 0.4, 0.6)
+ sep1.add_theme_color_override("font_color", Color(0.2, 0.4, 0.6))
  vbox.add_child(sep1)
 
  # Vetor Biológico
@@ -306,7 +306,7 @@ func _create_kaelen_hud() -> void:
 
  # Separator
  var sep2 = HSeparator.new()
- sep2.color = Color(0.2, 0.4, 0.6)
+ sep2.add_theme_color_override("font_color", Color(0.2, 0.4, 0.6))
  vbox.add_child(sep2)
 
  # Sugestões de Lock Break
@@ -759,9 +759,12 @@ func select_unit(unit: Unit) -> void:
  # Kaelen System (§3.4): analisar alvo inimigo selecionado.
  # analyze_target espera um Dictionary, nao o objeto UnitData.
  if unit.data and not unit.data.is_player:
+  # WEAKNESS_TABLE é chaveada por tipo de criatura ("Goblin", "Orc", "Cardeal"...).
+  # O nome do inimigo ("Lobo Sombrio", "Santo Cardeal") é o que casa por
+  # substring no KaelenSystem — melhor que soul_type (raro) ou unit_class (papel).
   var target_data := {
    "name": unit.data.unit_name,
-   "type": unit.data.unit_class,
+   "type": unit.data.unit_name,
    "hp": unit.data.current_hp,
    "max_hp": unit.data.max_hp,
    "armor": unit.data.defense,
@@ -778,6 +781,8 @@ func deselect_unit() -> void:
  grid.clear_highlights()
  hide_unit_info()
  hide_action_menu()
+ if kaelen_hud_panel and kaelen_hud_panel.visible:
+  kaelen_hud_panel.visible = false
 
 func move_selected_unit(grid_pos: Vector2i) -> void:
  if selected_unit and not selected_unit.has_moved:
@@ -1120,7 +1125,9 @@ func _on_lock_broken(_enemy, _lock: Dictionary) -> void:
 func _on_kaelen_target_analyzed(target_name: String, data: Dictionary) -> void:
  if not kaelen_hud_panel:
   return
- kaelen_hud_panel.visible = true
+ # HUD começa oculto (§3.4 morto) — revela na 1ª análise de um inimigo.
+ if not kaelen_hud_panel.visible:
+  kaelen_hud_panel.visible = true
 
  # Vetor Biológico
  var bio = data.get("biological", {})

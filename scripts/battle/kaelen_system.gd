@@ -60,9 +60,10 @@ func analyze_target(target_data: Dictionary) -> Dictionary:
 func _analyze_biological(data: Dictionary) -> Dictionary:
 	var weaknesses: Array = []
 	var enemy_type: String = data.get("type", "")
-	if WEAKNESS_TABLE.has(enemy_type):
-		for dmg_type in WEAKNESS_TABLE[enemy_type]:
-			var bonus: int = WEAKNESS_TABLE[enemy_type][dmg_type]
+	var matched_type := match_weakness_type(enemy_type)
+	if matched_type != "":
+		for dmg_type in WEAKNESS_TABLE[matched_type]:
+			var bonus: int = WEAKNESS_TABLE[matched_type][dmg_type]
 			if bonus > 0:
 				weaknesses.append({"type": dmg_type, "bonus_percent": bonus})
 
@@ -196,14 +197,28 @@ func analyze_wild_monster(monster_data: Dictionary) -> Dictionary:
 
 ## Retorna fraquezas de um tipo de inimigo (para exibição)
 func get_weaknesses(enemy_type: String) -> Array:
-	if not WEAKNESS_TABLE.has(enemy_type):
+	var matched_type := match_weakness_type(enemy_type)
+	if matched_type == "":
 		return []
 	var weaknesses: Array = []
-	for dmg_type in WEAKNESS_TABLE[enemy_type]:
-		var bonus: int = WEAKNESS_TABLE[enemy_type][dmg_type]
+	for dmg_type in WEAKNESS_TABLE[matched_type]:
+		var bonus: int = WEAKNESS_TABLE[matched_type][dmg_type]
 		if bonus > 0:
 			weaknesses.append({"type": dmg_type, "bonus_percent": bonus})
 	return weaknesses
+
+## Casa o tipo/name de um inimigo com uma chave da WEAKNESS_TABLE.
+## Prioridade: 1) igualdade; 2) palavra do arquétipo contida no nome
+## ("Lobo Sombrio" → "Lobo", "Santo Cardeal" → "Cardeal", "Chefe Orc" → "Orc").
+## Retorna "" se não houver entrada.
+func match_weakness_type(enemy_type: String) -> String:
+	if WEAKNESS_TABLE.has(enemy_type):
+		return enemy_type
+	var lower := enemy_type.to_lower()
+	for archetype in WEAKNESS_TABLE.keys():
+		if lower.begins_with(archetype.to_lower()) or lower.contains(archetype.to_lower()):
+			return archetype
+	return ""
 
 
 ## Retorna o nível de moral como string legível

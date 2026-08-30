@@ -122,3 +122,106 @@ func test_signal_suggestion_when_locks():
 	watch_signals(ks)
 	ks.analyze_target({"locks": [{"type": "Éter", "remaining": 1}]})
 	assert_signal_emitted(ks, "suggestion_generated", "Sinal deve disparar com locks")
+
+
+# --- ROADMAP #5: HUD de Kaelen vivo (era 🟡 morto) ---
+
+const BattleSceneScript := preload("res://scripts/battle/battle_scene.gd")
+
+var bs: Node
+
+# Grid fake geométrico — subclass de BattleGrid (o tipo do campo `grid` da
+# battle_scene) só com o grid_to_pixel estático e clear_highlights sem camadas;
+# sem montar camadas de tile.
+class FakeGrid:
+	extends BattleGrid
+	func grid_to_pixel(grid_pos: Vector2i) -> Vector2:
+		return Vector2(grid_pos.x * 32, grid_pos.y * 32)
+	func clear_highlights() -> void:
+		movement_tiles.clear()
+		attack_tiles.clear()
+	func show_movement_range(_unit, _range) -> void:
+		pass
+	func show_attack_range(_unit, _range) -> void:
+		pass
+
+func _make_combat_feedback_stub() -> CombatFeedback:
+	# Mesmo padrão do test_battle_actions: stub que extends CombatFeedback e
+	# só zera o flash_unit (exigiria estar na tree para tweens).
+	var script = GDScript.new()
+	script.source_code = """
+extends CombatFeedback
+func flash_unit(_unit: Node2D, _color: Color = Color.WHITE, _intensity: float = 1.0) -> void:
+	pass
+"""
+	script.reload()
+	var stub = CombatFeedback.new()
+	stub.set_script(script)
+	return stub
+
+func _open_battle_scene() -> void:
+	# Instância fora da árvore: _ready não roda (sem setup_ui), então injetamos
+	# os mínimos tree deps + KaelenSystem real. bs é member (como test_battle_actions).
+	bs = BattleSceneScript.new()
+	bs.grid = FakeGrid.new()
+	bs.unit_container = Node2D.new()
+	bs.ui_layer = CanvasLayer.new()
+	bs.kaelen_system = KaelenSystem.new()
+	bs.combat_feedback = _make_combat_feedback_stub()
+	# show/hide_unit_info + action_menu acessam esses nós na árvore real; um
+	# script-only não os tem, então injetamos minimamente p/ .visible funcionar.
+	bs.unit_info_panel = PanelContainer.new()
+	bs.unit_name_label = Label.new()
+	bs.unit_hp_label = Label.new()
+	bs.unit_class_label = Label.new()
+	bs.action_menu = PanelContainer.new()
+	bs.move_button = Button.new()
+	bs.attack_button = Button.new()
+	# _ready é quem conecta os sinais na árvore real; aqui chamamos direto para o
+	# fluxo de análise chegar aos handlers de HUD (mesmo caminho do runtime).
+	bs.connect_signals()
+
+# Inimigo stub para select_unit: UnitData (Resource) + Unit (Node2D).
+# soul_type carrega o tipo de criatura (chave da WEAKNESS_TABLE do Kaelen).
+func _make_enemy(name: String, soul_type: String, unit_class: String, hp: int, defense: int) -> Unit:
+	var data = UnitData.new()
+	data.is_player = false
+	data.unit_name = name
+	data.soul_type = soul_type
+	data.unit_class = unit_class
+	data.current_hp = hp
+	data.max_hp = hp
+	data.defense = defense
+	data.attack_range = 1
+	var unit = Unit.new()
+	unit.name = name
+	unit.data = data
+	return unit
+
+func test_kaelen_hud_panel_present_and_hidden():
+	_open_battle_scene()
+	bs._create_kaelen_hud()
+	assert_not_null(bs.kaelen_hud_panel, "painel existe após _create_kaelen_hud")
+	assert_true(not bs.kaelen_hud_panel.visible, "painel começa oculto (§3.4 estava morto)")
+	bs.free()
+
+func test_select_enemy_shows_kaelen_hud():
+	_open_battle_scene()
+	bs._create_kaelen_hud()
+	assert_true(not bs.kaelen_hud_panel.visible)
+	var enemy = _make_enemy("Orc Chefe", "Orc", "Guerreiro", 60, 12)
+	bs.select_unit(enemy)
+	assert_true(bs.kaelen_hud_panel.visible, "analisar inimigo revela a interface de Kaelen")
+	# WEAKNESS_TABLE["Orc"] = {Perfuração +30%, Éter +20%} — a HUD mostra a fraqueza certa.
+	assert_true(bs.kaelen_bio_weaknesses.text.contains("Perfuração"), "fraqueza de Orc (Perfuração +30%) aparece no HUD" + " label=[" + bs.kaelen_bio_weaknesses.text + "]")
+	bs.free()
+
+func test_deselect_hides_kaelen_hud():
+	_open_battle_scene()
+	bs._create_kaelen_hud()
+	var enemy = _make_enemy("Inquisidor", "Inquisidor", "Clérigo", 45, 10)
+	bs.select_unit(enemy)
+	assert_true(bs.kaelen_hud_panel.visible, "seleção mostra o HUD")
+	bs.deselect_unit()
+	assert_true(not bs.kaelen_hud_panel.visible, "deseleção oculta o HUD")
+	bs.free()
