@@ -31,7 +31,7 @@ Agente auditoria (per-aspect):
 | 4 | **Overworld + desbloqueio de mapa por ato** | map_select | ✅ feito | gating via `CampaignSystem.is_stage_playable` + persistência no save; UI agora data-driven (badge de ato de `act_for_map`, sem `unlocked` hardcoded) |
 | 5 | **Kaelen HUD** (análise bio/psi/tática, "nome sugerido") | KaelenSystem | ✅ feito | painel revela ao selecionar inimigo e oculta ao deselecionar; fraquezas casam por tipo de criatura (nome) via `match_weakness_type`; sep recorrente era `sep.color` inválido → theme override |
 | 6 | **Feedback de evolução de forma** | CharacterProgression | ✅ feito | `form_changed` → `_on_protagonist_form_changed`: FormLabel flash + status effect + stats aplicados na unit viva do Kael (via `_apply_protagonist_form_stats`); conectado no `connect_signals` |
-| 7 | **Decisão: turno individual vs 1.000+ unidades** | TurnOrderManager | 🟡 morto | velocity-sort é órfão (default fase); GDD promete batalhas de 1.000 unidades — escolher UM modelo |
+| 7 | **Decisão: turno individual vs 1.000+ unidades** | TurnOrderManager | ✅ decidido (a) | **manter turno por-fase individual**; Ato III = batalhas em ONDAS escaladas (reusa a mesma batalha); velocity-sort permanece como ferramenta p/ encontros selecionados |
 | 8 | **Conteúdo de chefes de verdade** | BossSystem | 🟡 1-way | Só alcançável marcando inimigo "Boss"; os 5 Cardeais + Aurius de 3 fases são spec |
 | 9 | **Continuidade do nome no save** | unit nome | ✅ feito | `_spawn_named_souls` lê `NamingSystem.get_all_souls()` e spawna aliados com nome+stats persistidos; dedup com apóstolos canônicos (Kroug via starting_ally) |
 
@@ -75,7 +75,7 @@ Combate (§3–§5) — ```scripts/battle/```
 | Kaelen | §3.4 | ✅ | 🟡 morto | ✅ | HUD inteiro inalcançável (#5) |
 | Lineage | §3.4/§4 | ✅ | ✅ (ato) | ✅ | evolução só no advance de ato |
 | Boss | §5 | ✅ | 🟡 1-way | ✅ | Cardeais + Aurius = spec (#8) |
-| TurnOrderManager | §5.1 | ✅ | 🟡 morto | ✅ | velocity-sort órfão (#7) |
+| TurnOrderManager | §5.1 | ✅ | 🟡 útil | ✅ | velocity-sort mantido p/ encontros selecionados (#7 = ondas) |
 | BattleManager/Grid/IA | §3 | ✅ | ✅ | ✅ | layer de equipamento ausente |
 
 Exploração/campo (§6–§7) — ```scripts/battle/```
