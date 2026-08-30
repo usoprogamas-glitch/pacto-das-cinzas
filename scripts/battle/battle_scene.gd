@@ -492,8 +492,37 @@ func _spawn_player_party() -> void:
  var atk: int = 12
  var def: int = 8
  spawn_player_unit(Vector2i(2, 6), "Kael", Color(0.2, 0.8, 0.3), "Imp Menor", hp, atk, def, 3, 1)
+ # Nomes já no campo (evita duplicar apóstolo canônico com alma nomeada).
+ var spawned: Array[String] = ["Kael"]
  if GameManager and GameManager.game_data.get("starting_ally") == "kroug":
   spawn_player_unit(Vector2i(1, 7), "Kroug", Color(0.8, 0.3, 0.1), "Goblin da Lama", 120, 10, 15, 2, 1)
+  spawned.append("Kroug")
+ _spawn_named_souls(spawned)
+
+# Spawna as almas nomeadas do save (NamingSystem) como aliados vivos, usando o
+# NOME real persistido + stats evoluídos (ROADMAP #9). Almas canônicas já
+# spawnadas (Kroug via starting_ally) são puladas por nome.
+func _spawn_named_souls(spawned: Array = []) -> void:
+ if not GameManager or not GameManager.naming_system:
+  return
+ # Slots ao redor do Kael (evita sobreposição em party grande).
+ var offsets: Array[Vector2i] = [
+  Vector2i(3, 6), Vector2i(1, 5), Vector2i(3, 7), Vector2i(2, 8), Vector2i(3, 5)
+ ]
+ var idx: int = 0
+ for soul in GameManager.naming_system.get_all_souls():
+  if idx >= offsets.size():
+   break
+  var soul_name: String = soul.get("name", "Alma Nomeada")
+  if soul_name in spawned:
+   continue
+  var soul_stats: Dictionary = soul.get("stats", {})
+  var hp_val: int = soul_stats.get("hp", 80)
+  var atk_val: int = soul_stats.get("attack", 10)
+  var def_val: int = soul_stats.get("defense", 8)
+  spawn_player_unit(offsets[idx], soul_name, Color(0.6, 0.6, 0.9), soul.get("original_type", "Monstro"), hp_val, atk_val, def_val, 2, 1)
+  spawned.append(soul_name)
+  idx += 1
 
 func spawn_player_unit(grid_pos: Vector2i, unit_name: String, color: Color, unit_class: String, hp: int, atk: int, def: int, mov: int, rng: int) -> Unit:
  var unit = create_unit(grid_pos, unit_name, color, unit_class, hp, atk, def, mov, rng, true)

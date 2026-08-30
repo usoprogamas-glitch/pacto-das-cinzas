@@ -1,7 +1,7 @@
 # ROADMAP — O Pacto das Cinzas
 
 > Documento vivo de progresso (não especulação): estado verificado contra o código em 2026-08-30.
-> **Engine** Godot 4.3 | **Testes** GUT headless 431/431 ✅ | **Último commit** (feedback de evolução de forma)
+> **Engine** Godot 4.3 | **Testes** GUT headless 432/432 ✅ | **Último commit** (continuidade de nome no save)
 > Fonte de lore/spec: [GDD_Completo_v2.md](GDD_Completo_v2.md) | Tracking técnico anterior: memória do projeto
 
 **Legenda de estado**
@@ -33,7 +33,7 @@ Agente auditoria (per-aspect):
 | 6 | **Feedback de evolução de forma** | CharacterProgression | ✅ feito | `form_changed` → `_on_protagonist_form_changed`: FormLabel flash + status effect + stats aplicados na unit viva do Kael (via `_apply_protagonist_form_stats`); conectado no `connect_signals` |
 | 7 | **Decisão: turno individual vs 1.000+ unidades** | TurnOrderManager | 🟡 morto | velocity-sort é órfão (default fase); GDD promete batalhas de 1.000 unidades — escolher UM modelo |
 | 8 | **Conteúdo de chefes de verdade** | BossSystem | 🟡 1-way | Só alcançável marcando inimigo "Boss"; os 5 Cardeais + Aurius de 3 fases são spec |
-| 9 | **Continuidade do nome no save** | unit nome | 🟡 | Nomes são literais da battle_scene ("Kroug"), desconectados do save/apóstolos |
+| 9 | **Continuidade do nome no save** | unit nome | ✅ feito | `_spawn_named_souls` lê `NamingSystem.get_all_souls()` e spawna aliados com nome+stats persistidos; dedup com apóstolos canônicos (Kroug via starting_ally) |
 
 PRIORIDADE 2 (após a campanha existir):
 

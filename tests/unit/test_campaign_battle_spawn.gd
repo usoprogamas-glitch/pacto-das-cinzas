@@ -28,6 +28,11 @@ func before_each() -> void:
 	BattleManager.player_units.clear()
 	BattleManager.enemy_units.clear()
 	BattleManager.soul_ether = 0
+	# Limpar almas nomeadas p/ contagem determinística (testes anteriores podem
+	# nomear via start_new_game / naming_flow).
+	if GameManager and GameManager.naming_system:
+		GameManager.naming_system.named_souls.clear()
+		GameManager.naming_system.total_named = 0
 	bs = BattleSceneScript.new()
 	_stub_tree_deps()
 
@@ -55,6 +60,20 @@ func test_spawn_player_party_kroug_only_when_kroug_ally():
 	bs._spawn_player_party()
 	assert_eq(BattleManager.player_units.size(), 1, "sem Kroug, só Kael")
 	assert_eq(BattleManager.player_units[0].data.unit_name, "Kael")
+
+func test_spawn_player_party_includes_named_souls_from_save():
+	# ROADMAP #9: uma alma nomeada no save vira unit na party com nome real.
+	GameManager.game_data["starting_ally"] = "none"
+	GameManager.naming_system.name_soul("aranha_gigante", "Teia")
+	bs._spawn_player_party()
+	var names = []
+	for u in BattleManager.player_units:
+		names.append(u.data.unit_name)
+	assert_eq(names.size(), 2, "Kael + alma nomeada")
+	assert_true(names.has("Teia"), "alma nomeada 'Teia' spawna com nome persistido")
+	# restore
+	GameManager.naming_system.named_souls.clear()
+	GameManager.naming_system.total_named = 0
 
 func test_act_boss_stage_swaps_enemy_pool_to_orc_chefe():
 	# O swap de inimigo é decidido por CampaignSystem.get_current_stage().final.
