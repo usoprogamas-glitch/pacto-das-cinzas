@@ -51,7 +51,89 @@ static var maps: Dictionary = {
   "description": "Terra de ninguém. Feras elementais e lava.",
   "music": "battle",
   "tiles": generate_volcanic_map()
- }
+ },
+	 # ===== ATO II — CARDEAIS =====
+	 5: {
+	  "name": "Vale dos Despojos — Ignis",
+	  "size": Vector2i(12, 12),
+	  "terrain": "volcanic",
+	  "enemies": ["cardeal_ignis"],
+	  "enemy_count": 1,
+	  "description": "Plataformas sobre lava branca. Ignis aguarda no vulcão.",
+	  "music": "battle",
+	  "tiles": generate_volcanic_map()
+	 },
+	 6: {
+	  "name": "Floresta dos Ventos — Zephyr",
+	  "size": Vector2i(14, 14),
+	  "terrain": "forest",
+	  "enemies": ["cardeal_zephyr"],
+	  "enemy_count": 1,
+	  "description": "Tempestades de vento. Zephyr comanda as alturas.",
+	  "music": "battle",
+	  "tiles": generate_forest_map()
+	 },
+	 7: {
+	  "name": "Lago Corrosivo — Aqua",
+	  "size": Vector2i(12, 12),
+	  "terrain": "cave",
+	  "enemies": ["cardeal_aqua"],
+	  "enemy_count": 1,
+	  "description": "Águas bentas corrosivas. O cálice aguarda.",
+	  "music": "battle",
+	  "tiles": generate_cave_map()
+	 },
+	 8: {
+	  "name": "Fortaleza de Mármore — Terra",
+	  "size": Vector2i(14, 14),
+	  "terrain": "castle",
+	  "enemies": ["cardeal_terra"],
+	  "enemy_count": 1,
+	  "description": "Muralhas vivas se fecham. Terra não cede.",
+	  "music": "battle",
+	  "tiles": generate_castle_map()
+	 },
+	 9: {
+	  "name": "Abismo das Sombras — Umbra",
+	  "size": Vector2i(14, 14),
+	  "terrain": "castle",
+	  "enemies": ["cardeal_umbra"],
+	  "enemy_count": 1,
+	  "description": "Ilusões de luz negra. A máscara aguarda.",
+	  "music": "battle",
+	  "tiles": generate_castle_map()
+	 },
+	 // ===== ATO IV — AURIUS =====
+	 10: {
+	  "name": "Solaria — Sala do Trono",
+	  "size": Vector2i(16, 16),
+	  "terrain": "castle",
+	  "enemies": ["aurius_fase1"],
+	  "enemy_count": 1,
+	  "description": "Trono monumental. O Falso Demiurgo aguarda.",
+	  "music": "battle",
+	  "tiles": generate_castle_map()
+	 },
+	 11: {
+	  "name": "Solaria — Cúpula Solar",
+	  "size": Vector2i(16, 16),
+	  "terrain": "castle",
+	  "enemies": ["aurius_fase2"],
+	  "enemy_count": 1,
+	  "description": "Asas solares cortam o céu. O Serafim Tirano voa.",
+	  "music": "battle",
+	  "tiles": generate_castle_map()
+	 },
+	 12: {
+	  "name": "Solaria — Núcleo Instável",
+	  "size": Vector2i(16, 16),
+	  "terrain": "castle",
+	  "enemies": ["aurius_fase3"],
+	  "enemy_count": 1,
+	  "description": "O núcleo brilha. A Luz Desesperada aguarda.",
+	  "music": "battle",
+	  "tiles": generate_castle_map()
+	 }
 }
 
 static func generate_frontier_map() -> Array:

@@ -149,3 +149,30 @@ func test_signal_spell_charging():
 	bs.tick_spell_counters()  ## Erupção=1, Lava=2
 	bs.tick_spell_counters()  ## Erupção=0 → emite sinal
 	assert_signal_emitted(bs, "boss_spell_charging", "Sinal deve disparar quando magia é lançada")
+
+
+# --- ROADMAP #8: Conteúdo de chefes de verdade (5 Cardeais + Aurius) ---
+
+func test_cardinal_enemy_database_entries_exist():
+	# Verifica que os 5 Cardeais existem no EnemyDatabase com classe Boss
+	var cardinals = ["cardeal_ignis", "cardeal_zephyr", "cardeal_aqua", "cardeal_terra", "cardeal_umbra"]
+	for c in cardinals:
+		var data = EnemyDatabase.get_enemy(c)
+		assert_false(data.is_empty(), "EnemyDatabase deve ter %s" % c)
+		assert_eq(data["class"], "Boss", "%s deve ser da classe Boss" % c)
+		assert_eq(data["ai_type"], "boss", "%s deve ter ai_type boss" % c)
+
+func test_aurius_phases_enemy_database_entries_exist():
+	# Verifica que as 3 fases de Aurius existem no EnemyDatabase
+	var phases = ["aurius_fase1", "aurius_fase2", "aurius_fase3"]
+	for p in phases:
+		var data = EnemyDatabase.get_enemy(p)
+		assert_false(data.is_empty(), "EnemyDatabase deve ter %s" % p)
+		assert_eq(data["class"], "Boss", "%s deve ser da classe Boss" % p)
+
+func test_boss_maps_exist_in_map_database():
+	# Verifica que os mapas de boss (5-12) existem no MapDatabase
+	for map_id in range(5, 13):
+		var map_data = MapDatabase.get_map(map_id)
+		assert_false(map_data.is_empty(), "MapDatabase deve ter map_id %d" % map_id)
+		assert_eq(map_data["enemy_count"], 1, "mapa de boss deve ter 1 inimigo")

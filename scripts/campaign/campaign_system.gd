@@ -1,18 +1,32 @@
 class_name CampaignSystem
 extends RefCounted
 
-# Stage order == map visitation order. Acts II–IV are THIN entries that reuse maps 1–4
-# to prove the "new act unlocks new map/enemies" fan-out; content fills later.
+# Stage order == map visitation order. Content fills the GDD §1 Atos.
+# Act I: map 0 (Fronteira Cinzenta) - goblin + orc_chefe
+# Act II: 5 Cardeais (maps 5-9) - Ignis, Zephyr, Aqua, Terra, Umbra
+# Act III: maps 3, 4 (Castelo Solaris, Vulcão do Abismo) - conteúdo existente
+# Act IV: 3 fases de Aurius (maps 10-12) - Fase 1, 2, 3
 const ACT_STAGES: Dictionary = {
  1: [
-  {"name": "Socorro aos Goblins", "map_id": 0, "boss": false},
-  {"name": "O Chefe Orc", "map_id": 0, "boss": true, "final": true}
+   {"name": "Socorro aos Goblins", "map_id": 0, "boss": false},
+   {"name": "O Chefe Orc", "map_id": 0, "boss": true, "final": true}
  ],
- 2: [{"name": "Floresta Sombria", "map_id": 1, "boss": false},
-     {"name": "Vale dos Despojos", "map_id": 2, "boss": true, "final": true}],
- 3: [{"name": "Castelo Solaris", "map_id": 3, "boss": false},
-     {"name": "Cerne da Igreja", "map_id": 4, "boss": true, "final": true}],
- 4: [{"name": "Caminho de Aurius", "map_id": 4, "boss": true, "final": true}]
+ 2: [
+   {"name": "Cardeal Ignis — Lava Branca", "map_id": 5, "boss": true},
+   {"name": "Cardeal Zephyr — Tempestades", "map_id": 6, "boss": true},
+   {"name": "Cardeal Aqua — Água Benta", "map_id": 7, "boss": true},
+   {"name": "Cardeal Terra — Muralhas", "map_id": 8, "boss": true},
+   {"name": "Cardeal Umbra — Sombras", "map_id": 9, "boss": true, "final": true}
+ ],
+ 3: [
+   {"name": "Castelo Solaris", "map_id": 3, "boss": false},
+   {"name": "Cerne da Igreja", "map_id": 4, "boss": true, "final": true}
+ ],
+ 4: [
+   {"name": "Aurius Fase 1 — Falso Demiurgo", "map_id": 10, "boss": true},
+   {"name": "Aurius Fase 2 — Serafim Tirano", "map_id": 11, "boss": true},
+   {"name": "Aurius Fase 3 — Luz Desesperada", "map_id": 12, "boss": true, "final": true}
+ ]
 }
 
 var current_act: int = 1

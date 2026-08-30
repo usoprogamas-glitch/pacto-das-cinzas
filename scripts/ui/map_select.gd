@@ -36,6 +36,56 @@ var maps: Array[Dictionary] = [
   "name": "Vulcão do Abismo",
   "description": "Terra de ninguém. Feras elementais e lava.",
   "difficulty": 5
+ },
+ // ===== ATO II — CARDEAIS =====
+ {
+  "id": 5,
+  "name": "Vale dos Despojos — Ignis",
+  "description": "Plataformas sobre lava branca. Ignis aguarda no vulcão.",
+  "difficulty": 6
+ },
+ {
+  "id": 6,
+  "name": "Floresta dos Ventos — Zephyr",
+  "description": "Tempestades de vento. Zephyr comanda as alturas.",
+  "difficulty": 6
+ },
+ {
+  "id": 7,
+  "name": "Lago Corrosivo — Aqua",
+  "description": "Águas bentas corrosivas. O cálice aguarda.",
+  "difficulty": 7
+ },
+ {
+  "id": 8,
+  "name": "Fortaleza de Mármore — Terra",
+  "description": "Muralhas vivas se fecham. Terra não cede.",
+  "difficulty": 7
+ },
+ {
+  "id": 9,
+  "name": "Abismo das Sombras — Umbra",
+  "description": "Ilusões de luz negra. A máscara aguarda.",
+  "difficulty": 8
+ },
+ // ===== ATO IV — AURIUS =====
+ {
+  "id": 10,
+  "name": "Solaria — Sala do Trono",
+  "description": "Trono monumental. O Falso Demiurgo aguarda.",
+  "difficulty": 9
+ },
+ {
+  "id": 11,
+  "name": "Solaria — Cúpula Solar",
+  "description": "Asas solares cortam o céu. O Serafim Tirano voa.",
+  "difficulty": 9
+ },
+ {
+  "id": 12,
+  "name": "Solaria — Núcleo Instável",
+  "description": "O núcleo brilha. A Luz Desesperada aguarda.",
+  "difficulty": 10
  }
 ]
 

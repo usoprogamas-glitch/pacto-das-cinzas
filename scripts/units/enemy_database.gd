@@ -168,6 +168,138 @@ static var enemies: Dictionary = {
   "soul_ether": 40,
   "ai_type": "brute",
   "description": "Lider dos orcs que escraviza goblins - chefe do Ato I"
+ },
+
+ # ===== OS CINCO SANTOS CARDEAIS (GDD §5) =====
+
+ "cardeal_ignis": {
+  "name": "Ignis",
+  "class": "Boss",
+  "hp": 500,
+  "atk": 35,
+  "def": 30,
+  "mag": 60,
+  "spd": 8,
+  "mov": 2,
+  "rng": 3,
+  "color": Color(1.0, 0.3, 0.1),
+  "soul_ether": 200,
+  "ai_type": "boss",
+  "description": "Santo Cardeal do Fogo - Lava Branca"
+ },
+
+ "cardeal_zephyr": {
+  "name": "Zephyr",
+  "class": "Boss",
+  "hp": 450,
+  "atk": 40,
+  "def": 20,
+  "mag": 50,
+  "spd": 12,
+  "mov": 3,
+  "rng": 4,
+  "color": Color(0.3, 0.7, 1.0),
+  "soul_ether": 200,
+  "ai_type": "boss",
+  "description": "Santo Cardeal do Vento - Tempestades de Vento"
+ },
+
+ "cardeal_aqua": {
+  "name": "Aqua",
+  "class": "Boss",
+  "hp": 480,
+  "atk": 32,
+  "def": 25,
+  "mag": 55,
+  "spd": 7,
+  "mov": 2,
+  "rng": 3,
+  "color": Color(0.2, 0.6, 1.0),
+  "soul_ether": 200,
+  "ai_type": "boss",
+  "description": "Santo Cardeal da Água - Água Benta Corrosiva"
+ },
+
+ "cardeal_terra": {
+  "name": "Terra",
+  "class": "Boss",
+  "hp": 600,
+  "atk": 28,
+  "def": 50,
+  "mag": 40,
+  "spd": 5,
+  "mov": 1,
+  "rng": 2,
+  "color": Color(0.5, 0.4, 0.3),
+  "soul_ether": 200,
+  "ai_type": "boss",
+  "description": "Santo Cardeal da Terra - Muralhas de Mármore"
+ },
+
+ "cardeal_umbra": {
+  "name": "Umbra",
+  "class": "Boss",
+  "hp": 420,
+  "atk": 38,
+  "def": 22,
+  "mag": 65,
+  "spd": 10,
+  "mov": 3,
+  "rng": 3,
+  "color": Color(0.3, 0.1, 0.5),
+  "soul_ether": 200,
+  "ai_type": "boss",
+  "description": "Santo Cardeal das Trevas - Ilusões de Luz Negra"
+ },
+
+ // ===== AURIUS — O FALSO DEUS (3 FASES, GDD §5) =====
+
+ "aurius_fase1": {
+  "name": "Aurius — Falso Demiurgo",
+  "class": "Boss",
+  "hp": 800,
+  "atk": 45,
+  "def": 40,
+  "mag": 80,
+  "spd": 6,
+  "mov": 2,
+  "rng": 4,
+  "color": Color(1.0, 0.95, 0.3),
+  "soul_ether": 500,
+  "ai_type": "boss",
+  "description": "Aurius Fase 1: Falso Demiurgo no Trono Monumental"
+ },
+
+ "aurius_fase2": {
+  "name": "Aurius — Serafim Tirano",
+  "class": "Boss",
+  "hp": 600,
+  "atk": 55,
+  "def": 30,
+  "mag": 75,
+  "spd": 10,
+  "mov": 3,
+  "rng": 4,
+  "color": Color(1.0, 0.8, 0.2),
+  "soul_ether": 500,
+  "ai_type": "boss",
+  "description": "Aurius Fase 2: Serafim Tirano com Asas Solares"
+ },
+
+ "aurius_fase3": {
+  "name": "Aurius — Luz Desesperada",
+  "class": "Boss",
+  "hp": 500,
+  "atk": 60,
+  "def": 15,
+  "mag": 90,
+  "spd": 12,
+  "mov": 3,
+  "rng": 5,
+  "color": Color(1.0, 1.0, 0.5),
+  "soul_ether": 500,
+  "ai_type": "boss",
+  "description": "Aurius Fase 3: Luz Desesperada - Núcleo Instável"
  }
 }
 
