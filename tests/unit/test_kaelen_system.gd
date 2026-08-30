@@ -159,7 +159,7 @@ func flash_unit(_unit: Node2D, _color: Color = Color.WHITE, _intensity: float = 
 	stub.set_script(script)
 	return stub
 
-func _open_battle_scene() -> void:
+func _open_battle_scene() -> Node:
 	# Instância fora da árvore: _ready não roda (sem setup_ui), então injetamos
 	# os mínimos tree deps + KaelenSystem real. bs é member (como test_battle_actions).
 	bs = BattleSceneScript.new()
@@ -180,6 +180,7 @@ func _open_battle_scene() -> void:
 	# _ready é quem conecta os sinais na árvore real; aqui chamamos direto para o
 	# fluxo de análise chegar aos handlers de HUD (mesmo caminho do runtime).
 	bs.connect_signals()
+	return bs
 
 # Inimigo stub para select_unit: UnitData (Resource) + Unit (Node2D).
 # soul_type carrega o tipo de criatura (chave da WEAKNESS_TABLE do Kaelen).
@@ -225,3 +226,50 @@ func test_deselect_hides_kaelen_hud():
 	bs.deselect_unit()
 	assert_true(not bs.kaelen_hud_panel.visible, "deseleção oculta o HUD")
 	bs.free()
+
+
+# --- ROADMAP #6: evolução de forma dá feedback no mundo ---
+
+func _open_battle_scene_with_form() -> Node:
+	# battle_scene com a árvore de HUD + CharacterProgression real conectado.
+	var scene = _open_battle_scene()
+	scene._create_progression_hud()
+	# injeta um CharacterProgression no GameManager e conecta form_changed
+	# diretamente (sem re-rodar connect_signals inteiro, que duplicaria sinais).
+	var cp = CharacterProgression.new()
+	GameManager.character_progression = cp
+	cp.form_changed.connect(scene._on_protagonist_form_changed)
+	scene._update_progression_hud()
+	return scene
+
+func _make_player_unit(name: String, unit_class: String, hp: int, attack: int) -> Unit:
+	var data = UnitData.new()
+	data.is_player = true
+	data.unit_name = name
+	data.unit_class = unit_class
+	data.max_hp = hp
+	data.current_hp = hp
+	data.attack = attack
+	data.defense = 5
+	data.magic = 10
+	data.speed = 120
+	var unit = Unit.new()
+	unit.name = name
+	unit.data = data
+	return unit
+
+func test_form_evolution_updates_label_and_applies_stats():
+	var scene = _open_battle_scene_with_form()
+	# Spawna o Kael vivo (player_units, is_player=true) para o handler aplicar stats.
+	var kael = _make_player_unit("Kael", "Imp Menor", 80, 15)
+	BattleManager.player_units.append(kael)
+	BattleManager.all_units.append(kael)
+	var cp = GameManager.character_progression
+	cp.evolve_form("Nobre Abissal")
+	# Sinal form_changed: o handler deve ter atualizado o FormLabel.
+	var form_label = scene.progression_hud.find_child("FormLabel", true, false) as Label
+	assert_true(form_label.text.contains("Nobre Abissal"), "FormLabel mostra a forma nova após evolução")
+	# Stats do Kael vivo aplicados: hp base 50 * 5.6 = 280, attack 8 * 3.0 = 24.
+	assert_eq(kael.data.max_hp, 280, "max_hp aplicado da forma nova (50 * 5.6); atual=" + str(kael.data.max_hp))
+	assert_eq(kael.data.attack, 24, "attack aplicado da forma nova (8 * 3.0)")
+	scene.free()

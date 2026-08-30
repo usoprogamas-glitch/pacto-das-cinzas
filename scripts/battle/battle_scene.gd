@@ -604,6 +604,11 @@ func connect_signals() -> void:
  kaelen_system.target_analyzed.connect(_on_kaelen_target_analyzed)
  kaelen_system.suggestion_generated.connect(_on_kaelen_suggestion_generated)
 
+ # Form evolution (§8 / ROADMAP #6) - feedback imediato no mundo quando a
+ # forma do protagonista muda (avanço de ato por memória/almas/XP).
+ if GameManager and GameManager.character_progression:
+  GameManager.character_progression.form_changed.connect(_on_protagonist_form_changed)
+
 func create_unit_sprite(unit_name: String, color: Color, is_player: bool) -> Sprite2D:
  # HD 2D: usa textura de assets/sprites/<key>.png se existir (gerada via ComfyUI).
  # Fallback: PixelArtRenderer procedural.
@@ -1392,6 +1397,43 @@ func _create_progression_hud() -> void:
  form_label.add_theme_constant_override("shadow_offset_x", 1)
  form_label.add_theme_constant_override("shadow_offset_y", 1)
  row2.add_child(form_label)
+
+## Feedback visual + stat application quando a forma do protagonista evolui.
+## Conectado a CharacterProgression.form_changed (§8 / ROADMAP #6).
+func _on_protagonist_form_changed(old_form: String, new_form: String) -> void:
+ # Flash do FormLabel + status effect para o jogador notar a evolução no mundo.
+ if progression_hud:
+  var form_label := progression_hud.find_child("FormLabel", true, false) as Label
+  if form_label:
+   form_label.text = "FORMA: " + new_form
+   form_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2))
+   form_label.modulate = Color(3, 3, 2)
+ if combat_feedback:
+  combat_feedback.show_status_effect(Vector2(640, 300), "EVOLUÇÃO: " + old_form + " → " + new_form)
+ _update_progression_hud()
+ _apply_protagonist_form_stats(new_form)
+
+## Aplica os multiplicadores de stats da forma nova na unit viva do Kael.
+func _apply_protagonist_form_stats(new_form: String) -> void:
+ if not GameManager or not GameManager.character_progression:
+  return
+ var form_data: Dictionary = GameManager.character_progression.get_form_info(new_form)
+ if form_data.is_empty():
+  return
+ for unit: Unit in BattleManager.player_units:
+  if not unit.data or not unit.data.is_player:
+   continue
+  if unit.data.unit_name != "Kael":
+   continue
+  var stats := GameManager.character_progression.get_protagonist_stats()
+  if unit.data.current_hp > 0:
+   var hp_ratio := float(unit.data.current_hp) / float(unit.data.max_hp)
+   unit.data.max_hp = stats.get("hp", unit.data.max_hp)
+   unit.data.current_hp = int(unit.data.max_hp * hp_ratio)
+  unit.data.attack = stats.get("attack", unit.data.attack)
+  unit.data.defense = stats.get("defense", unit.data.defense)
+  unit.data.magic = stats.get("magic", unit.data.magic)
+  unit.data.speed = stats.get("speed", unit.data.speed)
 
 func _update_progression_hud() -> void:
  if not progression_hud or not progression_system:

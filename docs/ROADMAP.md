@@ -1,7 +1,7 @@
 # ROADMAP — O Pacto das Cinzas
 
 > Documento vivo de progresso (não especulação): estado verificado contra o código em 2026-08-30.
-> **Engine** Godot 4.3 | **Testes** GUT headless 430/430 ✅ | **Último commit** (Kaelen HUD vivo)
+> **Engine** Godot 4.3 | **Testes** GUT headless 431/431 ✅ | **Último commit** (feedback de evolução de forma)
 > Fonte de lore/spec: [GDD_Completo_v2.md](GDD_Completo_v2.md) | Tracking técnico anterior: memória do projeto
 
 **Legenda de estado**
@@ -30,7 +30,7 @@ Agente auditoria (per-aspect):
 | 3 | **Naming/Pacto de Alma como mecânica viva** | NamingSystem+NamingUI | ✅ feito (`6dc5626`) — GameManager dono + save + 1º Pacto nomeia Kroug | A mecânica-assinatura do lore NUNCA rodava: nomear um monstro, ganhar apóstolo, metamorfose. Agora o 1º pacto (intro) nomeia Kroug de verdade; nomear um caído pós-batalha (fluxo de "soul capturado") fica p/ a campanha (#2) |
 | 4 | **Overworld + desbloqueio de mapa por ato** | map_select | ✅ feito | gating via `CampaignSystem.is_stage_playable` + persistência no save; UI agora data-driven (badge de ato de `act_for_map`, sem `unlocked` hardcoded) |
 | 5 | **Kaelen HUD** (análise bio/psi/tática, "nome sugerido") | KaelenSystem | ✅ feito | painel revela ao selecionar inimigo e oculta ao deselecionar; fraquezas casam por tipo de criatura (nome) via `match_weakness_type`; sep recorrente era `sep.color` inválido → theme override |
-| 6 | **Feedback de evolução de forma** | CharacterProgression | 🟡 parcial | Evoluir muda só estado interno/atalho no HUD — nada muda no mundo (stats/visual/inimigos) |
+| 6 | **Feedback de evolução de forma** | CharacterProgression | ✅ feito | `form_changed` → `_on_protagonist_form_changed`: FormLabel flash + status effect + stats aplicados na unit viva do Kael (via `_apply_protagonist_form_stats`); conectado no `connect_signals` |
 | 7 | **Decisão: turno individual vs 1.000+ unidades** | TurnOrderManager | 🟡 morto | velocity-sort é órfão (default fase); GDD promete batalhas de 1.000 unidades — escolher UM modelo |
 | 8 | **Conteúdo de chefes de verdade** | BossSystem | 🟡 1-way | Só alcançável marcando inimigo "Boss"; os 5 Cardeais + Aurius de 3 fases são spec |
 | 9 | **Continuidade do nome no save** | unit nome | 🟡 | Nomes são literais da battle_scene ("Kroug"), desconectados do save/apóstolos |
