@@ -1,7 +1,7 @@
 # ROADMAP — O Pacto das Cinzas
 
-> Documento vivo de progresso (não especulação): estado verificado contra o código em 2026-08-29.
-> **Engine** Godot 4.3 | **Testes** GUT headless 403/403 ✅ | **Último commit** `931d92e` (IA caster lança magia)
+> Documento vivo de progresso (não especulação): estado verificado contra o código em 2026-08-30.
+> **Engine** Godot 4.3 | **Testes** GUT headless 427/427 ✅ | **Último commit** (campanha por atos)
 > Fonte de lore/spec: [GDD_Completo_v2.md](GDD_Completo_v2.md) | Tracking técnico anterior: memória do projeto
 
 **Legenda de estado**
@@ -28,7 +28,7 @@ Agente auditoria (per-aspect):
 | 1 | **Morte por magia não encerra batalha** | BattleManager.cast_magic | ✅ feito (`e21bd99`) | Caster mata alvo → HP 0 fica no grid, sem `unit_died`/soul_ether; `battle_won` pode não disparar |
 | 2 | **Fluxo de campanha (atos)** | — | ⚪ | Hoje: 1 batalha + sandbox. Falta: encadeamento intro→ato→batalhas→chefes→créditos |
 | 3 | **Naming/Pacto de Alma como mecânica viva** | NamingSystem+NamingUI | ✅ feito (`6dc5626`) — GameManager dono + save + 1º Pacto nomeia Kroug | A mecânica-assinatura do lore NUNCA rodava: nomear um monstro, ganhar apóstolo, metamorfose. Agora o 1º pacto (intro) nomeia Kroug de verdade; nomear um caído pós-batalha (fluxo de "soul capturado") fica p/ a campanha (#2) |
-| 4 | **Overworld + desbloqueio de mapa por ato** | map_select | 🟡 gated hardcoded | `unlocked:false` sem condição; batalhas não destravam o próximo mapa |
+| 4 | **Overworld + desbloqueio de mapa por ato** | map_select | ✅ feito | gating via `CampaignSystem.is_stage_playable` + persistência no save; UI agora data-driven (badge de ato de `act_for_map`, sem `unlocked` hardcoded) |
 | 5 | **Kaelen HUD** (análise bio/psi/tática, "nome sugerido") | KaelenSystem | 🟡 morto | GDD §3.4 inteiro está inalcançável (instanciado, sinais nunca conectados) |
 | 6 | **Feedback de evolução de forma** | CharacterProgression | 🟡 parcial | Evoluir muda só estado interno/atalho no HUD — nada muda no mundo (stats/visual/inimigos) |
 | 7 | **Decisão: turno individual vs 1.000+ unidades** | TurnOrderManager | 🟡 morto | velocity-sort é órfão (default fase); GDD promete batalhas de 1.000 unidades — escolher UM modelo |

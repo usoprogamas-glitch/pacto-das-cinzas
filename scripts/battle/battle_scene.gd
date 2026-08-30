@@ -558,23 +558,37 @@ func create_unit(grid_pos: Vector2i, unit_name: String, color: Color, unit_class
  data.soul_ether_value = 10 if is_player else 15
  unit.data = data
 
- unit.position = grid.grid_to_pixel(grid_pos)
- unit.grid_position = grid_pos
- unit_container.add_child(unit)
+ var inst = _place_unit(unit, grid_pos)
+ if not inst:
+  return null
 
  # Criar animador
  var animator = UnitAnimator.new()
  animator.name = "Animator"
- unit.add_child(animator)
+ (unit as Node).add_child(animator)
  animator.setup(unit)
  unit_animators[unit_name] = animator
  animator.play_idle()
 
  # Aplicar efeitos visuais avançados
- if pixel_art_renderer.has_method("apply_all_effects"):
+ if pixel_art_renderer and pixel_art_renderer.has_method("apply_all_effects"):
   pixel_art_renderer.apply_all_effects(sprite, _sprite_key(unit_name))
 
  return unit
+
+# Coloca a unit no grid/rótulo. Isolado p/ stubbing: testes de spawn chamam
+# _spawn_player_party sem árvore (sem $BattleGrid/$UnitContainer); a variante
+# real usa grid à vista, a variante de teste stub usa um fake geométrico.
+func _place_unit(unit, grid_pos: Vector2i) -> bool:
+ unit.grid_position = grid_pos
+ if grid:
+  unit.position = grid.grid_to_pixel(grid_pos)
+ elif unit.has_method("set_grid_position"):
+  unit.set_grid_position(grid_pos)
+ if unit_container:
+  unit_container.add_child(unit)
+  return true
+ return false
 
 func connect_signals() -> void:
  BattleManager.phase_changed.connect(_on_phase_changed)

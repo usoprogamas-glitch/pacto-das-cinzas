@@ -46,7 +46,7 @@ func is_stage_playable(map_id: int) -> bool:
  # A map is playable if:
  # - it belongs to a completed act (act < current_act), OR
  # - it belongs to the current act AND is the current stage's map.
- var map_act = _act_for_map(map_id)
+ var map_act = act_for_map(map_id)
  if map_act < current_act:
   return true
  if map_act == current_act:
@@ -54,7 +54,9 @@ func is_stage_playable(map_id: int) -> bool:
   return stage.get("map_id", -1) == map_id
  return false
 
-func _act_for_map(map_id: int) -> int:
+# Ato dono do mapa (1ª aparição em ACT_STAGES). Fonte única de verdade para
+# map_select exibir o badge de ato sem duplicar a tabela hardcoded.
+func act_for_map(map_id: int) -> int:
  for act in ACT_STAGES.keys():
   for stage in ACT_STAGES[act]:
    if stage.map_id == map_id:
