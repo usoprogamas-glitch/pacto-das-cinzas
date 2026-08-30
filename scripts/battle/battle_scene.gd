@@ -34,6 +34,18 @@ var boss_hp_bar: ProgressBar
 var boss_name_label: Label
 var boss_panel: PanelContainer
 
+# Kaelen HUD (§3.4)
+var kaelen_hud_panel: PanelContainer
+var kaelen_bio_weaknesses: Label
+var kaelen_bio_fatigue: Label
+var kaelen_bio_armor: Label
+var kaelen_psy_morale: Label
+var kaelen_psy_flee: Label
+var kaelen_tac_locks: Label
+var kaelen_tac_threat: Label
+var kaelen_tac_range: Label
+var kaelen_suggestions_label: Label
+
 # Sistemas de combate avançado (GDD v2 §3-5)
 var timed_combat: TimedCombatSystem
 var lock_system: LockSystem
@@ -79,6 +91,7 @@ var battle_stats: Dictionary = {
  "damage_taken": 0,
  "souls_named": 0
 }
+var captured_souls: CapturedSouls = CapturedSouls.new()
 
 func _ready() -> void:
  setup_systems()
@@ -182,6 +195,128 @@ func setup_ui() -> void:
 
  # Painel de ações §6-7 (logo abaixo do HUD de progressão)
  _create_actions_panel()
+
+ # Kaelen HUD (§3.4) - análise preditiva de alvos
+ _create_kaelen_hud()
+
+func _create_kaelen_hud() -> void:
+ var panel = PanelContainer.new()
+ panel.position = Vector2(850, 10)
+ panel.size = Vector2(420, 300)
+ panel.visible = false
+ var panel_style = StyleBoxFlat.new()
+ panel_style.bg_color = Color(0.05, 0.05, 0.1, 0.9)
+ panel_style.border_color = Color(0.2, 0.4, 0.8)
+ panel_style.set_border_width_all(2)
+ panel_style.set_corner_radius_all(6)
+ panel.add_theme_stylebox_override("panel", panel_style)
+ ui_layer.add_child(panel)
+
+ var vbox = VBoxContainer.new()
+ vbox.add_theme_constant_override("separation", 6)
+ vbox.add_theme_constant_override("margin_left", 10)
+ vbox.add_theme_constant_override("margin_right", 10)
+ vbox.add_theme_constant_override("margin_top", 10)
+ vbox.add_theme_constant_override("margin_bottom", 10)
+ panel.add_child(vbox)
+
+ # Title
+ var title = Label.new()
+ title.text = "KALEN — INTERFACE COGNITIVA"
+ title.add_theme_font_size_override("font_size", 14)
+ title.add_theme_color_override("font_color", Color(0.4, 0.7, 1.0))
+ title.add_theme_color_override("font_shadow_color", Color(0, 0, 0))
+ title.add_theme_constant_override("shadow_offset_x", 1)
+ title.add_theme_constant_override("shadow_offset_y", 1)
+ vbox.add_child(title)
+
+ # Separator
+ var sep1 = HSeparator.new()
+ sep1.color = Color(0.2, 0.4, 0.6)
+ vbox.add_child(sep1)
+
+ # Vetor Biológico
+ var bio_title = Label.new()
+ bio_title.text = "VETOR BIOLÓGICO"
+ bio_title.add_theme_font_size_override("font_size", 12)
+ bio_title.add_theme_color_override("font_color", Color(0.3, 1.0, 0.5))
+ vbox.add_child(bio_title)
+
+ kaelen_bio_weaknesses = Label.new()
+ kaelen_bio_weaknesses.text = "Fraquezas: —"
+ kaelen_bio_weaknesses.add_theme_font_size_override("font_size", 11)
+ kaelen_bio_weaknesses.add_theme_color_override("font_color", Color(0.8, 0.9, 1.0))
+ vbox.add_child(kaelen_bio_weaknesses)
+
+ kaelen_bio_fatigue = Label.new()
+ kaelen_bio_fatigue.text = "Fadiga: —"
+ kaelen_bio_fatigue.add_theme_font_size_override("font_size", 11)
+ kaelen_bio_fatigue.add_theme_color_override("font_color", Color(0.8, 0.9, 1.0))
+ vbox.add_child(kaelen_bio_fatigue)
+
+ kaelen_bio_armor = Label.new()
+ kaelen_bio_armor.text = "Armadura: —"
+ kaelen_bio_armor.add_theme_font_size_override("font_size", 11)
+ kaelen_bio_armor.add_theme_color_override("font_color", Color(0.8, 0.9, 1.0))
+ vbox.add_child(kaelen_bio_armor)
+
+ # Vetor Psicológico
+ var psycho_title = Label.new()
+ psycho_title.text = "VETOR PSICOLÓGICO"
+ psycho_title.add_theme_font_size_override("font_size", 12)
+ psycho_title.add_theme_color_override("font_color", Color(1.0, 0.7, 0.3))
+ vbox.add_child(psycho_title)
+
+ kaelen_psy_morale = Label.new()
+ kaelen_psy_morale.text = "Moral: —"
+ kaelen_psy_morale.add_theme_font_size_override("font_size", 11)
+ kaelen_psy_morale.add_theme_color_override("font_color", Color(0.8, 0.9, 1.0))
+ vbox.add_child(kaelen_psy_morale)
+
+ kaelen_psy_flee = Label.new()
+ kaelen_psy_flee.text = "Fuga: —"
+ kaelen_psy_flee.add_theme_font_size_override("font_size", 11)
+ kaelen_psy_flee.add_theme_color_override("font_color", Color(0.8, 0.9, 1.0))
+ vbox.add_child(kaelen_psy_flee)
+
+ # Vetor Tático
+ var tactical_title = Label.new()
+ tactical_title.text = "VETOR TÁTICO"
+ tactical_title.add_theme_font_size_override("font_size", 12)
+ tactical_title.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5))
+ vbox.add_child(tactical_title)
+
+ kaelen_tac_locks = Label.new()
+ kaelen_tac_locks.text = "Locks: —"
+ kaelen_tac_locks.add_theme_font_size_override("font_size", 11)
+ kaelen_tac_locks.add_theme_color_override("font_color", Color(0.8, 0.9, 1.0))
+ vbox.add_child(kaelen_tac_locks)
+
+ kaelen_tac_threat = Label.new()
+ kaelen_tac_threat.text = "Ameaça: —"
+ kaelen_tac_threat.add_theme_font_size_override("font_size", 11)
+ kaelen_tac_threat.add_theme_color_override("font_color", Color(0.8, 0.9, 1.0))
+ vbox.add_child(kaelen_tac_threat)
+
+ kaelen_tac_range = Label.new()
+ kaelen_tac_range.text = "Alcance: —"
+ kaelen_tac_range.add_theme_font_size_override("font_size", 11)
+ kaelen_tac_range.add_theme_color_override("font_color", Color(0.8, 0.9, 1.0))
+ vbox.add_child(kaelen_tac_range)
+
+ # Separator
+ var sep2 = HSeparator.new()
+ sep2.color = Color(0.2, 0.4, 0.6)
+ vbox.add_child(sep2)
+
+ # Sugestões de Lock Break
+ kaelen_suggestions_label = Label.new()
+ kaelen_suggestions_label.text = "SUGESTÕES: —"
+ kaelen_suggestions_label.add_theme_font_size_override("font_size", 11)
+ kaelen_suggestions_label.add_theme_color_override("font_color", Color(1.0, 1.0, 0.4))
+ vbox.add_child(kaelen_suggestions_label)
+
+ kaelen_hud_panel = panel
 
 func _create_combo_ui() -> void:
  # Painel de Combo Points (canto inferior esquerdo)
@@ -309,23 +444,36 @@ func setup_battle() -> void:
  autotile_system.auto_tile_map(grid.terrain_layer, 0, Rect2i(0, 0, 12, 12))
  autotile_system.setup_animated_tiles(grid.terrain_layer)
  autotile_system.apply_random_variations(grid.terrain_layer, Rect2i(0, 0, 12, 12), 0.15)
- 
+
+ # Root-cause fix: spawnar o grupo principal ANTES dos inimigos. Antes disso o
+ # caminho de current_map spawnava só inimigos -> instant loss. DRY: helper
+ # único, usado também pelo fallback abaixo.
+ _spawn_player_party()
+
  # Obter o mapa atual
  var current_map = MapDatabase.get_map(GameManager.game_data.get("current_map", 0))
  if current_map:
-  # Spawn inimigos baseado no mapa
-  var enemy_positions = MapDatabase.get_enemy_spawn_positions(GameManager.game_data.get("current_map", 0), current_map.enemy_count)
+  # Act-boss swap: act-final stage replaces the map pool with the boss enemy
+  # and limits to 1 enemy.
+  var is_act_boss = false
   var enemies = current_map.enemies
-  
-  for i in range(min(current_map.enemy_count, enemy_positions.size())):
+  var enemy_count = current_map.enemy_count
+  if GameManager and GameManager.campaign_system:
+   var stage = GameManager.campaign_system.get_current_stage()
+   if stage.get("final", false):
+    is_act_boss = true
+    enemies = ["orc_chefe"]
+    enemy_count = 1
+
+  var enemy_positions = MapDatabase.get_enemy_spawn_positions(GameManager.game_data.get("current_map", 0), enemy_count)
+
+  for i in range(min(enemy_count, enemy_positions.size())):
    var enemy_type = enemies[randi() % enemies.size()]
    var enemy_data = EnemyDatabase.get_enemy(enemy_type)
    if enemy_data:
     spawn_enemy_unit(enemy_positions[i], enemy_data.name, Color(enemy_data.color.r, enemy_data.color.g, enemy_data.color.b), enemy_data.class, enemy_data.hp, enemy_data.atk, enemy_data.def, enemy_data.mov, enemy_data.rng)
  else:
-  # Fallback para spawn padrão
-  spawn_player_unit(Vector2i(2, 6), "Kael", Color(0.2, 0.8, 0.3), "Imp Menor", 80, 12, 8, 3, 1)
-  spawn_player_unit(Vector2i(1, 7), "Kroug", Color(0.8, 0.3, 0.1), "Goblin da Lama", 120, 10, 15, 2, 1)
+  # Fallback para spawn padrão (reusa o helper acima — uma só fonte de verdade)
   spawn_enemy_unit(Vector2i(9, 5), "Mercenário", Color(0.7, 0.2, 0.2), "Guerreiro", 60, 14, 10, 3, 1)
   spawn_enemy_unit(Vector2i(10, 6), "Mercenário", Color(0.7, 0.2, 0.2), "Guerreiro", 60, 14, 10, 3, 1)
   spawn_enemy_unit(Vector2i(8, 4), "Caçador", Color(0.6, 0.3, 0.3), "Arqueiro", 45, 16, 5, 4, 3)
@@ -333,6 +481,19 @@ func setup_battle() -> void:
  # Iniciar tutorial na primeira batalha
  if not FileAccess.file_exists("user://tutorial_completed"):
   tutorial_system.start_tutorial()
+
+func _spawn_player_party() -> void:
+ # Stats de CharacterProgression (runtime) — literais preservam o balanço herdado
+ # (atk Kael = 12 literal, não o default 8 de protagonist_stats.stats).
+ var stats: Dictionary = {}
+ if GameManager and GameManager.character_progression:
+  stats = GameManager.character_progression.get_protagonist_stats()
+ var hp: int = stats.get("hp", 80)
+ var atk: int = 12
+ var def: int = 8
+ spawn_player_unit(Vector2i(2, 6), "Kael", Color(0.2, 0.8, 0.3), "Imp Menor", hp, atk, def, 3, 1)
+ if GameManager and GameManager.game_data.get("starting_ally") == "kroug":
+  spawn_player_unit(Vector2i(1, 7), "Kroug", Color(0.8, 0.3, 0.1), "Goblin da Lama", 120, 10, 15, 2, 1)
 
 func spawn_player_unit(grid_pos: Vector2i, unit_name: String, color: Color, unit_class: String, hp: int, atk: int, def: int, mov: int, rng: int) -> Unit:
  var unit = create_unit(grid_pos, unit_name, color, unit_class, hp, atk, def, mov, rng, true)
@@ -424,6 +585,10 @@ func connect_signals() -> void:
  BattleManager.battle_won.connect(_on_battle_won)
  BattleManager.battle_lost.connect(_on_battle_lost)
  BattleManager.soul_ether_gained.connect(_on_soul_ether_gained)
+
+ # Kaelen System (§3.4) - conectar sinais
+ kaelen_system.target_analyzed.connect(_on_kaelen_target_analyzed)
+ kaelen_system.suggestion_generated.connect(_on_kaelen_suggestion_generated)
 
 func create_unit_sprite(unit_name: String, color: Color, is_player: bool) -> Sprite2D:
  # HD 2D: usa textura de assets/sprites/<key>.png se existir (gerada via ComfyUI).
@@ -576,6 +741,22 @@ func select_unit(unit: Unit) -> void:
   grid.show_movement_range(unit, unit.data.move_range)
  if not unit.has_acted:
   grid.show_attack_range(unit, unit.data.attack_range)
+
+ # Kaelen System (§3.4): analisar alvo inimigo selecionado.
+ # analyze_target espera um Dictionary, nao o objeto UnitData.
+ if unit.data and not unit.data.is_player:
+  var target_data := {
+   "name": unit.data.unit_name,
+   "type": unit.data.unit_class,
+   "hp": unit.data.current_hp,
+   "max_hp": unit.data.max_hp,
+   "armor": unit.data.defense,
+   "morale": 50,
+   "attack_range": unit.data.attack_range,
+   "locks": [],
+   "spell_counter": 0,
+  }
+  kaelen_system.analyze_target(target_data)
 
 func deselect_unit() -> void:
  selected_unit = null
@@ -746,6 +927,9 @@ func _on_unit_died(unit: Unit) -> void:
 
  if unit.data and not unit.data.is_player:
   battle_stats.enemies_defeated += 1
+  var soul_type = unit.data.soul_type if unit.data else ""
+  if soul_type != "":
+   captured_souls.add(soul_type, unit.data.unit_name)
 
  # Verificar vitória
  check_battle_end()
@@ -760,13 +944,66 @@ func _on_battle_won() -> void:
  _commit_progression()  # persiste progresso da batalha no GameManager antes de sair
  can_interact = false
 
+ # Fix: soul_ether e souls_named nunca chegavam ao result screen antes.
+ battle_stats["soul_ether"] = BattleManager.soul_ether
+ if captured_souls.has_captured():
+  battle_stats["souls_named"] += captured_souls.souls.size()
+
+ # Campanha: boss encerra o ato; estágio normal avança o estágio — ambos persistem.
+ if GameManager and GameManager.campaign_system:
+  if GameManager.campaign_system.is_act_boss_stage():
+   _on_boss_stage_cleared()
+  else:
+   GameManager.campaign_system.advance_stage()
+   if GameManager.has_method("save_game"):
+    GameManager.save_game()
+
  # Efeitos visuais
  await screen_effects.flash_white()
  combat_feedback.spawn_level_up_effect(Vector2(640, 360))
 
  # Mostrar tela de vitória
  await get_tree().create_timer(1.0).timeout
+ await _maybe_show_naming()
  show_victory_screen()
+
+func _on_boss_stage_cleared() -> void:
+ # Called ONLY when an act-boss stage is won: advance act + persist.
+ if not GameManager or not GameManager.campaign_system:
+  return
+ GameManager.campaign_system.complete_act()
+ if GameManager.has_method("save_game"):
+  GameManager.save_game()
+
+func _maybe_show_naming() -> void:
+ # Guarded seam: no-op when no NamingSystem / no captured souls,
+ # so headless tests calling _on_battle_won are unaffected.
+ if not GameManager or not GameManager.naming_system:
+  return
+ if not captured_souls.has_captured():
+  return
+ var dialog = load("res://scenes/ui/naming_ui.tscn").instantiate()
+ add_child(dialog)
+ var types: Array[String] = []
+ for s in captured_souls.souls:
+  types.append(s["type"])
+ dialog.populate_soul_list(types)
+
+ # Kaelen System (§3.4): analisar monstros selvagens capturados para preview de evolução.
+ # O resultado (analysis) não é usado ainda — só a chamada garante a integração.
+ for s in captured_souls.souls:
+  var monster_data = {"type": s["type"], "name": s["display_name"]}
+  kaelen_system.analyze_wild_monster(monster_data)
+
+ dialog.soul_named.connect(func(soul_type: String, custom_name: String) -> void:
+  if GameManager and GameManager.naming_system:
+   GameManager.naming_system.name_soul(soul_type, custom_name)
+   if GameManager.faith_system:
+    GameManager.faith_system.register_apostle(custom_name)
+ )
+ await dialog.back_pressed
+ dialog.queue_free()
+ captured_souls.clear()
 
 func _on_battle_lost() -> void:
  can_interact = false
@@ -864,6 +1101,41 @@ func _on_lock_broken(_enemy, _lock: Dictionary) -> void:
  combo_system.earn_from_lock_break()
  update_combo_ui()
  combat_feedback.show_status_effect(Vector2(640, 300), "LOCK QUEBRADO (+2 CP)")
+
+## §3.4 Kaelen System — handlers de sinais
+func _on_kaelen_target_analyzed(target_name: String, data: Dictionary) -> void:
+ if not kaelen_hud_panel:
+  return
+ kaelen_hud_panel.visible = true
+
+ # Vetor Biológico
+ var bio = data.get("biological", {})
+ var weaknesses_text: Array = []
+ for w in bio.get("weaknesses", []):
+  weaknesses_text.append("%s (+%d%%)" % [w["type"], w["bonus_percent"]])
+ kaelen_bio_weaknesses.text = "Fraquezas: " + (", ".join(weaknesses_text) if weaknesses_text else "—")
+ kaelen_bio_fatigue.text = "Fadiga: " + kaelen_system.get_fatigue_name(bio.get("fatigue", 0))
+ kaelen_bio_armor.text = "Armadura: %d" % bio.get("armor", 0)
+
+ # Vetor Psicológico
+ var psycho = data.get("psychological", {})
+ kaelen_psy_morale.text = "Moral: " + kaelen_system.get_morale_name(psycho.get("morale", 1))
+ kaelen_psy_flee.text = "Fuga: %.0f%%" % (psycho.get("flee_chance", 0.0) * 100)
+
+ # Vetor Tático
+ var tac = data.get("tactical", {})
+ kaelen_tac_locks.text = "Locks: " + ("Sim" if tac.get("has_locks", false) else "Não")
+ kaelen_tac_threat.text = "Ameaça: " + tac.get("threat_level", "BAIXA")
+ kaelen_tac_range.text = "Alcance: %d" % tac.get("attack_range", 1)
+
+func _on_kaelen_suggestion_generated(suggestion: Dictionary) -> void:
+ if not kaelen_hud_panel:
+  return
+ var suggestions: Array = suggestion.get("suggestions", [])
+ var texts: Array = []
+ for s in suggestions:
+  texts.append("%s: %s (urgência: %s)" % [s["lock_type"], s["suggestion"], s["urgency"]])
+ kaelen_suggestions_label.text = "SUGESTÕES: " + ("\n".join(texts) if texts else "—")
 
 func _on_balance_mode_changed(new_mode: String) -> void:
  var color: Color

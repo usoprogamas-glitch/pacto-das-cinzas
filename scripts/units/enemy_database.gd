@@ -137,6 +137,37 @@ static var enemies: Dictionary = {
   "soul_ether": 200,
   "ai_type": "boss",
   "description": "Avatar de um deus usurpador"
+ },
+ "goblin_lama": {
+  "name": "Goblin da Lama",
+  "class": "Guerreiro",
+  "hp": 60,
+  "atk": 10,
+  "def": 8,
+  "mag": 0,
+  "spd": 8,
+  "mov": 2,
+  "rng": 1,
+  "color": Color(0.4, 0.45, 0.3),
+  "soul_ether": 12,
+  "ai_type": "aggressive",
+  "soul_type": "goblin_lama",
+  "description": "Goblin fraco da fronteira, presa facil para o Pacto"
+ },
+ "orc_chefe": {
+  "name": "Chefe Orc",
+  "class": "Bruto",
+  "hp": 140,
+  "atk": 18,
+  "def": 16,
+  "mag": 0,
+  "spd": 6,
+  "mov": 2,
+  "rng": 1,
+  "color": Color(0.45, 0.3, 0.1),
+  "soul_ether": 40,
+  "ai_type": "brute",
+  "description": "Lider dos orcs que escraviza goblins - chefe do Ato I"
  }
 }
 
@@ -172,4 +203,5 @@ static func create_enemy_data(type: String) -> UnitData:
  data.attack_range = enemy.rng
  data.color = enemy.color
  data.soul_ether_value = enemy.soul_ether
+ data.soul_type = enemy.get("soul_type", "")
  return data

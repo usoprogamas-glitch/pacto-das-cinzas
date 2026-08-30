@@ -13,6 +13,8 @@ signal back_pressed()
 
 var naming_system: NamingSystem
 var selected_soul_type: String = ""
+# Restricted list set by the victory modal (only what was captured this fight).
+var _restricted: Array[String] = []
 
 func _ready() -> void:
  # Usar o NamingSystem persistente do GameManager quando presente (runtime); senão
@@ -23,16 +25,23 @@ func _ready() -> void:
  back_button.pressed.connect(_on_back)
  soul_list.item_selected.connect(_on_soul_selected)
 
-func populate_soul_list() -> void:
+func populate_soul_list(_soul_types: Array[String] = []) -> void:
  soul_list.clear()
- var types = naming_system.get_available_soul_types()
+ # Deterministic + restrictable: the victory modal passes only captured soul types.
+ var types: Array[String] = _soul_types if not _soul_types.is_empty() else naming_system.get_available_soul_types()
+ _restricted = types.duplicate()
+ types.sort()
  for soul_type in types:
   var template = naming_system.get_soul_template(soul_type)
   soul_list.add_item(template.base_name)
 
 func _on_soul_selected(index: int) -> void:
- var types = naming_system.get_available_soul_types()
- selected_soul_type = types[index]
+ # Index maps into the sorted/restricted list we actually displayed.
+ var types: Array[String] = _restricted.duplicate()
+ types.sort()
+ selected_soul_type = types[index] if index < types.size() else ""
+ if selected_soul_type == "":
+  return
  var template = naming_system.get_soul_template(selected_soul_type)
 
  var info = "[center]%s[/center]\n\n" % template.base_name

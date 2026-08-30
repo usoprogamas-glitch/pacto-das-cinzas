@@ -11,9 +11,10 @@ var faith_system: FaithSystem
 var building_system: BuildingSystem
 var ability_system: AbilitySystem
 var progression_system: ProgressionSystem
-var character_progression: CharacterProgression  # conectado ao ProgressionSystem p/ evolução de forma
-var lineage_system: LineageSystem  # canônico (RefCounted): evolução dos apóstolos por ato
-var naming_system: NamingSystem  # Pacto de Alma (GDD §2.1/§4): nomear criaturas → apóstolos
+var character_progression: CharacterProgression  # conectado ao ProgressionSystem p/ evolucao de forma
+var lineage_system: LineageSystem  # canonico (RefCounted): evolucao dos apostolos por ato
+var naming_system: NamingSystem  # Pacto de Alma (GDD 2.1/4): nomear criaturas -> apostolos
+var campaign_system: CampaignSystem  # Ato/stage/gating/persistencia (ROADMAP #2)
 
 var current_scene: String = "intro"
 var game_data: Dictionary = {
@@ -49,36 +50,39 @@ func initialize_systems() -> void:
  add_child(ability_system)
 
  progression_system = ProgressionSystem.new()
- # ProgressionSystem extends RefCounted (não Node) — só guarda a referência, não add_child
+ # ProgressionSystem extends RefCounted (nao Node) -- so guarda a referencia, nao add_child
 
  character_progression = CharacterProgression.new()
  character_progression.name = "CharacterProgression"
  add_child(character_progression)
  progression_system.set_character_progression(character_progression)
 
- # LineageSystem canônico (RefCounted) — registrar os 4 apóstolos e conectar à evolução por ato
+ # LineageSystem canonico (RefCounted) -- registrar os 4 apostolos e conectar a evolucao por ato
  lineage_system = LineageSystem.new()
  for creature_name in LineageSystem.APOSTLE_EVOLUTIONS:
   lineage_system.register_creature(creature_name)
  progression_system.set_lineage_system(lineage_system)
 
- # NamingSystem (Pacto de Alma, GDD §2.1/§4): dono persistente do sistema órfão —
- # nomear criaturas derrotadas vira apóstolo no save.
+ # NamingSystem (Pacto de Alma, GDD 2.1/4): dono persistente do sistema orfao --
+ # nomear criaturas derrotadas vira apostolo no save.
  naming_system = NamingSystem.new()
  naming_system.name = "NamingSystem"
  add_child(naming_system)
 
-# A intro canônica é a main scene (intro_story.tscn), que se auto-conecta no _ready.
+ # CampaignSystem (ROADMAP #2): atos e estagios -> desbloqueio de mapa + save.
+ campaign_system = CampaignSystem.new()
+
+# A intro canonica e a main scene (intro_story.tscn), que se auto-conecta no _ready.
 # Antes havia um IntroStory DUPLICADO instanciado aqui (script.new()): a intro que o
-# jogador via emitia intro_completed para zero listeners → tela preta, game nunca
-# iniciava. Quem quer que carregue a intro (main scene) passa a própria instância.
+# jogador via emitia intro_completed para zero listeners -> tela preta, game nunca
+# iniciava. Quem quer que carregue a intro (main scene) passa a propria instancia.
 func connect_intro_story(story) -> void:
  if story and story.has_signal("intro_completed"):
   story.intro_completed.connect(_on_intro_completed)
 
 func _on_intro_completed(choices: Dictionary) -> void:
- # Aplicar escolhas do jogador. Só os dicts de escolha têm "consequence"; o emit
- # também carrega chaves auxiliares (starting_ally/knowledge_bonus/skipped) —
+ # Aplicar escolhas do jogador. So os dicts de escolha tem "consequence"; o emit
+ # tambem carrega chaves auxiliares (starting_ally/knowledge_bonus/skipped) --
  # filtrar evita crash (`"kroug".consequence` era erro de runtime).
  for key in choices:
   var choice = choices[key]
@@ -97,7 +101,7 @@ func _on_intro_completed(choices: Dictionary) -> void:
    game_data.mana += 10
    game_data.difficulty = "normal"
 
- # Aplicar bônus de conhecimento se escolhido
+ # Aplicar bonus de conhecimento se escolhido
  if game_data.knowledge_bonus:
   # Desbloquear conhecimento extra
   pass
@@ -123,11 +127,11 @@ func start_new_game() -> void:
 
  # Registrar aliados baseado na escolha
  if game_data.starting_ally == "kroug":
-  # Pacto de Alma vivo (GDD §2.1): nomear Kroug forja o 1º pacto + vira apóstolo
+  # Pacto de Alma vivo (GDD 2.1): nomear Kroug forja o 1o pacto + vira apostolo
   var res = naming_system.name_soul("goblin_lama", "Kroug")
   if res.success:
    faith_system.register_apostle("Kroug")
-   # +25 de fé inicial por ser o primeiro pacto
+   # +25 de fe inicial por ser o primeiro pacto
    faith_system.add_faith("Kroug", 25)
  elif game_data.starting_ally == "none":
   # Sem aliado inicial
@@ -162,7 +166,8 @@ func save_game() -> void:
   "resources": building_system.resources,
   "character_progression": character_progression.serialize(),
   "lineage_system": lineage_system.serialize(),
-  "naming_system": naming_system.save_data()
+  "naming_system": naming_system.save_data(),
+  "campaign_system": campaign_system.serialize() if campaign_system else {}
  }
  var file = FileAccess.open("user://save_game.json", FileAccess.WRITE)
  if file:
@@ -193,6 +198,8 @@ func load_game() -> bool:
     lineage_system.deserialize(save_data.lineage_system)
    if naming_system and save_data.has("naming_system"):
     naming_system.load_data(save_data.naming_system)
+   if campaign_system and save_data.has("campaign_system"):
+    campaign_system.deserialize(save_data.campaign_system)
    return true
   return false
  return false

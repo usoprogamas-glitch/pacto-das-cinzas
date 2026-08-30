@@ -37,6 +37,13 @@ layout_mode = 2
 text = "SELECIONAR MAPA"
 horizontal_alignment = 1
 
+[node name="ActLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "ATO I — FRONTEIRA CINZENTA"
+horizontal_alignment = 1
+add_theme_font_size_override("font_size", 16)
+add_theme_color_override("font_color", Color(0.8, 0.8, 1.0))
+
 [node name="MapList" type="ItemList" parent="VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
