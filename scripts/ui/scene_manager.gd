@@ -3,7 +3,7 @@ extends Node
 
 signal scene_change_requested(scene_name: String)
 
-enum SceneType { INTRO, MAIN_MENU, BATTLE, VILLAGE, MAP_SELECT, SETTINGS }
+enum SceneType { INTRO, MAIN_MENU, BATTLE, VILLAGE, MAP_SELECT, SETTINGS, EPILOGUE }
 
 var current_scene: String = "intro"
 var scenes: Dictionary = {
@@ -12,7 +12,8 @@ var scenes: Dictionary = {
  "battle": "res://scenes/battle/battle_scene.tscn",
  "village": "res://scenes/village/village_scene.tscn",
  "map_select": "res://scenes/menu/map_select.tscn",
- "settings": "res://scenes/menu/settings.tscn"
+ "settings": "res://scenes/menu/settings.tscn",
+ "epilogue": "res://scenes/ui/epilogue.tscn"
  }
 
 func _ready() -> void:
@@ -41,3 +42,6 @@ func go_to_map_select() -> void:
 
 func go_to_settings() -> void:
  change_scene("settings")
+
+func go_to_epilogue() -> void:
+ change_scene("epilogue")

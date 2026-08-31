@@ -38,6 +38,9 @@ const SIDE_MAP_ACTS: Dictionary = {
 
 var current_act: int = 1
 var current_stage: int = 0
+# Fim da campanha (ROADMAP #2): true após vencer o estágio final do Ato IV
+# (Aurius Fase 3). Roteia o pós-vitória para o epílogo em vez do map_select.
+var game_completed: bool = false
 
 func _init() -> void:
  reset()
@@ -45,6 +48,7 @@ func _init() -> void:
 func reset() -> void:
  current_act = 1
  current_stage = 0
+ game_completed = false
 
 func get_current_stage() -> Dictionary:
  var list: Array = ACT_STAGES.get(current_act, [])
@@ -61,7 +65,13 @@ func advance_stage() -> void:
 func complete_act() -> void:
  if current_act < 4:
   current_act += 1
+ else:
+  # Último ato concluído: campanha acabou (Tratado do Éter e da Carne).
+  game_completed = true
  current_stage = 0
+
+func is_game_complete() -> bool:
+ return game_completed
 
 func is_stage_playable(map_id: int) -> bool:
  # A map is playable if:
@@ -85,8 +95,9 @@ func act_for_map(map_id: int) -> int:
   return SIDE_MAP_ACTS.get(map_id, 1)
 
 func serialize() -> Dictionary:
- return {"current_act": current_act, "current_stage": current_stage}
+ return {"current_act": current_act, "current_stage": current_stage, "game_completed": game_completed}
 
 func deserialize(data: Dictionary) -> void:
  current_act = data.get("current_act", 1)
  current_stage = data.get("current_stage", 0)
+ game_completed = data.get("game_completed", false)

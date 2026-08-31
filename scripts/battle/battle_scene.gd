@@ -1117,7 +1117,13 @@ func _on_menu() -> void:
  SceneManager.change_scene("main_menu")
 
 func _on_continue() -> void:
- SceneManager.change_scene("map_select")
+ SceneManager.change_scene(_get_post_victory_destination())
+
+# Destino pós-vitória (ROADMAP #2): campanha completa → epílogo; senão map_select.
+func _get_post_victory_destination() -> String:
+ if GameManager and GameManager.campaign_system and GameManager.campaign_system.is_game_complete():
+  return "epilogue"
+ return "map_select"
 
 func _on_tutorial_message(message: String, position: Vector2) -> void:
  # Mostrar mensagem do tutorial
