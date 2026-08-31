@@ -6,6 +6,7 @@ extends Node2D
 ## Lógica no ArenaCombat (puro, headless-testável); esta cena só apresenta.
 
 const ArenaCombatLib := preload("res://scripts/arena_combat.gd")
+const MotionLib := preload("res://scripts/sprite_motion_library.gd")
 
 signal battle_ended(victory: bool, rewards: Dictionary)
 signal battle_fled()
@@ -127,12 +128,15 @@ func _arena_position(u: Unit, pos: Vector2, color: Color, sprite_key: String) ->
 	_home_positions[u.get_instance_id()] = pos
 	var path := "res://assets/sprites/%s.png" % sprite_key
 	var sprite: Sprite2D
+	var motion_sets := {}
 	if FileAccess.file_exists(path):
 		var img := Image.new()
 		if img.load(path) == OK:
+			motion_sets = MotionLib.build_motion_sets(img)
 			sprite = Sprite2D.new()
-			sprite.texture = ImageTexture.create_from_image(img)
-			sprite.scale = Vector2(0.09, 0.09)
+			# Frame 0 do idle (256px); UnitAnimator cicla a partir daqui.
+			sprite.texture = motion_sets["idle"][0]
+			sprite.scale = Vector2(0.09, 0.09) * (float(img.get_width()) / float(MotionLib.FRAME_SIZE))
 		else:
 			sprite = _fallback_sprite(color)
 	else:
@@ -154,6 +158,7 @@ func _arena_position(u: Unit, pos: Vector2, color: Color, sprite_key: String) ->
 	var animator := UnitAnimator.new()
 	u.add_child(animator)
 	animator.setup(u)
+	animator.set_frames(motion_sets)
 	animator.play_idle()
 	_animators[u.get_instance_id()] = animator
 
@@ -175,6 +180,7 @@ func _entrance_walk() -> void:
 		if animator:
 			animator.current_animation = "walk"
 			animator.face_direction(target.x - from_x)
+			animator.set_moving(true)  # passada real (frames) durante a entrada
 		var tween := create_tween()
 		_entrance_tweens.append(tween)
 		tween.tween_property(u, "position", target, 0.9).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
@@ -187,6 +193,7 @@ func _entrance_walk() -> void:
 func _on_entrance_finished(animator) -> void:
 	if animator:
 		animator.current_animation = "idle"
+		animator.set_moving(false)
 
 
 ## Mata os tweens de entrada e encaixa todos nos destinos (evita conflito de
@@ -202,6 +209,7 @@ func _finish_entrance() -> void:
 			var animator := _animator_for(u)
 			if animator and animator.current_animation == "walk":
 				animator.current_animation = "idle"
+				animator.set_moving(false)
 
 
 func _sprite_key(unit_name: String) -> String:

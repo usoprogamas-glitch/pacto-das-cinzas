@@ -14,8 +14,55 @@ var sprite: Sprite2D
 var current_animation: String = "idle"
 var animation_speed: float = 1.0
 
+# Ciclos multi-frame gerados pelo SpriteMotionLibrary (movimento real, além do
+# bob por tween). Array vazio = sprite estático: fallback volta ao tween.
+var idle_frames: Array = []
+var walk_frames: Array = []
+const IDLE_FPS := 4.0
+const WALK_FPS := 8.0
+var _active_frames: Array = []
+var _active_fps: float = IDLE_FPS
+var _frame_i := 0
+var _frame_t := 0.0
+var _bob_tween: Tween
+
 func _ready() -> void:
  pass
+
+func _process(delta: float) -> void:
+ if _active_frames.size() < 2 or sprite == null:
+  return
+ _frame_t += delta
+ if _frame_t >= 1.0 / _active_fps:
+  _frame_t = 0.0
+  _frame_i = (_frame_i + 1) % _active_frames.size()
+  sprite.texture = _active_frames[_frame_i]
+
+## Recebe os ciclos gerados ({"idle": [...], "walk": [...]}; arrays vazios = estático).
+func set_frames(motion_sets: Dictionary) -> void:
+ idle_frames = motion_sets.get("idle", [])
+ walk_frames = motion_sets.get("walk", [])
+ _use_frames(idle_frames, IDLE_FPS)
+
+## Liga/desliga o ciclo de caminhada (chase no mapa, entrada na arena).
+func set_moving(moving: bool) -> void:
+ if moving:
+  _use_frames(walk_frames, WALK_FPS)
+ else:
+  _use_frames(idle_frames, IDLE_FPS)
+
+## Ativa um set de frames; false se não houver frames (caller usa o fallback).
+func _use_frames(frames: Array, fps: float) -> bool:
+ if frames.is_empty() or sprite == null or frames == _active_frames:
+  return frames.size() > 0 and frames == _active_frames
+ if _bob_tween and _bob_tween.is_valid():
+  _bob_tween.kill()  # o bob por tween sai de cena quando há frames reais
+ _active_frames = frames
+ _active_fps = maxf(fps, 0.1)
+ _frame_i = 0
+ _frame_t = 0.0
+ sprite.texture = frames[0]
+ return true
 
 func setup(unit_ref: Node2D) -> void:
  unit = unit_ref
@@ -45,14 +92,21 @@ func play_idle() -> void:
  if not sprite:
   return
 
+ # Com frames reais (SpriteMotionLibrary), o ciclo troca textura no _process
+ # e o bob por tween fica desligado.
+ if _use_frames(idle_frames, IDLE_FPS):
+  return
+
  # RespiraÃ§Ã£o sutil: squash & stretch RELATIVO Ã  escala real do sprite.
  # Sprites HD normalizados chegam com scale ~0.03 (1024px â†’ 32px): animar
  # para escala absoluta 1.0/1.02 os explodia em tela.
  var base_scale := sprite.scale
- var tween = create_tween()
- tween.set_loops()
- tween.tween_property(sprite, "scale", base_scale * Vector2(1.0, 1.06), 0.6).set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE)
- tween.tween_property(sprite, "scale", base_scale, 0.6).set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE)
+ if _bob_tween and _bob_tween.is_valid():
+  _bob_tween.kill()
+ _bob_tween = create_tween()
+ _bob_tween.set_loops()
+ _bob_tween.tween_property(sprite, "scale", base_scale * Vector2(1.0, 1.06), 0.6).set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE)
+ _bob_tween.tween_property(sprite, "scale", base_scale, 0.6).set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE)
 
 func play_walk(target_position: Vector2) -> void:
  current_animation = "walk"
@@ -61,6 +115,9 @@ func play_walk(target_position: Vector2) -> void:
 
  # Virar para a direção do movimento
  face_direction(target_position.x - unit.position.x)
+
+ # Ciclo de passada real quando há frames (fase forte durante o movimento).
+ _use_frames(walk_frames, WALK_FPS)
 
  # Animação de caminhada
  var tween = create_tween()
@@ -74,7 +131,7 @@ func play_walk(target_position: Vector2) -> void:
   tween.tween_property(unit, "position", unit.position + offset, duration / steps)
 
  # Balanço do sprite durante os passos (sem sprite, só os passos bastam)
- if sprite:
+ if sprite and not _active_frames.size() > 0:
   var base_rotation := sprite.rotation
   tween.tween_property(sprite, "rotation", base_rotation + 0.08, duration * 0.25)
   tween.tween_property(sprite, "rotation", base_rotation - 0.08, duration * 0.25)
@@ -82,6 +139,8 @@ func play_walk(target_position: Vector2) -> void:
   tween.parallel().tween_property(sprite, "rotation", base_rotation, 0.01)
 
  await tween.finished
+ if current_animation == "walk":
+  _use_frames(idle_frames, IDLE_FPS)
 
 func play_attack(target: Node2D) -> void:
  current_animation = "attack"

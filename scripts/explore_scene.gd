@@ -16,6 +16,8 @@ const TERRAIN_TILE_PX := 128  ## tile visual decorado (PixelArtRenderer)
 const TERRAIN_GRID := Vector2i(10, 6)  ## 1280x720 coberto por tiles de 128px
 const HINT_BASE := "Setas/WASD: mover  |  E: puzzle  |  Encoste no inimigo para lutar (Timed Hit/Block: clique!)"
 
+const MotionLib := preload("res://scripts/sprite_motion_library.gd")
+
 var encounter  # SeamlessEncounterSystem
 var player: Node2D
 var enemy_nodes: Array = []
@@ -24,6 +26,9 @@ var map_id: int = 0
 var puzzles: Array = []  # [{id, data, system, nodes, clock_node, solved}]
 var terrain_tiles: Array = []  # [{node, kind}] - fundo decorado data-driven
 var pixel_renderer  # PixelArtRenderer
+var player_animator  # UnitAnimator (ciclos do MotionLib)
+var _buddy_animator
+var _enemy_animators: Array = []  # paralelo a enemy_nodes
 
 var _enemy_tile_ids: Array = []  # ids registrados no SeamlessEncounterSystem
 var _ui: CanvasLayer
@@ -106,15 +111,50 @@ func _terrain_color(terrain: String) -> Color:
 func _spawn_party() -> void:
 	player = Node2D.new()
 	player.position = Vector2(160, 360)
-	player.add_child(_hd_sprite("res://assets/sprites/kael.png", 0.06, Color(0.2, 0.8, 0.3)))
+	var kael_sprite := _animated_sprite("res://assets/sprites/kael.png", 0.06, Color(0.2, 0.8, 0.3))
+	player.add_child(kael_sprite)
+	player_animator = kael_sprite.get_meta("animator", null)
 	add_child(player)
 
 	# Kroug segue o Kael (party no mapa, molde SoS).
 	if GameManager and GameManager.game_data.get("starting_ally") == "kroug":
 		var buddy := Node2D.new()
 		buddy.position = Vector2(-44, 26)
-		buddy.add_child(_hd_sprite("res://assets/sprites/kroug.png", 0.05, Color(0.8, 0.3, 0.1)))
+		var kroug_sprite := _animated_sprite("res://assets/sprites/kroug.png", 0.05, Color(0.8, 0.3, 0.1))
+		buddy.add_child(kroug_sprite)
+		_buddy_animator = kroug_sprite.get_meta("animator", null)
 		player.add_child(buddy)
+
+
+## Sprite HD com ciclos de movimento gerados em runtime (MotionLib). Mantém o
+## contrato Sprite2D (textura = frame 0 do idle); o UnitAnimator anexado troca
+## as texturas a cada frame do ciclo.
+func _animated_sprite(path: String, scale_f: float, fallback_color: Color) -> Sprite2D:
+	var s := _hd_sprite(path, scale_f, fallback_color)
+	if s.texture == null or not FileAccess.file_exists(path):
+		return s
+	var img: Image = s.texture.get_image()
+	if img == null or img.get_width() < 64:
+		return s
+	var sets := MotionLib.build_motion_sets(img)
+	if sets.is_empty():
+		return s
+	var animator := UnitAnimator.new()
+	s.add_child(animator)
+	animator.setup(s)
+	animator.set_frames(sets)
+	# Frames são 256px; o PNG era ~4x maior — compensa a escala de exibição.
+	s.scale = s.scale * (float(img.get_width()) / float(MotionLib.FRAME_SIZE))
+	s.set_meta("animator", animator)
+	return s
+
+
+func _set_move_anim(anim, moving: bool, dir_x: float = 0.0) -> void:
+	if anim == null:
+		return
+	anim.set_moving(moving)
+	if moving and absf(dir_x) > 0.01:
+		anim.face_direction(dir_x)
 
 
 func _hd_sprite(path: String, scale_f: float, fallback_color: Color) -> Sprite2D:
@@ -148,9 +188,11 @@ func _spawn_enemies() -> void:
 			continue
 		var node := Node2D.new()
 		node.position = Vector2(rng.randf_range(760, 1180), rng.randf_range(120, 620))
-		node.add_child(_hd_sprite("res://assets/sprites/%s.png" % type, 0.05, Color(e["color"])))
+		node.add_child(_animated_sprite("res://assets/sprites/%s.png" % type, 0.05, Color(e["color"])))
 		add_child(node)
 		enemy_nodes.append(node)
+		var foe_sprite: Sprite2D = node.get_children()[0]
+		_enemy_animators.append(foe_sprite.get_meta("animator", null))
 		var foe_type := "boss" if stage.get("boss", false) else "random"
 		encounter.register_enemy("foe_%d" % i, Vector2i(int(node.position.x / TILE), int(node.position.y / TILE)), foe_type, 1)
 		_enemy_tile_ids.append("foe_%d" % i)
@@ -183,16 +225,24 @@ func _process(delta: float) -> void:
 		dir.y += 1
 	if Input.is_action_pressed("ui_up") or Input.is_key_pressed(KEY_W):
 		dir.y -= 1
+	var moving := dir != Vector2.ZERO
+	_set_move_anim(player_animator, moving, dir.x)
+	if _buddy_animator:
+		_set_move_anim(_buddy_animator, moving, dir.x)
 	player.position += dir.normalized() * SPEED * delta
 	player.position.x = clampf(player.position.x, 30, 1250)
 	player.position.y = clampf(player.position.y, 30, 690)
 
-	for node in enemy_nodes:
+	for i in range(enemy_nodes.size()):
+		var node = enemy_nodes[i]
 		if not is_instance_valid(node):
 			continue
 		var to_player: Vector2 = player.position - node.position
 		if to_player.length() < 260.0:
 			node.position += to_player.normalized() * 90.0 * delta
+			_set_move_anim(_enemy_animators[i], true, to_player.x)
+		else:
+			_set_move_anim(_enemy_animators[i], false)
 
 	_check_contact()
 	_process_puzzles(delta)
@@ -227,6 +277,8 @@ func _on_battle_ended(victory: bool, rewards: Dictionary, enemy_index: int) -> v
 			enemy_nodes[enemy_index].queue_free()
 			enemy_nodes.remove_at(enemy_index)
 			_enemy_tile_ids.remove_at(enemy_index)
+			if enemy_index < _enemy_animators.size():
+				_enemy_animators.remove_at(enemy_index)
 		if GameManager:
 			GameManager.add_soul_ether(int(rewards.get("soul_ether", 0)))
 		# Vitória encerra o estágio da campanha (mesma porta do fluxo linear).
