@@ -100,7 +100,7 @@ Narrativa/mundo — ```scripts/narrative/```
 
 ## Como usar este roadmap
 
-- **A cada sessão**: comece pelo item de maior prioridade não-'✅' (hoje: **#1 morte por magia** — bug que quebra vitória).
+- **A cada sessão**: comece pelo item de maior prioridade não-'✅' — a fila atual está em [AUDIT.md](AUDIT.md) (P0: boss por nome, animators por instância, troca de sprite na evolução, BGM, shaders).
 - **Regra do projeto**: 1 mecânica por prompt + teste GUT junto + commit por feature + conteúdo data-driven (nada hardcoded).
 - **Ao concluir um item**, atualize a tabela acima + a memória do projeto (commit e contagem GUT).
 
