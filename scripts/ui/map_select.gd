@@ -6,30 +6,44 @@ extends Control
 @onready var back_button: Button = $VBoxContainer/BackButton
 @onready var act_label: Label = $VBoxContainer/ActLabel
 
+# Fallback data-driven quando não há CampaignSystem (testes isolados / dead path).
+# Em runtime, a fonte de verdade é CampaignSystem.ACT_STAGES.
 var maps: Array[Dictionary] = [
  {
   "id": 0,
-  "name": "Fronteira Cinzenta",
-  "description": "Onde tudo começou. Terreno baldio com vegetação morta.",
+  "name": "Socorro aos Goblins",
+  "description": "Resgatar a tribo goblin e forjar o primeiro Pacto de Alma.",
   "difficulty": 1,
   "unlocked": true,
-  "act": 1
+  "act": 1,
+  "boss": false
+ },
+ {
+  "id": 0,
+  "name": "O Chefe Orc",
+  "description": "Derrotar o chefe orc que ameaça os goblins das cinzas.",
+  "difficulty": 2,
+  "unlocked": false,
+  "act": 1,
+  "boss": true
  },
  {
   "id": 1,
   "name": "Floresta Sombria",
   "description": "Floresta densa e perigosa. Lobo Sombrios e Aranhas.",
-  "difficulty": 2,
-  "unlocked": true,
-  "act": 2
+  "difficulty": 3,
+  "unlocked": false,
+  "act": 2,
+  "boss": false
  },
  {
   "id": 2,
-  "name": "Caverna Profunda",
+  "name": "Vale dos Despojos",
   "description": "Sistema de cavernas com cristais brilhantes. Esqueletos e Trolls.",
-  "difficulty": 3,
+  "difficulty": 4,
   "unlocked": false,
-  "act": 3
+  "act": 2,
+  "boss": true
  },
  {
   "id": 3,
@@ -37,15 +51,17 @@ var maps: Array[Dictionary] = [
   "description": "A fortaleza da Igreja. Paladinos e Inquisidores.",
   "difficulty": 4,
   "unlocked": false,
-  "act": 4
+  "act": 3,
+  "boss": false
  },
  {
   "id": 4,
-  "name": "Vulcão do Abismo",
+  "name": "Cerne da Igreja",
   "description": "Terra de ninguém. Feras elementais e lava.",
   "difficulty": 5,
   "unlocked": false,
-  "act": 4
+  "act": 3,
+  "boss": true
  }
 ]
 
@@ -58,13 +74,16 @@ func _ready() -> void:
  map_list.item_selected.connect(_on_map_selected)
  _update_act_label()
 
-# Campaign gate: a map is playable only if its act is reachable.
-# Falls back to the hard-coded `unlocked` field when there is no CampaignSystem
-# (e.g. isolated tests / dead path), preserving prior behavior exactly.
+## Fonte única de stages: CampaignSystem quando disponível; senão o fallback local.
+func _stage_list() -> Array:
+ if GameManager and GameManager.campaign_system:
+  return GameManager.campaign_system.get_campaign_stages()
+ return maps
+
 func _is_map_playable(m: Dictionary) -> bool:
  if GameManager and GameManager.campaign_system:
-  return GameManager.campaign_system.is_stage_playable(m.id)
- return m.unlocked
+  return GameManager.campaign_system.is_stage_playable(m.get("map_id", m.get("id", -1)))
+ return m.get("unlocked", false)
 
 func _update_act_label() -> void:
  if GameManager and GameManager.campaign_system:
@@ -76,27 +95,47 @@ func _update_act_label() -> void:
 
 func populate_map_list() -> void:
  map_list.clear()
- for map in maps:
+ var stages = _stage_list()
+ for map in stages:
   var playable = _is_map_playable(map)
-  var lock = "🔒" if not playable else "⭐".repeat(map.difficulty)
-  # Show act badge for context
+  var lock = "🔒" if not playable else "⭐".repeat(_stage_difficulty(map))
   var act_badge = "  [Ato %d]" % map.act
-  map_list.add_item("%s %s%s" % [lock, map.name, act_badge])
+  var boss_tag = " [BOSS]" if map.get("boss", false) else ""
+  map_list.add_item("%s %s%s%s" % [lock, _stage_name(map), boss_tag, act_badge])
+
+func _stage_name(m: Dictionary) -> String:
+ return m.get("name", m.get("map_name", "Estágio %d" % m.get("map_id", 0)))
+
+func _stage_difficulty(m: Dictionary) -> int:
+ return m.get("difficulty", 1)
 
 func _on_map_selected(index: int) -> void:
  selected_map = index
- var map = maps[index]
- map_info.text = "%s\n\nDificuldade: %s\nAto: %d\n\n%s" % [
-  map.name,
-  "⭐".repeat(map.difficulty),
+ var stages = _stage_list()
+ if index >= stages.size():
+  return
+ var map = stages[index]
+ map_info.text = "%s\n\n%s\nAto: %d\n\n%s" % [
+  _stage_name(map),
+  "⭐".repeat(_stage_difficulty(map)),
   map.act,
-  map.description
+  _stage_description(map)
  ]
  start_button.disabled = not _is_map_playable(map)
 
+func _stage_description(m: Dictionary) -> String:
+ return m.get("description", m.get("map_desc", ""))
+
 func _on_start() -> void:
- if _is_map_playable(maps[selected_map]):
-  GameManager.game_data["current_map"] = maps[selected_map]["id"]
+ var stages = _stage_list()
+ if selected_map >= stages.size():
+  return
+ var map = stages[selected_map]
+ if _is_map_playable(map):
+  GameManager.game_data["current_map"] = map.get("map_id", map.get("id", 0))
+  # Registrar o stage atual no CampaignSystem para o battle_scene resolver inimigos/rewards.
+  if GameManager and GameManager.campaign_system:
+   GameManager.campaign_system.select_map(map.get("map_id", map.get("id", 0)))
   SceneManager.change_scene("battle")
 
 func _on_back() -> void:

@@ -4,6 +4,7 @@ extends Node
 signal building_built(building_name: String)
 signal building_upgraded(building_name: String, new_level: int)
 signal resource_changed(resource: String, amount: int)
+signal feature_unlocked(feature: String)
 
 var buildings: Dictionary = {}
 var resources: Dictionary = {
@@ -11,6 +12,10 @@ var resources: Dictionary = {
  "gold": 0,
  "materials": 0
 }
+
+# Desbloqueios acumulados das construções. Persistido no save para consumidores
+# (UI de crafting, recrutamento, fé) consultarem.
+var unlocked_features: Dictionary = {}
 
 func _ready() -> void:
  initialize_buildings()
@@ -143,12 +148,66 @@ func build(building_id: String) -> bool:
  spend_resources(cost)
 
  buildings[building_id].level += 1
+ apply_building_effects(building_id)
  building_built.emit(building_id)
 
  if buildings[building_id].level > 1:
   building_upgraded.emit(building_id, buildings[building_id].level)
 
  return true
+
+## Interpreta os efeitos data-driven da construção e materializa os desbloqueios
+## em `unlocked_features` para as UIs/consumidores consultarem. Guardado como dados
+## para persistência e para não acoplar a sistemas que podem nem existir ainda.
+func apply_building_effects(building_id: String) -> void:
+ if not buildings.has(building_id):
+  return
+ var building = buildings[building_id]
+ for effect_key in building.effects:
+  var effect_value = building.effects[effect_key]
+  match effect_key:
+   "craft":
+    for u in building.unlocks:
+     unlocked_features["craft_" + u.to_snake_case()] = true
+     feature_unlocked.emit("craft_" + u.to_snake_case())
+   "recruit":
+    for u in building.unlocks:
+     unlocked_features["recruit_" + u.to_snake_case()] = true
+     feature_unlocked.emit("recruit_" + u.to_snake_case())
+   "faith_cap":
+    unlocked_features["faith_cap"] = int(effect_value)
+    feature_unlocked.emit("faith_cap")
+   "defense":
+    unlocked_features["defense"] = int(effect_value)
+    feature_unlocked.emit("defense")
+   "heal_rate":
+    unlocked_features["heal_rate"] = int(effect_value)
+    feature_unlocked.emit("heal_rate")
+   "army_power":
+    unlocked_features["army_power"] = int(effect_value)
+    feature_unlocked.emit("army_power")
+   "new_regions":
+    unlocked_features["new_regions"] = true
+    feature_unlocked.emit("new_regions")
+   "alert":
+    unlocked_features["alert"] = true
+    feature_unlocked.emit("alert")
+   "spy_missions":
+    unlocked_features["spy_missions"] = true
+    feature_unlocked.emit("spy_missions")
+
+func is_feature_unlocked(feature: String) -> bool:
+ return unlocked_features.get(feature, false)
+
+func is_craft_unlocked(recipe_id: String) -> bool:
+ return unlocked_features.get("craft_" + recipe_id.to_snake_case(), false)
+
+func get_unlocked_recruit_types() -> Array:
+ var result = []
+ for key in unlocked_features:
+  if key.begins_with("recruit_"):
+   result.append(key.trim_prefix("recruit_"))
+ return result
 
 func has_resources(cost: Dictionary) -> bool:
  for resource in cost:

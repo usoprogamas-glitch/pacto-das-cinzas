@@ -491,9 +491,42 @@ func _spawn_player_party() -> void:
  var hp: int = stats.get("hp", 80)
  var atk: int = 12
  var def: int = 8
- spawn_player_unit(Vector2i(2, 6), "Kael", Color(0.2, 0.8, 0.3), "Imp Menor", hp, atk, def, 3, 1)
- if GameManager and GameManager.game_data.get("starting_ally") == "kroug":
-  spawn_player_unit(Vector2i(1, 7), "Kroug", Color(0.8, 0.3, 0.1), "Goblin da Lama", 120, 10, 15, 2, 1)
+
+ # Fonte da verdade: GameManager.party_data (persistida no save). Fallback para
+ # jogo novo / caminho legado sem party registrada.
+ var party: Array[Dictionary] = []
+ if GameManager and GameManager.party_data and not GameManager.party_data.is_empty():
+  party = GameManager.party_data
+ else:
+  party = [{"name": "Kael", "class": "Imp Menor", "hp": hp, "atk": atk, "def": def, "mov": 3, "rng": 1}]
+  if GameManager and GameManager.game_data.get("starting_ally") == "kroug":
+   party.append({"name": "Kroug", "class": "Goblin da Lama", "hp": 120, "atk": 10, "def": 15, "mov": 2, "rng": 1})
+
+ for i in range(party.size()):
+  var m: Dictionary = party[i]
+  var grid_pos = Vector2i(2 + i, 6)
+  spawn_player_unit(
+   grid_pos,
+   m.get("name", "Kael"),
+   _party_color(m.get("name", "")),
+   m.get("class", "Imp Menor"),
+   int(m.get("hp", 80)),
+   int(m.get("atk", atk)),
+   int(m.get("def", def)),
+   int(m.get("mov", 3)),
+   int(m.get("rng", 1))
+  )
+
+func _party_color(member_name: String) -> Color:
+ match member_name:
+  "Kroug":
+   return Color(0.8, 0.3, 0.1)
+  "Lira":
+   return Color(0.3, 0.8, 0.4)
+  "Thal'kor":
+   return Color(0.4, 0.3, 0.8)
+  _:
+   return Color(0.2, 0.8, 0.3)
 
 func spawn_player_unit(grid_pos: Vector2i, unit_name: String, color: Color, unit_class: String, hp: int, atk: int, def: int, mov: int, rng: int) -> Unit:
  var unit = create_unit(grid_pos, unit_name, color, unit_class, hp, atk, def, mov, rng, true)
@@ -941,31 +974,62 @@ func check_battle_end() -> void:
   BattleManager.battle_won.emit()
 
 func _on_battle_won() -> void:
- _commit_progression()  # persiste progresso da batalha no GameManager antes de sair
- can_interact = false
+  _commit_progression()  # persiste progresso da batalha no GameManager antes de sair
+  can_interact = false
 
- # Fix: soul_ether e souls_named nunca chegavam ao result screen antes.
- battle_stats["soul_ether"] = BattleManager.soul_ether
- if captured_souls.has_captured():
-  battle_stats["souls_named"] += captured_souls.souls.size()
+  # Calcular recompensas da vitória
+  var rewards = _calculate_victory_rewards()
+  
+  # Aplicar recompensas via GameManager
+  if GameManager and GameManager.has_method("apply_victory_rewards"):
+   GameManager.apply_victory_rewards(rewards)
 
- # Campanha: boss encerra o ato; estágio normal avança o estágio — ambos persistem.
- if GameManager and GameManager.campaign_system:
-  if GameManager.campaign_system.is_act_boss_stage():
-   _on_boss_stage_cleared()
+  # Fix: soul_ether e souls_named nunca chegavam ao result screen antes.
+  battle_stats["soul_ether"] = BattleManager.soul_ether
+  if captured_souls.has_captured():
+   battle_stats["souls_named"] += captured_souls.souls.size()
+
+  # Campanha: boss encerra o ato; estágio normal avança o estágio — ambos persistem.
+  if GameManager and GameManager.campaign_system:
+   if GameManager.campaign_system.is_act_boss_stage():
+    _on_boss_stage_cleared()
+   else:
+    GameManager.campaign_system.advance_stage()
+    if GameManager.has_method("save_game"):
+     GameManager.save_game()
+
+  # Efeitos visuais
+  await screen_effects.flash_white()
+  combat_feedback.spawn_level_up_effect(Vector2(640, 360))
+
+  # Mostrar tela de vitória
+  await get_tree().create_timer(1.0).timeout
+  await _maybe_show_naming()
+  show_victory_screen()
+
+func _calculate_victory_rewards() -> Resource:
+  var rewards = load("res://scripts/battle/victory_rewards.gd").new()
+  var stage = {}
+  if GameManager and GameManager.campaign_system:
+   stage = GameManager.campaign_system.get_current_stage()
+  
+  # Base rewards
+  rewards.soul_ether = BattleManager.soul_ether
+  rewards.gold = stage.get("gold_reward", 50)
+  rewards.xp = stage.get("xp_reward", 100)
+  
+  # Captured souls para naming
+  if captured_souls.has_captured():
+   for s in captured_souls.souls:
+    rewards.captured_souls.append({"type": s["type"], "display_name": s["display_name"]})
+  
+  # Unlocks baseados no stage
+  if stage.get("boss", false):
+   rewards.unlocks.append("act_complete")
   else:
-   GameManager.campaign_system.advance_stage()
-   if GameManager.has_method("save_game"):
-    GameManager.save_game()
-
- # Efeitos visuais
- await screen_effects.flash_white()
- combat_feedback.spawn_level_up_effect(Vector2(640, 360))
-
- # Mostrar tela de vitória
- await get_tree().create_timer(1.0).timeout
- await _maybe_show_naming()
- show_victory_screen()
+   rewards.unlocks.append("next_stage")
+  
+  return rewards
 
 func _on_boss_stage_cleared() -> void:
  # Called ONLY when an act-boss stage is won: advance act + persist.

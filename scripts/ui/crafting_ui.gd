@@ -26,9 +26,25 @@ func populate_recipes() -> void:
  recipe_list.clear()
  var recipes = crafting_manager.get_unlocked_recipes()
  for recipe in recipes:
+  # Respeitar desbloqueios de construção: receitas avançadas exigem a Fornalha/Forja
+  # construída. default sempre disponível.
+  if not _recipe_unlocked_by_buildings(recipe):
+   continue
   var can = crafting_manager.can_craft(recipe.id, GameManager.game_data.get("gold", 0))
   var icon = "✅" if can else "❌"
   recipe_list.add_item("%s %s" % [icon, recipe.name])
+
+func _recipe_unlocked_by_buildings(recipe: Dictionary) -> bool:
+ # default: disponível desde o início
+ if recipe.get("unlock", "default") == "default":
+  return true
+ # Acesso geral à fornalha (craft) é requerido para receitas não-default.
+ if GameManager and GameManager.building_system:
+  if recipe.get("unlock") == "faith_30" or recipe.get("unlock") == "faith_60":
+   return GameManager.building_system.is_feature_unlocked("craft_armas_básicas") \
+     or GameManager.building_system.is_feature_unlocked("craft_armas_avançadas") \
+     or GameManager.building_system.is_feature_unlocked("craft_poções")
+ return false
 
 func populate_materials() -> void:
  material_list.clear()

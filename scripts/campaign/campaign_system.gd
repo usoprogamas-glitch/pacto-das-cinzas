@@ -29,6 +29,18 @@ func get_current_stage() -> Dictionary:
  var list: Array = ACT_STAGES.get(current_act, [])
  return list[current_stage] if current_stage < list.size() else {}
 
+## Retorna todos os stages da campanha (fonte única de dados p/ UI de mapa).
+## Cada stage carrega o ato a que pertence para exibição.
+func get_campaign_stages() -> Array:
+ var result := []
+ for act in ACT_STAGES.keys():
+  for stage in ACT_STAGES[act]:
+   var entry = stage.duplicate()
+   entry["act"] = act
+   entry["locked"] = not is_stage_playable(stage.get("map_id", -1))
+   result.append(entry)
+ return result
+
 func is_act_boss_stage() -> bool:
  return get_current_stage().get("boss", false)
 
@@ -53,6 +65,15 @@ func is_stage_playable(map_id: int) -> bool:
   var stage = get_current_stage()
   return stage.get("map_id", -1) == map_id
  return false
+
+## Sincroniza a seleção de mapa da UI com o estágio corrente da campanha.
+## Permite ao jogador re-jogar o estágio atual sem avançar a progressão.
+func select_map(map_id: int) -> void:
+ var list: Array = ACT_STAGES.get(current_act, [])
+ for i in range(list.size()):
+  if list[i].get("map_id", -1) == map_id:
+   current_stage = i
+   return
 
 func _act_for_map(map_id: int) -> int:
  for act in ACT_STAGES.keys():
