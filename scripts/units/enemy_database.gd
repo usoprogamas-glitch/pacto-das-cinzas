@@ -252,7 +252,7 @@ static var enemies: Dictionary = {
   "description": "Santo Cardeal das Trevas - Ilusões de Luz Negra"
  },
 
- // ===== AURIUS — O FALSO DEUS (3 FASES, GDD §5) =====
+ # ===== AURIUS — O FALSO DEUS (3 FASES, GDD §5) =====
 
  "aurius_fase1": {
   "name": "Aurius — Falso Demiurgo",

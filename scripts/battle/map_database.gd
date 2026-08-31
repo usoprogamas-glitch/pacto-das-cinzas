@@ -103,7 +103,7 @@ static var maps: Dictionary = {
 	  "music": "battle",
 	  "tiles": generate_castle_map()
 	 },
-	 // ===== ATO IV — AURIUS =====
+	 # ===== ATO IV — AURIUS =====
 	 10: {
 	  "name": "Solaria — Sala do Trono",
 	  "size": Vector2i(16, 16),
