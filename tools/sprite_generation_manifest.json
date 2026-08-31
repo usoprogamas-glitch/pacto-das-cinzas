@@ -1,0 +1,80 @@
+{
+  "style_positive": "HD 2D game art, high-quality hand-painted 2D illustration in the style of Ori and the Will of the Wisps, dark fantasy, ash particles, cinematic in-game unit portrait, dramatic rim light, rich color palette, masterpiece, ultra detailed, 8k concept art",
+  "style_negative": "ugly, deformed, noisy, blurry, low quality, watermark, text, modern clothes, sci-fi, photorealistic, 3d render, neon, cartoon",
+  "model": "sd_xl_base_1.0.safetensors",
+  "size": [1024, 1024],
+  "sprites": [
+    {
+      "key": "chefe_orc",
+      "unit_name": "Chefe Orc",
+      "act": "I",
+      "prompt": "brutal orc warlord chieftain, massive iron cleaver, scarred green skin, bone and iron trophy armor, war paint of ash, commanding pose"
+    },
+    {
+      "key": "ignis",
+      "unit_name": "Ignis",
+      "act": "II",
+      "prompt": "Santo Cardeal do Fogo, holy cardinal warlord wreathed in white lava flames, molten golden vestments with solar iconography, burning censer staff, volcanic battlefield"
+    },
+    {
+      "key": "zephyr",
+      "unit_name": "Zephyr",
+      "act": "II",
+      "prompt": "Santo Cardeal do Vento, holy cardinal warlord riding storm winds, flowing white-and-silver vestments, tornado swirls around raised hand, storm clouds and lightning"
+    },
+    {
+      "key": "aqua",
+      "unit_name": "Aqua",
+      "act": "II",
+      "prompt": "Santo Cardeal da Agua, holy cardinal warlord of corrosive holy water, dripping ceremonial robes, ornate chalice pouring glowing acid-blessed water, mist and vapor"
+    },
+    {
+      "key": "terra",
+      "unit_name": "Terra",
+      "act": "II",
+      "prompt": "Santo Cardeal da Terra, colossal holy cardinal guardian fused with living marble fortress walls, stone-plated vestments, tower shield, crumbling masonry aura"
+    },
+    {
+      "key": "umbra",
+      "unit_name": "Umbra",
+      "act": "II",
+      "prompt": "Santo Cardeal das Trevas, holy cardinal of shadows and black light illusions, void-black vestments with silver mask, darkness bleeding from open palm, false light halo"
+    },
+    {
+      "key": "aurius_falso_demiurgo",
+      "unit_name": "Aurius — Falso Demiurgo",
+      "act": "IV",
+      "prompt": "the False Demiurge god-king seated on monumental solar throne, radiant false golden light, arrogant divine pose, marble and gold regalia, fractured halo"
+    },
+    {
+      "key": "aurius_serafim_tirano",
+      "unit_name": "Aurius — Serafim Tirano",
+      "act": "IV",
+      "prompt": "tyrant seraph with six massive solar wings, burning feather blades, wrathful divine face, golden armor cracking with inner light, flying pose in storm of feathers"
+    },
+    {
+      "key": "aurius_luz_desesperada",
+      "unit_name": "Aurius — Luz Desesperada",
+      "act": "IV",
+      "prompt": "desperate dying god of light, collapsing unstable light core, shattered golden form dissolving into sparks, final desperate radiance, apocalyptic backdrop"
+    },
+    {
+      "key": "nobre_abissal",
+      "unit_name": "Nobre Abissal",
+      "act": "evolucao",
+      "prompt": "abyssal noble demon evolution of a small imp, slate-grey skin with cobalt blue glowing runes, obsidian horns, black wings, regal arrogant stance"
+    },
+    {
+      "key": "arquidemonio",
+      "unit_name": "Arquidemonio",
+      "act": "evolucao",
+      "prompt": "arch-demon levitating above the ground, grandiose dark wings, aura of encroaching darkness, cobalt and ember color scheme, crowned silhouette"
+    },
+    {
+      "key": "avatar_primordial",
+      "unit_name": "Avatar Primordial",
+      "act": "evolucao",
+      "prompt": "primordial god avatar of ether and beasts, cosmic ethereal form made of raw ether energy, wild beast spirits circling, ash storm galaxy backdrop, divine and terrible"
+    }
+  ]
+}

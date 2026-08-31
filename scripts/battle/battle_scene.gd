@@ -711,9 +711,16 @@ func _create_unit_sprite_raw(unit_name: String, color: Color, is_player: bool) -
    # Fallback para sprite procedural se não encontrado
    return _create_fallback_sprite(color, is_player)
 
-## Normaliza nome de unidade → chave de arquivo sprite (minúsculo, sem acento/apóstrofo).
+## Normaliza nome de unidade → chave de arquivo sprite (minúsculo, sem acento/
+## apóstrofo/em-dash, underscores únicos). Ex.: "Aurius — Falso Demiurgo" →
+## "aurius_falso_demiurgo", "Arquidemônio" → "arquidemonio".
 func _sprite_key(unit_name: String) -> String:
- return unit_name.to_lower().replace(" ", "_").replace("'", "").replace("á", "a").replace("é", "e").replace("ã", "a").replace("ç", "c")
+ var key := unit_name.to_lower()
+ for pair in [["—", ""], ["'", ""], ["á", "a"], ["é", "e"], ["ê", "e"], ["â", "a"], ["ã", "a"], ["õ", "o"], ["ô", "o"], ["í", "i"], ["ú", "u"], ["ç", "c"], [" ", "_"]]:
+  key = key.replace(pair[0], pair[1])
+ while "__" in key:
+  key = key.replace("__", "_")
+ return key
 
 ## HD 2D: carrega textura png de assets/sprites se existir; null → fallback procedural.
 func _load_hd_sprite(path: String) -> Sprite2D:

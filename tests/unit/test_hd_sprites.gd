@@ -32,6 +32,16 @@ func test_sprite_key_normalizes_apostrophe_and_accent():
 	assert_eq(fake_battle_scene._sprite_key("Mercenário"), "mercenario", "acento removido")
 
 
+## Em-dash e acentos não cobertos antes (ô/õ/ê/â/í/ú) + underscores únicos.
+## Motivação: Aurius (em-dash) e Arquidemônio (ô) nunca casavam com png.
+func test_sprite_key_normalizes_em_dash_and_extra_accents():
+	assert_eq(fake_battle_scene._sprite_key("Aurius — Falso Demiurgo"), "aurius_falso_demiurgo", "em-dash removido, underscores colapsados")
+	assert_eq(fake_battle_scene._sprite_key("Aurius — Serafim Tirano"), "aurius_serafim_tirano")
+	assert_eq(fake_battle_scene._sprite_key("Arquidemônio"), "arquidemonio", "ô normalizado")
+	assert_eq(fake_battle_scene._sprite_key("Nobre Abissal"), "nobre_abissal")
+	assert_eq(fake_battle_scene._sprite_key("Avatar Primordial"), "avatar_primordial")
+
+
 ## Sem png em assets/sprites → fallback procedural (_create_fallback_sprite, não usa renderer)
 func test_hd_sprite_missing_falls_back():
 	var sprite = fake_battle_scene.create_unit_sprite("FANTASMA", Color.WHITE, true)
