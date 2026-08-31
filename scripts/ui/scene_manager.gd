@@ -13,7 +13,8 @@ var scenes: Dictionary = {
  "village": "res://scenes/village/village_scene.tscn",
  "map_select": "res://scenes/menu/map_select.tscn",
  "settings": "res://scenes/menu/settings.tscn",
- "epilogue": "res://scenes/ui/epilogue.tscn"
+ "epilogue": "res://scenes/ui/epilogue.tscn",
+ "act_cutscene": "res://scenes/ui/act_cutscene.tscn"
  }
 
 func _ready() -> void:

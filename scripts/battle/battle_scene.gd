@@ -1119,10 +1119,14 @@ func _on_menu() -> void:
 func _on_continue() -> void:
  SceneManager.change_scene(_get_post_victory_destination())
 
-# Destino pós-vitória (ROADMAP #2): campanha completa → epílogo; senão map_select.
+# Destino pós-vitória (ROADMAP #2): campanha completa → epílogo; abertura de
+# ato pendente → cutscene do ato; senão map_select.
 func _get_post_victory_destination() -> String:
- if GameManager and GameManager.campaign_system and GameManager.campaign_system.is_game_complete():
-  return "epilogue"
+ if GameManager and GameManager.campaign_system:
+  if GameManager.campaign_system.is_game_complete():
+   return "epilogue"
+  if GameManager.campaign_system.has_pending_act_intro():
+   return "act_cutscene"
  return "map_select"
 
 func _on_tutorial_message(message: String, position: Vector2) -> void:
