@@ -618,6 +618,18 @@ func create_unit(grid_pos: Vector2i, unit_name: String, color: Color, unit_class
 # Coloca a unit no grid/rótulo. Isolado p/ stubbing: testes de spawn chamam
 # _spawn_player_party sem árvore (sem $BattleGrid/$UnitContainer); a variante
 # real usa grid à vista, a variante de teste stub usa um fake geométrico.
+## Normaliza o sprite à célula do grid (BattleGrid.TILE_SIZE): sprites HD
+## (1024px) e procedurais (64-128px) chegam em tamanhos heterogêneos — sem isto,
+## o sprite HD é 32x a célula (GDD §10.1: sprites 32x32).
+func _normalize_sprite_to_tile(sprite: Sprite2D) -> void:
+ if sprite == null or sprite.texture == null:
+  return
+ var effective := sprite.texture.get_width() * sprite.scale.x
+ if effective <= 0.0:
+  return
+ var factor := float(BattleGrid.TILE_SIZE) / effective
+ sprite.scale *= factor
+
 func _place_unit(unit, grid_pos: Vector2i) -> bool:
  unit.grid_position = grid_pos
  if grid:
@@ -649,6 +661,13 @@ func connect_signals() -> void:
   GameManager.character_progression.form_changed.connect(_on_protagonist_form_changed)
 
 func create_unit_sprite(unit_name: String, color: Color, is_player: bool) -> Sprite2D:
+ # Factory única de sprite de unidade: toda saída sai normalizada à célula
+ # (BattleGrid.TILE_SIZE) — HD 1024px e procedurais 64-128px entram cruos.
+ var sprite = _create_unit_sprite_raw(unit_name, color, is_player)
+ _normalize_sprite_to_tile(sprite)
+ return sprite
+
+func _create_unit_sprite_raw(unit_name: String, color: Color, is_player: bool) -> Sprite2D:
  # HD 2D: usa textura de assets/sprites/<key>.png se existir (gerada via ComfyUI).
  # Fallback: PixelArtRenderer procedural.
  var char_key = _sprite_key(unit_name)
