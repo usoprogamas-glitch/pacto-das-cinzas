@@ -30,6 +30,13 @@ var _block_reduction := 0.0
 var action_menu: VBoxContainer
 var turn_label: Label
 var log_label: Label
+var result_panel: Control  # result screen dedicada (AUDIT 7d)
+var result_title: Label
+var result_rewards: Label
+var result_continue: Button
+var _result_shown := false
+var _pending_victory := false
+var _pending_rewards := {}
 var _hp_labels: Dictionary = {}  # unit -> Label
 var _animators: Dictionary = {}  # instance_id -> UnitAnimator (P0-2: key por instância)
 var _home_positions: Dictionary = {}  # instance_id -> Vector2 (destino da entrada)
@@ -255,6 +262,9 @@ func _check_end() -> bool:
 
 
 func _finish(victory: bool) -> void:
+	if _result_shown:
+		return
+	_result_shown = true
 	_show_action_menu(false)
 	var rewards := {"soul_ether": 0, "gold": 0, "experience": 0}
 	if victory:
@@ -266,7 +276,72 @@ func _finish(victory: bool) -> void:
 			if u.is_player_side() and u.is_alive() and _animator_for(u):
 				_animator_for(u).play_victory()
 	_log("VITÓRIA!" if victory else "DERROTA...")
-	battle_ended.emit(victory, rewards)
+	_show_result_screen(victory, rewards)
+
+
+# --- Result screen dedicada (molde SoS) ---
+# O sinal battle_ended só dispara quando o jogador clica "Continuar" — a
+# campanha avança DEPOIS que o resultado é visto.
+
+func _show_result_screen(victory: bool, rewards: Dictionary) -> void:
+	_pending_victory = victory
+	_pending_rewards = rewards
+	result_panel = PanelContainer.new()
+	result_panel.position = Vector2(420, 230)
+	result_panel.custom_minimum_size = Vector2(440, 260)
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 12)
+	result_panel.add_child(vbox)
+
+	result_title = Label.new()
+	result_title.text = "VITÓRIA!" if victory else "DERROTA..."
+	result_title.add_theme_font_size_override("font_size", 42)
+	result_title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3) if victory else Color(0.9, 0.3, 0.3))
+	result_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(result_title)
+
+	result_rewards = Label.new()
+	result_rewards.text = "\n".join(PackedStringArray(_result_lines(victory, rewards)))
+	result_rewards.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(result_rewards)
+
+	result_continue = Button.new()
+	result_continue.text = "Continuar"
+	result_continue.pressed.connect(_on_result_continue_pressed)
+	vbox.add_child(result_continue)
+
+	add_child(result_panel)
+	result_panel.modulate.a = 0.0
+	var tween := create_tween()
+	tween.tween_property(result_panel, "modulate:a", 1.0, 0.25)
+
+
+func _result_lines(victory: bool, rewards: Dictionary) -> Array:
+	if not victory:
+		return ["A cinza reclama outro corpo...", "Retorne pelo menu para tentar de novo."]
+	var lines := []
+	if int(rewards.get("soul_ether", 0)) > 0:
+		lines.append("+%d Soul Éter" % int(rewards["soul_ether"]))
+	if int(rewards.get("gold", 0)) > 0:
+		lines.append("+%d ouro" % int(rewards["gold"]))
+	if int(rewards.get("experience", 0)) > 0:
+		lines.append("+%d XP" % int(rewards["experience"]))
+	lines.append("O caminho segue adiante...")
+	return lines
+
+
+func _on_result_continue_pressed() -> void:
+	if not _result_shown:
+		return
+	_result_shown = false
+	if result_panel:
+		result_panel.queue_free()
+		result_panel = null
+	battle_ended.emit(_pending_victory, _pending_rewards)
+
+
+func result_visible() -> bool:
+	return result_panel != null and is_instance_valid(result_panel) and result_panel.visible
 
 
 # --- Ações do jogador ---

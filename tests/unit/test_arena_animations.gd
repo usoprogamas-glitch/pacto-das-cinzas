@@ -106,6 +106,7 @@ func test_defeat_ends_cleanly_without_animations():
 		if u.is_player_side():
 			u.current_hp = 0
 	arena._check_end()
+	arena._on_result_continue_pressed()
 	assert_false(ended["victory"], "derrota encerra a batalha")
 	for u in arena.combatants:
 		var a = arena._animator_for(u)

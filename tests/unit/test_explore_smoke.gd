@@ -67,4 +67,8 @@ func test_arena_battle_ends_and_awards_soul_ether():
 		if not c.is_player_side():
 			c.current_hp = 0
 	arena._check_end()
-	assert_true(_won, "núcleo resolve vitória")
+	assert_true(arena.result_visible(), "result screen dedicada aparece ao vencer")
+	assert_false(_won, "sinal battle_ended espera o jogador ver o resultado")
+	arena._on_result_continue_pressed()
+	assert_true(_won, "vitória sinalizada após Continuar")
+	assert_lt(scene.enemy_nodes.size(), 3, "inimigo derrotado removido do mapa")
