@@ -236,8 +236,12 @@ func damage_part(part_name: String, damage: int) -> bool:
 
 ## Vincula o sistema a um boss já em campo (runtime §5): HP real vem da Unit
 ## recém-spawnada (mapa data-driven), partes/spells vêm do cardinal.
+## Aurius tem dict próprio (não está em CARDINALS) → roteia para init_aurius().
 func spawn_runtime_boss(cardinal_name: String, hp: int) -> void:
-	init_cardinal(cardinal_name)
+	if cardinal_name == "Aurius":
+		init_aurius()
+	else:
+		init_cardinal(cardinal_name)
 	_boss_hp = hp
 	boss_hp_changed.emit(_current_boss, _boss_hp, _max_hp())
 

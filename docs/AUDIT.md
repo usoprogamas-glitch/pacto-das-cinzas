@@ -8,12 +8,10 @@
 
 ## P0 — Bugs reais (quebram a experiência; fazer primeiro)
 
-### 1. BossSystem mostra "Ignis" para TODOS os chefes 🐛
+### 1. BossSystem mostra "Ignis" para TODOS os chefes 🐛 ✅ CORRIGIDO (2026-08-31)
 - **Onde**: `battle_scene.gd:70` → `BOSS_CARDINAL_BY_CLASS = {"Boss": "Ignis"}`
 - **Problema**: o mapeamento runtime usa a *classe* da unidade. Todo chefe tem `class: "Boss"`, então lutar contra Zephyr/Aqua/Aurius mostra painel, partes e spells de **Ignis**.
-- **Impacto**: os 5 Cardeais e as 3 fases de Aurius — conteúdo recém-destravado — jogam todos com a mecânica do mesmo chefe.
-- **Fix**: mapear por *nome de unidade* → cardinal, data-driven (ex.: `"Ignis": "Ignis"`, `"Aurius — Falso Demiurgo": "Aurius"`). BossSystem já tem CARDINALS com partes/spells por nome.
-- **Teste**: spawnar cada cardeal → `boss_system._current_boss` correto.
+- **Fix aplicado**: `_resolve_cardinal_name(unit_name)` — Cardeais casam com a chave de CARDINALS; nomes "Aurius — *" → "Aurius"; "Santo Cardeal" (legado) → Ignis; demais → "". Bônus: `spawn_runtime_boss("Aurius")` agora roteia para `init_aurius()` (antes retornava cedo e o boss ficava sem binding). 8 testes (`test_boss_name_resolve.gd`).
 
 ### 2. `unit_animators` colide com nomes duplicados 🐛
 - **Onde**: `battle_scene.gd` — `unit_animators[unit_name] = animator`
@@ -94,7 +92,7 @@
 
 | # | Item | Racional |
 |---|---|---|
-| 1 | P0-1 Boss por nome | destrava a identidade dos 8 chefes |
+| ~~1~~ | ~~P0-1 Boss por nome~~ | ✅ feito (2026-08-31) |
 | 2 | P0-2 animators por instância | correção de bug pequena e isolada |
 | 3 | P0-3 troca de sprite na evolução | usa os 4 sprites já gerados |
 | 4 | P0-4 BGM data-driven | campo `music` já existe nos dados |

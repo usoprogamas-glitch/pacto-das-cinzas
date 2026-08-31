@@ -66,8 +66,8 @@ var progression_system: ProgressionSystem
 # HUD cumulativo dos sistemas §6-7
 var progression_hud: PanelContainer
 
-# §5 Boss runtime: classe de inimigo → cardinal (Vulcão do Abismo usa Ignis)
-const BOSS_CARDINAL_BY_CLASS: Dictionary = {"Boss": "Ignis"}
+# §5 Boss runtime: cardinal resolvido por NOME da unidade (_resolve_cardinal_name)
+# — o mapeamento por classe ("Boss": "Ignis") fazia TODO chefe usar dados de Ignis.
 
 # Painel de ações §6-7 (excita sinais já conectados)
 var actions_panel: PanelContainer
@@ -542,16 +542,31 @@ func spawn_player_unit(grid_pos: Vector2i, unit_name: String, color: Color, unit
 func spawn_enemy_unit(grid_pos: Vector2i, unit_name: String, color: Color, unit_class: String, hp: int, atk: int, def: int, mov: int, rng: int) -> Unit:
  var unit = create_unit(grid_pos, unit_name, color, unit_class, hp, atk, def, mov, rng, false)
  BattleManager.register_unit(unit)
- # §5 Boss runtime: classe Boss = cardeal no campo → sincroniza BossSystem (panel + HP)
- if BOSS_CARDINAL_BY_CLASS.has(unit_class):
+ # §5 Boss runtime: classe Boss = chefe no campo → sincroniza BossSystem (panel + HP).
+ # Cardinal resolvido pelo NOME da unidade (antes: por classe → todos viravam Ignis).
+ if unit_class == "Boss" and _resolve_cardinal_name(unit_name) != "":
   _spawn_runtime_boss(unit)
  return unit
 
-## Vincula o boss em campo ao BossSystem: nome/cardinal via classe, HP da Unit real.
+## Vincula o boss em campo ao BossSystem: nome/cardinal resolvido por nome, HP da Unit real.
 func _spawn_runtime_boss(unit: Unit) -> void:
- var cardinal: String = BOSS_CARDINAL_BY_CLASS[unit.data.unit_class]
+ var cardinal: String = _resolve_cardinal_name(unit.data.unit_name)
  boss_system.spawn_runtime_boss(cardinal, unit.data.max_hp)
  unit.hp_changed.connect(func(hp: int) -> void: boss_system.sync_runtime_hp(hp))
+
+## Nome da unidade → cardinal do BossSystem (data-driven):
+## - Cardeais: o nome do EnemyDatabase CASA com a chave de BossSystem.CARDINALS.
+## - Aurius: as 3 fases têm nomes distintos no EnemyDatabase → todas viram "Aurius".
+## - "Santo Cardeal" (mapa lateral 4): mantém o binding legado com Ignis.
+## - Demais nomes: "" (não é chefe conhecido).
+func _resolve_cardinal_name(unit_name: String) -> String:
+ if boss_system and boss_system.CARDINALS.has(unit_name):
+  return unit_name
+ if unit_name.begins_with("Aurius"):
+  return "Aurius"
+ if unit_name == "Santo Cardeal":
+  return "Ignis"
+ return ""
 
 func create_unit(grid_pos: Vector2i, unit_name: String, color: Color, unit_class: String, hp: int, atk: int, def: int, mov: int, rng: int, is_player: bool) -> Unit:
  var unit = Unit.new()
