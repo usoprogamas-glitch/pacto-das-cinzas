@@ -1,7 +1,7 @@
 # ROADMAP — O Pacto das Cinzas
 
 > Documento vivo de progresso (não especulação): estado verificado contra o código em 2026-08-30.
-> **Engine** Godot 4.3 | **Testes** GUT headless 432/432 ✅ | **Último commit** (continuidade de nome no save)
+> **Engine** Godot 4.3 | **Testes** GUT headless 541/541 ✅ | **Último commit** (continuidade de nome no save)
 > Fonte de lore/spec: [GDD_Completo_v2.md](GDD_Completo_v2.md) | Tracking técnico anterior: memória do projeto
 
 **Legenda de estado**
@@ -13,7 +13,7 @@
 
 ## Começo — onde estamos agora (base jogável)
 
-Existe um único caminho jogável: **intro → menu → map_select → 1 batalha → resultado → menu**. Mais a village_scene (sandbox, **inalcançável** de jogo novo) e o settings.
+Existe um único caminho jogável, **no molde Sea of Stars (MVP 2026-08-31)**: **intro → exploração contínua do mapa (encontros por proximidade) → arena de batalha in-place (timed hit/block) → próximo estágio → ... → cutscene de ato → ... → epílogo**. Grid tático e map_select fora do caminho principal (legado/replay futuro).
 
 O **loop tático individual** está sólido e testado: turnos por fase (PLAYER→ENEMY), grid, IA inimiga (10 arquétipos + caster com magia), dano pipeline (terreno→flanco→adjacência→timed), Éter/Fúria, combos, lock break, chefes 1-way, acampar/cozinhar/taberna/travessia, progressão persistente no save.
 
@@ -27,7 +27,7 @@ Agente auditoria (per-aspect):
 |---|---|---|---|---|
 | 1 | **Morte por magia não encerra batalha** | BattleManager.cast_magic | ✅ feito (`e21bd99`) | Caster mata alvo → HP 0 fica no grid, sem `unit_died`/soul_ether; `battle_won` pode não disparar |
 | 2 | **Fluxo de campanha (atos)** | — | ✅ feito | Encadeamento completo: intro→map_select (gating por ato)→estágios→chefe completa ato→**cutscene de abertura** (`act_cutscene.tscn`, Atos II-IV, flag `act_intro_pending` persistida)→save. Vitória final → epílogo (`epilogue.tscn`, Tratado do Éter e da Carne). Único restante (conteúdo, não sistema): replay/variante de cutscene por escolha |
-| 3 | **Naming/Pacto de Alma como mecânica viva** | NamingSystem+NamingUI | ✅ feito (`6dc5626`) — GameManager dono + save + 1º Pacto nomeia Kroug | A mecânica-assinatura do lore NUNCA rodava: nomear um monstro, ganhar apóstolo, metamorfose. Agora o 1º pacto (intro) nomeia Kroug de verdade; nomear um caído pós-batalha (fluxo de "soul capturado") fica p/ a campanha (#2) |
+| 3 | **Naming/Pacto de Alma como mecânica viva** | NamingSystem+NamingUI | ✅ feito (`6dc5626`) — GameManager dono + save + 1º Pacto nomeia Kroug (intro canônica, sem escolhas desde 2026-08-31) | A mecânica-assinatura do lore NUNCA rodava: nomear um monstro, ganhar apóstolo, metamorfose. Agora o 1º pacto (intro) nomeia Kroug de verdade; nomear um caído pós-batalha (fluxo de "soul capturado") fica p/ a campanha (#2) |
 | 4 | **Overworld + desbloqueio de mapa por ato** | map_select | ✅ feito | gating via `CampaignSystem.is_stage_playable` + persistência no save; UI agora data-driven (badge de ato de `act_for_map`, sem `unlocked` hardcoded) |
 | 5 | **Kaelen HUD** (análise bio/psi/tática, "nome sugerido") | KaelenSystem | ✅ feito | painel revela ao selecionar inimigo e oculta ao deselecionar; fraquezas casam por tipo de criatura (nome) via `match_weakness_type`; sep recorrente era `sep.color` inválido → theme override |
 | 6 | **Feedback de evolução de forma** | CharacterProgression | ✅ feito | `form_changed` → `_on_protagonist_form_changed`: FormLabel flash + status effect + stats aplicados na unit viva do Kael (via `_apply_protagonist_form_stats`); conectado no `connect_signals` |
@@ -40,7 +40,7 @@ PRIORIDADE 2 (após a campanha existir):
 | # | Pendência | Estado | Nota |
 |---|---|---|---|
 | 10 | Conectar SeamlessEncounter + LightPuzzle ao overworld | 🟡 | sistemas prontos, zero instanciação runtime |
-| 11 | Timed **blocks** (mitigação de dano na defesa) | 🟡 parcial | só o caminho de ataque existe |
+| 11 | Timed **blocks** (mitigação de dano na defesa) | ✅ feito (2026-08-31) | pipeline espelhado do timed hit: janela 0.2s reativa durante o ataque inimigo |
 | 12 | Taberna: apostas + recompensas exclusivas (hoje autobattle) | 🟡 parcial | vira conteúdo |
 | 13 | Travessia vertical / arpéu (hoje só dash) | 🟡 parcial | vira conteúdo |
 | 14 | Culinária com bônus permanentes | 🟡 parcial | hoje temp only |
@@ -64,7 +64,7 @@ Combate (§3–§5) — ```scripts/battle/```
 
 | Sistema | GDD | Código | Wiring | Teste | Gap vs GDD |
 |---|---|---|---|---|---|
-| Timed Hits | §3.1 | ✅ | ✅ | ✅ | sem timed **block** |
+| Timed Hits | §3.1 | ✅ | ✅ | ✅ | timed block: ✅ (janela reativa 0.2s no ataque inimigo) |
 | Locks | §3.2 | ✅ | ✅ | ✅ | locks não nascem do cast inimigo |
 | Combos (CP) | §3.1 | ✅ | ✅ | ✅ | Triple Combo é dado-only (depende da party) |
 | Éter/Fúria/Balance | §3.3 | ✅ | ✅ | ✅ | escala 1.000+ unidades ausente (ver #7) |

@@ -45,8 +45,9 @@
 
 ## P1 — Conteúdo do ROADMAP (após P0)
 
-### 7. ROADMAP #11 — Timed blocks (mitigação na defesa) 🟡
-- `timed_hit_system` cobre só ataque; defesa reativa (bloqueio com timing) é o outro lado do combate-assinatura §3.1. Espelhar o pipeline existente.
+### 7. ROADMAP #11 — Timed blocks (mitigação na defesa) 🟡 ✅ CORRIGIDO (2026-08-31)
+- **Onde**: `timed_combat_system.gd` já tinha `resolve_block_timing`/`apply_block` testados, mas o fluxo de combate só usava o caminho de ataque (`battle_scene.gd::_timed_hit_*` → `BattleManager.attack_unit(timing_bonus)`).
+- **Fix aplicado**: pipeline espelhado. `BattleManager` ganhou `timed_block_resolver: Callable` + sinal `timed_block_window` — ataque inimigo em alvo jogador abre a janela de 0.2s (`BLOCK_WINDOW`) antes de aplicar dano; `battle_scene` instala o resolver (`_resolve_timed_block`: indicador "TIMED BLOCK!" + aguardo do clique reativo) e o clique gradua via `resolve_block_timing` (PERFECT -50% / GREAT -30% / GOOD -10%). Redução entra no pipeline de dano depois do timing bonus; clique reativo vale no ENEMY_TURN (`_input` intercepta antes do gate `can_interact`). Sem resolver (headless/testes), dano integral — comportamento antigo preservado. 7 testes (`test_timed_block.gd`).
 
 ### 8. ROADMAP #10 — SeamlessEncounter + LightPuzzle órfãos 🟡
 - Sistemas prontos e testados, **zero instanciação runtime**. Conectar: encuentros por proximidade no overworld/map_select e 1-2 puzzles posicionados data-driven em mapas dos Atos I-II.
@@ -62,6 +63,27 @@
 
 ### 12. Equipamentos sem wiring? (verificar)
 - `crafting/` (recipe/material/equipment databases + crafting_manager + crafting_ui) — wiring não auditado nesta passada. Confirmar se alcançável pelo jogador; senão, entra como órfão na lista.
+
+---
+
+## P1.5 — Mudanças de design (pedidos do usuário)
+
+### 7b. Intro sem escolhas — história canônica ✅ FEITO (2026-08-31)
+- **Pedido**: "ele é uma história, não tem essas opções" — a pergunta "O que você faz?" quebrava a imersão narrativa.
+- **Fix aplicado**: 1º Pacto de Alma agora é NARRADO (Kaelen ordena gastar a mana → metamorfose em Hobgoblin → "Kroug" nomeado). Kroug nasce sempre: `complete_intro()` emite `first_pact_choice = {consequence: "first_pact"}` no payload (GameManager aplica -15 mana + naming + fé + spawn em batalha, inalterado). `ChoiceContainer` nunca aparece; navegação 100% por input (A avança / ESC pula). Skip da intro segue o mesmo cânone. 5 testes (`test_intro_canonical.gd`).
+
+### 7c. Fluxo linear de enredo — map_select fora do caminho principal ✅ FEITO (2026-08-31)
+- **Pedido**: "era pra seguir um enredo" — a intro desaguava no menu de mapas e o jogador caía numa batalha sem contexto.
+- **Fix aplicado**: intro → batalha do estágio atual da campanha (Ato I — "Socorro aos Goblins"); pós-vitória "Continuar" → próxima batalha; cutscene de ato → batalha; main_menu (novo jogo/continuar) → batalha do estágio salvo. Cola: `GameManager.sync_current_map_from_campaign()` (fonte única do `map_id` = CampaignSystem). Epílogo no fim da campanha, inalterado. `map_select` permanece como cena para replay futuro (P1 #10). 3 testes (`test_story_flow.gd`) + 3 asserts de roteamento atualizados.
+
+### 7d. Molde Sea of Stars — exploração contínua + arena (opção 3) ✅ MVP (2026-08-31)
+- **Pedido**: "estilo de mapa e mecânica igual ao jogo de referência" — escolha pelo formato completo: exploração em mapa contínuo com encontros embutidos + combate arena (sem grid).
+- **Implementado (MVP)**:
+  - `scripts/explore/explore_scene.gd` — mapa contínuo (terreno do MapDatabase), Kael+Kroug andam em tempo real (WASD/setas), inimigos visíveis perseguem por proximidade (SeamlessEncounterSystem, órfão destravado) e o contato abre a arena IN-PLACE (sem troca de cena).
+  - `scripts/battle/arena_combat.gd` — núcleo puro: turnos por agilidade (TurnOrderManager), dano/magia perfurante, IA de foco, condição de fim. 10 testes.
+  - `scripts/battle/arena_battle.gd` — overlay de arena: menu Atacar/Magia/Fugir, Timed Hit (clique no impacto) e Timed Block (clique no golpe inimigo), barras de HP flutuantes, Soul Éter.
+  - Fluxo linear: intro → exploração → arena → vitória → próximo estágio → ... → cutscene de ato → ... → epílogo. Grid tático (battle_scene) permanece como código legado, fora do caminho principal.
+- **Pendências visuais para iterar com o usuário**: tiles decorados/animados, animações de caminhada/ataque na arena, música por mapa, result screen dedicada.
 
 ---
 
@@ -95,14 +117,14 @@
 | ~~4~~ | ~~P0-4 BGM data-driven~~ | ✅ feito (2026-08-31) |
 | ~~5~~ | ~~P0-6 pre-check de png~~ | ✅ feito (2026-08-31) |
 | 6 | P0-5 shaders | médio; isolar shader por shader |
-| 7 | P1 #11 timed blocks | próximo mecânica-assinatura |
+| 7 | P1 #11 timed blocks | ✅ feito (2026-08-31) |
 | 8 | P1 #10 encounters/puzzles | destrava sistemas órfãos |
 
 ---
 
 ## Métricas da sessão (2026-08-30/31)
 
-- Testes: 432 → **483** (+51), 0 falhando
+- Testes: 432 → **541** (+109), 0 falhando
 - Commits: 10 (fixes de sintaxe, gating, epílogo, cutscenes, chefes data-driven, sprites HD, animação)
 - Sprites: 15 → 28 (13 gerados via ComfyUI, 100% do elenco)
 - De dívida zerada: parse errors `//`, em-dash nas keys, sprites órfãos, animações mortas

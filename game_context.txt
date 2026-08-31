@@ -8,11 +8,14 @@ Executável: C:\Users\Administrator\Downloads\Godot43\Godot_v4.3-stable_win64_co
 Janela: 1280x720, stretch canvas_items
 
 ## Estrutura Principal
-- scenes/ui/intro_story.tscn - cena inicial (main_scene), história + escolhas
-- scenes/battle/battle_scene.tscn - cena da batalha tática
+- scenes/ui/intro_story.tscn - cena inicial (main_scene), história contínua (1º Pacto canônico: Kroug sempre nasce)
+- scenes/battle/explore_scene.tscn - exploração contínua estilo Sea of Stars (MVP 2026-08-31: caminho principal)
+- scenes/battle/battle_scene.tscn - batalha tática em grid (LEGADO, fora do caminho principal)
+- scripts/explore/ - exploração contínua (encontros por proximidade via SeamlessEncounterSystem)
+- scripts/battle/arena_combat.gd + arena_battle.gd - combate arena (turnos por agilidade, timed hit/block, sem grid)
 - scenes/menu/ - main_menu, map_select
 - scenes/village/village_scene.tscn - vila/construção
-- scripts/battle/ - combate (BattleManager, battle_scene, grid, enemy_ai,
+- scripts/battle/ - combate legado grid (BattleManager, battle_scene, grid, enemy_ai,
   magic_system, ability_system, faith_system, map_database,
   timed_hit_system, turn_order_manager)
 - scripts/units/ - unit.gd (Unit), unit_data.gd (UnitData Resource), unit_sprite.gd

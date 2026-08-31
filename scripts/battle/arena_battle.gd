@@ -1,0 +1,380 @@
+extends Node2D
+
+## Arena de batalha no molde Sea of Stars (decisão 2026-08-31, opção 3):
+## sem grid tático. Overlay IN-PLACE sobre a exploração (GDD §6.2), turnos por
+## agilidade (TurnOrderManager), menu Atacar/Magia/Fugir + Timed Hit/Block.
+## Lógica no ArenaCombat (puro, headless-testável); esta cena só apresenta.
+
+const ArenaCombatLib := preload("res://scripts/battle/arena_combat.gd")
+
+signal battle_ended(victory: bool, rewards: Dictionary)
+signal battle_fled()
+
+var combat  # ArenaCombat (núcleo puro)
+var combatants: Array = []  # Unit (contrato: get_speed/is_player_side/is_alive)
+var enemies_meta: Array = []  # [{type, soul_ether}] para recompensas
+var turn_queue: Array = []
+var turn_index: int = 0
+var current_actor = null
+
+# Timed hit / block (mesma mecânica do timed_combat_system, GDD §3.1)
+var _timed_hit_active := false
+var _timed_hit_start := 0.0
+var _pending_target = null
+var _pending_is_magic := false
+var _block_window_open := false
+var _block_start := 0.0
+var _block_reduction := 0.0
+
+# UI
+var action_menu: VBoxContainer
+var turn_label: Label
+var log_label: Label
+var _hp_labels: Dictionary = {}  # unit -> Label
+
+
+func _ready() -> void:
+	combat = ArenaCombatLib.new()
+	_build_arena()
+	_setup_from_campaign()
+	_start_round()
+
+
+# --- Setup ---
+
+func _setup_from_campaign() -> void:
+	var map_id: int = GameManager.game_data.get("current_map", 0) if GameManager else 0
+	var map: Dictionary = MapDatabase.get_map(map_id)
+	var stage: Dictionary = GameManager.campaign_system.get_current_stage() if GameManager and GameManager.campaign_system else {}
+
+	var kael := _make_combatant("Kael", true, 80, 12, 8, 11, 50)
+	combatants = [kael]
+	_arena_position(kael, Vector2(430, 430), Color(0.2, 0.8, 0.3), "kael")
+
+	if GameManager and GameManager.game_data.get("starting_ally") == "kroug":
+		var kroug := _make_combatant("Kroug", true, 120, 10, 15, 8, 20)
+		combatants.append(kroug)
+		_arena_position(kroug, Vector2(330, 500), Color(0.8, 0.3, 0.1), "kroug")
+
+	# Inimigos: boss_enemy do estágio sobrepõe o pool do mapa (ROADMAP #8).
+	var pool: Array = map.get("enemies", ["mercenario"])
+	var count: int = 1 if stage.get("boss", false) else int(map.get("enemy_count", 2))
+	if stage.get("boss_enemy", "") != "":
+		pool = [stage["boss_enemy"]]
+	var pos_x := 860.0
+	for i in range(count):
+		var type: String = pool[randi() % pool.size()]
+		var e: Dictionary = EnemyDatabase.get_enemy(type)
+		if e.is_empty():
+			continue
+		var foe := _make_combatant(e["name"], false, e["hp"], e["atk"], e["def"], e["spd"], 30)
+		combatants.append(foe)
+		_arena_position(foe, Vector2(pos_x, 400 + i * 130), Color(e["color"]), _sprite_key(e["name"]))
+		pos_x += 40
+		enemies_meta.append({"type": type, "soul_ether": e.get("soul_ether", 10)})
+
+
+func _make_combatant(unit_name: String, is_player: bool, hp: int, atk: int, def: int, spd: int, mp: int) -> Unit:
+	var u := Unit.new()
+	var d := UnitData.new()
+	d.unit_name = unit_name
+	d.is_player = is_player
+	d.max_hp = hp
+	d.current_hp = hp
+	d.attack = atk
+	d.defense = def
+	d.speed = spd
+	d.max_mp = mp
+	d.current_mp = mp
+	u.data = d
+	u.current_hp = hp
+	u.current_mp = mp
+	# Dummies para os @onready do Unit ($Sprite2D/$HPBar/$SelectionIndicator),
+	# que exigem os nós antes de entrar na árvore. A arte real é adicionada em
+	# _arena_position; o HP real é a barra flutuante dali.
+	var dummy_sprite := Sprite2D.new()
+	dummy_sprite.name = "Sprite2D"
+	dummy_sprite.visible = false
+	u.add_child(dummy_sprite)
+	var dummy_hp := ProgressBar.new()
+	dummy_hp.name = "HPBar"
+	dummy_hp.visible = false
+	u.add_child(dummy_hp)
+	var dummy_sel := ColorRect.new()
+	dummy_sel.name = "SelectionIndicator"
+	dummy_sel.visible = false
+	u.add_child(dummy_sel)
+	add_child(u)
+	return u
+
+
+func _arena_position(u: Unit, pos: Vector2, color: Color, sprite_key: String) -> void:
+	u.position = pos
+	u.visible = true
+	var path := "res://assets/sprites/%s.png" % sprite_key
+	var sprite: Sprite2D
+	if FileAccess.file_exists(path):
+		var img := Image.new()
+		if img.load(path) == OK:
+			sprite = Sprite2D.new()
+			sprite.texture = ImageTexture.create_from_image(img)
+			sprite.scale = Vector2(0.09, 0.09)
+		else:
+			sprite = _fallback_sprite(color)
+	else:
+		sprite = _fallback_sprite(color)
+	u.add_child(sprite)
+
+	# Barra de HP flutuante (molde SoS: HP visível sobre o combatente).
+	var bar := ProgressBar.new()
+	bar.min_value = 0
+	bar.max_value = u.data.max_hp
+	bar.value = u.current_hp
+	bar.position = Vector2(-30, -62)
+	bar.size = Vector2(60, 8)
+	bar.show_percentage = false
+	u.add_child(bar)
+	u.hp_changed.connect(func(hp): bar.value = hp)
+
+
+func _sprite_key(unit_name: String) -> String:
+	var key := unit_name.to_lower()
+	for pair in [["—", ""], ["'", ""], ["á", "a"], ["é", "e"], ["ê", "e"], ["â", "a"], ["ã", "a"], ["õ", "o"], ["ô", "o"], ["í", "i"], ["ú", "u"], ["ç", "c"], [" ", "_"]]:
+		key = key.replace(pair[0], pair[1])
+	while "__" in key:
+		key = key.replace("__", "_")
+	return key
+
+
+func _fallback_sprite(color: Color) -> Sprite2D:
+	var s := Sprite2D.new()
+	var img := Image.create(24, 24, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	for y in range(6, 22):
+		for x in range(6, 18):
+			img.set_pixel(x, y, color)
+	s.texture = ImageTexture.create_from_image(img)
+	return s
+
+
+# --- Fluxo de turnos (velocity-based, igual TurnOrderManager) ---
+
+func _start_round() -> void:
+	turn_queue = combat.build_turn_order(combatants)
+	turn_index = 0
+	_next_turn()
+
+
+func _next_turn() -> void:
+	if _check_end():
+		return
+	while turn_index < turn_queue.size() and not turn_queue[turn_index].is_alive():
+		turn_index += 1
+	if turn_index >= turn_queue.size():
+		_start_round()
+		return
+	current_actor = turn_queue[turn_index]
+	_update_turn_label()
+	if current_actor.is_player_side():
+		_show_action_menu(true)
+	else:
+		_enemy_act()
+
+
+func _advance() -> void:
+	turn_index += 1
+	_next_turn()
+
+
+func _check_end() -> bool:
+	var result: String = combat.is_battle_over(combatants)
+	if result == "":
+		return false
+	_finish(result == "victory")
+	return true
+
+
+func _finish(victory: bool) -> void:
+	_show_action_menu(false)
+	var rewards := {"soul_ether": 0, "gold": 0, "experience": 0}
+	if victory:
+		for m in enemies_meta:
+			rewards["soul_ether"] += m["soul_ether"]
+	_log("VITÓRIA!" if victory else "DERROTA...")
+	battle_ended.emit(victory, rewards)
+
+
+# --- Ações do jogador ---
+
+func _show_action_menu(show: bool) -> void:
+	action_menu.visible = show
+	if show:
+		_log("Vez de %s" % current_actor.data.unit_name)
+
+
+func _on_attack_pressed() -> void:
+	if not _can_player_act():
+		return
+	_show_action_menu(false)
+	_pending_is_magic = false
+	_begin_timed_hit()
+
+
+func _on_magic_pressed() -> void:
+	if not _can_player_act():
+		return
+	if current_actor.current_mp < ArenaCombatLib.MAGIC_COST:
+		_log("MP insuficiente!")
+		return
+	_show_action_menu(false)
+	_pending_is_magic = true
+	_begin_timed_hit()
+
+
+func _on_flee_pressed() -> void:
+	if not _can_player_act():
+		return
+	_show_action_menu(false)
+	if randf() < 0.5:
+		_log("Fuga bem-sucedida!")
+		battle_fled.emit()
+	else:
+		_log("A fuga falhou!")
+		_advance()
+
+
+func _can_player_act() -> bool:
+	return current_actor != null and current_actor.is_player_side() and action_menu.visible
+
+
+func _begin_timed_hit() -> void:
+	# Alvo: inimigo vivo de menor HP (foca kill, espelho da IA).
+	var foes := combatants.filter(func(u): return u.is_alive() and not u.is_player_side())
+	if foes.is_empty():
+		_advance()
+		return
+	foes.sort_custom(func(a, b): return a.current_hp < b.current_hp)
+	_pending_target = foes[0]
+	_timed_hit_active = true
+	_timed_hit_start = Time.get_ticks_msec() / 1000.0
+	_log("TIMED HIT! Clique no impacto!")
+	await get_tree().create_timer(ArenaCombatLib.TIMED_HIT_WINDOW).timeout
+	if _timed_hit_active:
+		_resolve_action(1.0, "MISS")
+
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		if _timed_hit_active:
+			var elapsed := (Time.get_ticks_msec() / 1000.0) - _timed_hit_start
+			var grade = combat.timed_combat.resolve_timing(elapsed)
+			_timed_hit_active = false
+			_resolve_action(grade.multiplier, grade.grade)
+		elif _block_window_open:
+			var elapsed := (Time.get_ticks_msec() / 1000.0) - _block_start
+			var result = combat.timed_combat.resolve_block_timing(elapsed)
+			_block_reduction = combat.timed_combat.get_block_reduction(result)
+			_block_window_open = false
+			_log("BLOCK %s!" % result.grade)
+
+
+func _resolve_action(multiplier: float, grade: String) -> void:
+	if _pending_target == null or not _pending_target.is_alive():
+		_advance()
+		return
+	var damage: int
+	if _pending_is_magic:
+		var cast: Dictionary = combat.cast_damage_spell(current_actor, _pending_target)
+		if not cast.success:
+			_log("MP insuficiente!")
+			_advance()
+			return
+		damage = int(cast.damage * multiplier)
+	else:
+		damage = combat.calculate_damage(current_actor, _pending_target, multiplier)
+	combat.apply_hit(current_actor, _pending_target, damage)
+	_pending_target.hp_changed.emit(_pending_target.current_hp)
+	_log("%s → %s: %d de dano (%s)" % [current_actor.data.unit_name, _pending_target.data.unit_name, damage, grade])
+	_pending_target = null
+	_advance()
+
+
+# --- IA inimiga ---
+
+func _enemy_act() -> void:
+	if _check_end():
+		return
+	var players := combatants.filter(func(u): return u.is_alive() and u.is_player_side())
+	var target = combat.choose_enemy_target(players)
+	if target == null:
+		return
+	# Janela de defesa reativa (timed block) durante o golpe inimigo.
+	_block_window_open = true
+	_block_start = Time.get_ticks_msec() / 1000.0
+	_block_reduction = 0.0
+	_log("%s ataca! Clique para bloquear!" % current_actor.data.unit_name)
+	await get_tree().create_timer(ArenaCombatLib.TIMED_BLOCK_WINDOW).timeout
+	_block_window_open = false
+	var damage: int = combat.calculate_damage(current_actor, target)
+	damage = int(damage * (1.0 - _block_reduction))
+	combat.apply_hit(current_actor, target, damage)
+	target.hp_changed.emit(target.current_hp)
+	_log("%s sofreu %d de dano" % [target.data.unit_name, damage])
+	if not _check_end():
+		_advance()
+
+
+# --- UI (overlay in-place, sem .tscn) ---
+
+func _build_arena() -> void:
+	var dim := ColorRect.new()
+	dim.color = Color(0.02, 0.02, 0.04, 0.55)
+	dim.size = Vector2(1280, 720)
+	add_child(dim)
+
+	var floor_rect := ColorRect.new()
+	floor_rect.color = Color(0.13, 0.11, 0.16, 0.9)
+	floor_rect.position = Vector2(140, 280)
+	floor_rect.size = Vector2(1000, 380)
+	add_child(floor_rect)
+
+	turn_label = Label.new()
+	turn_label.position = Vector2(20, 12)
+	turn_label.add_theme_font_size_override("font_size", 22)
+	add_child(turn_label)
+
+	log_label = Label.new()
+	log_label.position = Vector2(20, 668)
+	log_label.add_theme_font_size_override("font_size", 18)
+	add_child(log_label)
+
+	action_menu = VBoxContainer.new()
+	action_menu.position = Vector2(40, 320)
+	action_menu.add_theme_constant_override("separation", 12)
+	add_child(action_menu)
+
+	var atk_btn := Button.new()
+	atk_btn.text = "Atacar"
+	atk_btn.pressed.connect(_on_attack_pressed)
+	action_menu.add_child(atk_btn)
+
+	var magic_btn := Button.new()
+	magic_btn.text = "Magia (%d MP)" % ArenaCombatLib.MAGIC_COST
+	magic_btn.pressed.connect(_on_magic_pressed)
+	action_menu.add_child(magic_btn)
+
+	var flee_btn := Button.new()
+	flee_btn.text = "Fugir"
+	flee_btn.pressed.connect(_on_flee_pressed)
+	action_menu.add_child(flee_btn)
+
+	action_menu.visible = false
+
+
+func _update_turn_label() -> void:
+	turn_label.text = "Agindo: %s (HP %d/%d)" % [
+		current_actor.data.unit_name, current_actor.current_hp, current_actor.data.max_hp]
+
+
+func _log(msg: String) -> void:
+	log_label.text = msg
