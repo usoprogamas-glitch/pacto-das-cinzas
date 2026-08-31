@@ -5,7 +5,7 @@ extends "res://addons/gut/test.gd"
 ## O helper _spawn_player_party só chama spawn_player_unit, que registra no
 ## BattleManager autoload (disponível em GUT headless).
 
-const BattleSceneScript := preload("res://scripts/battle/battle_scene.gd")
+const BattleSceneScript := preload("res://scripts/battle_scene.gd")
 
 var bs: Node
 

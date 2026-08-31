@@ -5,8 +5,8 @@ extends "res://addons/gut/test.gd"
 ## (trocaria de cena em teste headless) — o efeito observable do _finish é o
 ## mark_act_intro_seen(), testado direto na campanha.
 
-const BattleSceneScript := preload("res://scripts/battle/battle_scene.gd")
-const ActCutsceneScript := preload("res://scripts/ui/act_cutscene.gd")
+const BattleSceneScript := preload("res://scripts/battle_scene.gd")
+const ActCutsceneScript := preload("res://scripts/act_cutscene.gd")
 
 func _make_campaign() -> CampaignSystem:
 	return CampaignSystem.new()
@@ -135,4 +135,4 @@ func test_cutscene_unknown_act_has_no_pages():
 
 func test_scene_manager_knows_act_cutscene():
 	assert_true(SceneManager.scenes.has("act_cutscene"), "cena registrada no SceneManager")
-	assert_eq(SceneManager.scenes["act_cutscene"], "res://scenes/ui/act_cutscene.tscn")
+	assert_eq(SceneManager.scenes["act_cutscene"], "res://scenes/act_cutscene.tscn")

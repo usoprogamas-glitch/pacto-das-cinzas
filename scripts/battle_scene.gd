@@ -1146,7 +1146,7 @@ func _maybe_show_naming() -> void:
   return
  if not captured_souls.has_captured():
   return
- var dialog = load("res://scenes/ui/naming_ui.tscn").instantiate()
+ var dialog = load("res://scenes/naming_ui.tscn").instantiate()
  add_child(dialog)
  var types: Array[String] = []
  for s in captured_souls.souls:
@@ -1207,7 +1207,7 @@ func _on_soul_ether_gained(amount: int) -> void:
 
 func show_victory_screen() -> void:
  # Criar tela de vitória dinamicamente
- var result_screen = load("res://scenes/ui/battle_result_screen.tscn").instantiate()
+ var result_screen = load("res://scenes/battle_result_screen.tscn").instantiate()
  add_child(result_screen)
  result_screen.show_victory(battle_stats)
  result_screen.restart_pressed.connect(_on_restart)
@@ -1215,7 +1215,7 @@ func show_victory_screen() -> void:
  result_screen.continue_pressed.connect(_on_continue)
 
 func show_defeat_screen() -> void:
- var result_screen = load("res://scenes/ui/battle_result_screen.tscn").instantiate()
+ var result_screen = load("res://scenes/battle_result_screen.tscn").instantiate()
  add_child(result_screen)
  result_screen.show_defeat(battle_stats)
  result_screen.restart_pressed.connect(_on_restart)

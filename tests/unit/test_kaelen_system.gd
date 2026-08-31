@@ -126,7 +126,7 @@ func test_signal_suggestion_when_locks():
 
 # --- ROADMAP #5: HUD de Kaelen vivo (era 🟡 morto) ---
 
-const BattleSceneScript := preload("res://scripts/battle/battle_scene.gd")
+const BattleSceneScript := preload("res://scripts/battle_scene.gd")
 
 var bs: Node
 

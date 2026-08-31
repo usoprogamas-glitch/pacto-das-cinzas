@@ -4,7 +4,7 @@ extends "res://addons/gut/test.gd"
 ## "boss_enemy" (Ato I, mapa compartilhado); Atos II-IV usam o pool próprio do
 ## mapa (Cardeais/Aurius). Sem hardcode de chefe na lógica.
 
-const BattleSceneScript := preload("res://scripts/battle/battle_scene.gd")
+const BattleSceneScript := preload("res://scripts/battle_scene.gd")
 
 var bs: Node
 

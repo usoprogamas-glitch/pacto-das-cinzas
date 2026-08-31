@@ -8,7 +8,7 @@ var bm: Node
 
 func before_each():
 	# BattleManager é autoload; para teste isolado instanciamos o script direto.
-	var BM = load("res://scripts/battle/BattleManager.gd")
+	var BM = load("res://scripts/BattleManager.gd")
 	bm = BM.new()
 	add_child_autofree(bm)
 

@@ -6,7 +6,7 @@ extends "res://addons/gut/test.gd"
 ## quebraria a run do GUT.
 
 func make_story() -> Node:
-	var story = load("res://scripts/ui/intro_story.gd").new()
+	var story = load("res://scripts/intro_story.gd").new()
 	script_build_story(story)
 	return story
 

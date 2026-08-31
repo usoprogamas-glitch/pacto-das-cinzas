@@ -164,7 +164,7 @@ func _check_contact() -> void:
 
 
 func _start_arena(enemy_index: int) -> void:
-	arena = load("res://scripts/battle/arena_battle.gd").new()
+	arena = load("res://scripts/arena_battle.gd").new()
 	arena.battle_ended.connect(_on_battle_ended.bind(enemy_index))
 	arena.battle_fled.connect(_on_battle_fled)
 	add_child(arena)
@@ -194,7 +194,7 @@ func _on_battle_ended(victory: bool, rewards: Dictionary, enemy_index: int) -> v
 			_advance_story()
 	else:
 		# Derrota: de volta ao menu (retry pelo menu/continuar).
-		get_tree().change_scene_to_file("res://scenes/menu/main_menu.tscn")
+		get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
 
 
 func _on_battle_fled() -> void:
@@ -205,10 +205,10 @@ func _on_battle_fled() -> void:
 func _advance_story() -> void:
 	if GameManager and GameManager.campaign_system:
 		if GameManager.campaign_system.is_game_complete():
-			get_tree().change_scene_to_file("res://scenes/ui/epilogue.tscn")
+			get_tree().change_scene_to_file("res://scenes/epilogue.tscn")
 			return
 		if GameManager.campaign_system.has_pending_act_intro():
-			get_tree().change_scene_to_file("res://scenes/ui/act_cutscene.tscn")
+			get_tree().change_scene_to_file("res://scenes/act_cutscene.tscn")
 			return
 	# Próximo estágio: recarrega a exploração com o novo mapa/estágio.
 	GameManager.sync_current_map_from_campaign()

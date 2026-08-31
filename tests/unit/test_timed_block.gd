@@ -12,7 +12,7 @@ var _last_damage: int = 0
 
 
 func before_each():
-	var BM = load("res://scripts/battle/BattleManager.gd")
+	var BM = load("res://scripts/BattleManager.gd")
 	bm = BM.new()
 	add_child_autofree(bm)
 	_last_damage = 0

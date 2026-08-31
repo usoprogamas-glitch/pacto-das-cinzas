@@ -4,7 +4,7 @@ extends "res://addons/gut/test.gd"
 ## batalha colidiam (1 entrada sobrescrevia a outra) e as animações tocavam na
 ## unidade errada. Agora a chave é o instance_id da Unit.
 
-const BattleSceneScript := preload("res://scripts/battle/battle_scene.gd")
+const BattleSceneScript := preload("res://scripts/battle_scene.gd")
 
 var bs: Node
 
@@ -53,7 +53,7 @@ func test_get_animator_returns_right_instance():
 	assert_eq(bs._get_animator(units[1]), units[1].get_node("Animator"))
 
 func test_get_animator_unknown_unit_returns_null():
-	var unit_script = load("res://scripts/units/unit.gd")
+	var unit_script = load("res://scripts/unit.gd")
 	var stranger = unit_script.new()
 	autofree(stranger)
 	var result = bs._get_animator(stranger)

@@ -38,7 +38,7 @@ func test_sync_noop_when_stage_list_exhausted():
 # === Molde SoS (opção 3): caminho principal usa EXPLORAÇÃO, não grid ===
 
 func test_linear_flow_routes_to_explore_scene():
-	var bs: Node = load("res://scripts/battle/battle_scene.gd").new()
+	var bs: Node = load("res://scripts/battle_scene.gd").new()
 	GameManager.campaign_system.reset()
 	assert_eq(bs._get_post_victory_destination(), "explore", "ato em curso → exploração do próximo estágio")
 	bs.free()
@@ -46,4 +46,4 @@ func test_linear_flow_routes_to_explore_scene():
 
 func test_scene_manager_knows_explore():
 	assert_true(SceneManager.scenes.has("explore"), "cena de exploração registrada")
-	assert_eq(SceneManager.scenes["explore"], "res://scenes/battle/explore_scene.tscn")
+	assert_eq(SceneManager.scenes["explore"], "res://scenes/explore_scene.tscn")

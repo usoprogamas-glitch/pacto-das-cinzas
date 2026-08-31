@@ -7,10 +7,10 @@ var fake_battle_scene: Node
 
 func before_each():
 	## Sobe uma instância da script battle_scene (Node2D) sem cena completa
-	fake_battle_scene = preload("res://scripts/battle/battle_scene.gd").new()
+	fake_battle_scene = preload("res://scripts/battle_scene.gd").new()
 	## pixel_art_renderer real (mesmo padrão do setup_systems); se o HD carregar,
 	## ele nem é usado — mas fica disponível para o fallback procedural.
-	fake_battle_scene.pixel_art_renderer = preload("res://scripts/visual/pixel_art_renderer.gd").new()
+	fake_battle_scene.pixel_art_renderer = preload("res://scripts/pixel_art_renderer.gd").new()
 
 
 ## Usa chave ficticia (zz_test) que nunca colide com os sprites reais em assets/sprites/.

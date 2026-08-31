@@ -3,7 +3,7 @@ extends "res://addons/gut/test.gd"
 ## Smoke da exploração (molde SoS): cena carrega, party spawna, inimigos
 ## registram no SeamlessEncounterSystem e o contato abre a arena in-place.
 
-const ExploreScript := preload("res://scripts/explore/explore_scene.gd")
+const ExploreScript := preload("res://scripts/explore_scene.gd")
 
 var _explore: Node
 var _won: bool = false  # lambdas capturam locais por valor: flag precisa ser membro

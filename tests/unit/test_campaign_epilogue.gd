@@ -3,7 +3,7 @@ extends "res://addons/gut/test.gd"
 ## Valida o ciclo game_completed no CampaignSystem, o roteamento pós-vitória
 ## do battle_scene e a cena de epílogo.
 
-const BattleSceneScript := preload("res://scripts/battle/battle_scene.gd")
+const BattleSceneScript := preload("res://scripts/battle_scene.gd")
 
 func _make_campaign() -> CampaignSystem:
 	return CampaignSystem.new()
@@ -56,7 +56,7 @@ func test_post_victory_destination_safe_without_campaign():
 	bs.free()
 
 func test_epilogue_scene_instantiates_with_canonical_text():
-	var scene = load("res://scenes/ui/epilogue.tscn").instantiate()
+	var scene = load("res://scenes/epilogue.tscn").instantiate()
 	add_child_autofree(scene)
 	assert_eq(scene.epilogue_label.text, scene.EPILOGUE_TEXT, "texto do epílogo canônico")
 	assert_true(scene.EPILOGUE_TEXT.contains("Tratado do Éter e da Carne"), "lore GDD v2 §1.5")
@@ -66,4 +66,4 @@ func test_epilogue_scene_instantiates_with_canonical_text():
 
 func test_scene_manager_knows_epilogue():
 	assert_true(SceneManager.scenes.has("epilogue"), "cena registrada no SceneManager")
-	assert_eq(SceneManager.scenes["epilogue"], "res://scenes/ui/epilogue.tscn")
+	assert_eq(SceneManager.scenes["epilogue"], "res://scenes/epilogue.tscn")

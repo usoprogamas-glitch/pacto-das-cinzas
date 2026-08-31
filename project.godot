@@ -12,15 +12,15 @@ config_version=5
 
 config/name="O Pacto das Cinzas"
 config/description="Tactical RPG - Um Imp governa uma nação de monstros"
-run/main_scene="res://scenes/ui/intro_story.tscn"
+run/main_scene="res://scenes/intro_story.tscn"
 config/features=PackedStringArray("4.3", "GL Compatibility")
 
 [autoload]
 
-BattleManager="*res://scripts/battle/BattleManager.gd"
+BattleManager="*res://scripts/BattleManager.gd"
 GameManager="*res://scripts/game_manager.gd"
-SoundManager="*res://scripts/audio/sound_manager.gd"
-SceneManager="*res://scripts/ui/scene_manager.gd"
+SoundManager="*res://scripts/sound_manager.gd"
+SceneManager="*res://scripts/scene_manager.gd"
 
 [display]
 

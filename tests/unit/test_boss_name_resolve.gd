@@ -4,7 +4,7 @@ extends "res://addons/gut/test.gd"
 ## chefes (Zephyr, Aqua, Terra, Umbra, Aurius 3 fases) usavam partes/spells de
 ## Ignis no runtime. Agora: nome da unit → cardinal data-driven.
 
-const BattleSceneScript := preload("res://scripts/battle/battle_scene.gd")
+const BattleSceneScript := preload("res://scripts/battle_scene.gd")
 
 var bs: Node
 

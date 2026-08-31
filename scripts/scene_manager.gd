@@ -7,13 +7,13 @@ enum SceneType { INTRO, MAIN_MENU, BATTLE, VILLAGE, MAP_SELECT, SETTINGS, EPILOG
 
 var current_scene: String = "intro"
 var scenes: Dictionary = {
- "intro": "res://scenes/ui/intro_story.tscn",
- "main_menu": "res://scenes/menu/main_menu.tscn",
- "battle": "res://scenes/battle/battle_scene.tscn",
- "explore": "res://scenes/battle/explore_scene.tscn",
- "settings": "res://scenes/menu/settings.tscn",
- "epilogue": "res://scenes/ui/epilogue.tscn",
- "act_cutscene": "res://scenes/ui/act_cutscene.tscn"
+ "intro": "res://scenes/intro_story.tscn",
+ "main_menu": "res://scenes/main_menu.tscn",
+ "battle": "res://scenes/battle_scene.tscn",
+ "explore": "res://scenes/explore_scene.tscn",
+ "settings": "res://scenes/settings.tscn",
+ "epilogue": "res://scenes/epilogue.tscn",
+ "act_cutscene": "res://scenes/act_cutscene.tscn"
  }
 
 func _ready() -> void:

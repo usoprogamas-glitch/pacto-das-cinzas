@@ -5,7 +5,7 @@ extends "res://addons/gut/test.gd"
 ## e desestabilizaria a run. Aqui instanciamos SEM entrar na árvore (_ready não
 ## roda) e validamos estrutura + assets — sem side effects.
 
-var _packed: PackedScene = load("res://scenes/ui/intro_story.tscn")
+var _packed: PackedScene = load("res://scenes/intro_story.tscn")
 var _inst: Node
 
 

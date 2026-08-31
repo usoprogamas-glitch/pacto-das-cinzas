@@ -4,7 +4,7 @@ extends "res://addons/gut/test.gd"
 ## array constructor, comentários acentuados) → compilação falhava e outline/
 ## glow/rim/water/grass/dither ficavam MORTOS silenciosamente.
 
-const PixelArtRendererScript := preload("res://scripts/visual/pixel_art_renderer.gd")
+const PixelArtRendererScript := preload("res://scripts/pixel_art_renderer.gd")
 
 var renderer
 

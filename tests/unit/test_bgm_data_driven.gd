@@ -3,7 +3,7 @@ extends "res://addons/gut/test.gd"
 ## Bugs: play_music() nunca setava stream (tocava silêncio) e ninguém a chamava —
 ## o campo "music" do MapDatabase era dado morto.
 
-const BattleSceneScript := preload("res://scripts/battle/battle_scene.gd")
+const BattleSceneScript := preload("res://scripts/battle_scene.gd")
 
 var bs: Node
 

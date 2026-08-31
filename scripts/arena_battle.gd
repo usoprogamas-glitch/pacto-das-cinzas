@@ -5,7 +5,7 @@ extends Node2D
 ## agilidade (TurnOrderManager), menu Atacar/Magia/Fugir + Timed Hit/Block.
 ## Lógica no ArenaCombat (puro, headless-testável); esta cena só apresenta.
 
-const ArenaCombatLib := preload("res://scripts/battle/arena_combat.gd")
+const ArenaCombatLib := preload("res://scripts/arena_combat.gd")
 
 signal battle_ended(victory: bool, rewards: Dictionary)
 signal battle_fled()

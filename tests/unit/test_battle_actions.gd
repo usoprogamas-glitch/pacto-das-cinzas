@@ -7,7 +7,7 @@ extends "res://addons/gut/test.gd"
 ## que extends CombatFeedback mas sobrescreve show_status_effect (que
 ## exigiria estar na tree para criar tweens).
 
-const BattleSceneScript := preload("res://scripts/battle/battle_scene.gd")
+const BattleSceneScript := preload("res://scripts/battle_scene.gd")
 
 var bs: Node
 # Lambdas do GDScript 4 capturam locais por valor; mutações de flags precisam

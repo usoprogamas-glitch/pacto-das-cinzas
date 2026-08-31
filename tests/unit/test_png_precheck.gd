@@ -3,7 +3,7 @@ extends "res://addons/gut/test.gd"
 ## img.load em arquivo ausente imprime ERROR no console para cada probe de nome
 ## sem png (fantasma, teia, guerreiro...) — o pre-check elimina o spam.
 
-const BattleSceneScript := preload("res://scripts/battle/battle_scene.gd")
+const BattleSceneScript := preload("res://scripts/battle_scene.gd")
 
 var bs: Node
 

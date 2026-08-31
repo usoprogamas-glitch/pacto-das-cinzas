@@ -3,13 +3,13 @@ extends "res://addons/gut/test.gd"
 ## Sprites HD (1024px) e procedurais (64-128px) devem sair de create_unit()
 ## com tamanho visual = BattleGrid.TILE_SIZE (32px).
 
-const BattleSceneScript := preload("res://scripts/battle/battle_scene.gd")
+const BattleSceneScript := preload("res://scripts/battle_scene.gd")
 
 var fake_battle_scene: Node
 
 func before_each():
-	fake_battle_scene = preload("res://scripts/battle/battle_scene.gd").new()
-	fake_battle_scene.pixel_art_renderer = preload("res://scripts/visual/pixel_art_renderer.gd").new()
+	fake_battle_scene = preload("res://scripts/battle_scene.gd").new()
+	fake_battle_scene.pixel_art_renderer = preload("res://scripts/pixel_art_renderer.gd").new()
 	# NOTA: sem árvore, o _ready do renderer não roda → ShaderMaterials null →
 	# o caminho procedural imprime 2 SCRIPT ERRORs benignos de duplicate(null).
 	# NÃO chamar create_shaders() aqui: os shaders do renderer têm erros de

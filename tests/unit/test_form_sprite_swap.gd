@@ -3,7 +3,7 @@ extends "res://addons/gut/test.gd"
 ## Bug: form_changed aplicava stats mas NUNCA trocava o sprite — Kael ficava
 ## Imp Menor o jogo inteiro apesar dos 4 pngs de forma existirem.
 
-const BattleSceneScript := preload("res://scripts/battle/battle_scene.gd")
+const BattleSceneScript := preload("res://scripts/battle_scene.gd")
 
 var bs: Node
 

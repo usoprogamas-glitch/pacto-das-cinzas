@@ -6,7 +6,7 @@ extends "res://addons/gut/test.gd"
 ## intro_completed carrega first_pact com consequence (consumido pelo GameManager).
 
 func make_story() -> Node:
-	var story = load("res://scripts/ui/intro_story.gd").new()
+	var story = load("res://scripts/intro_story.gd").new()
 	story._build_ui_if_missing()
 	story.text_label = story.get_node("VBoxContainer/TextLabel")
 	story.choice_container = story.get_node("VBoxContainer/ChoiceContainer")

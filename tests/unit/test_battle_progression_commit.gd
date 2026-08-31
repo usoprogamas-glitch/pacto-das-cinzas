@@ -4,14 +4,14 @@ extends "res://addons/gut/test.gd"
 ## para o GameManager.progression_system PERSISTENTE ao vencer — o bug #fix onde
 ## os ganhos (XP/memória/almas) se perdiam ao sair da batalha.
 
-const BattleSceneScript := preload("res://scripts/battle/battle_scene.gd")
+const BattleSceneScript := preload("res://scripts/battle_scene.gd")
 
 var bs: Node
 var _before: Dictionary
 
 func before_each() -> void:
 	bs = BattleSceneScript.new()
-	bs.progression_system = preload("res://scripts/narrative/progression_system.gd").new()
+	bs.progression_system = preload("res://scripts/progression_system.gd").new()
 	# Simular acumulado de batalha: derrotar inimigos dá memória/XP/almas
 	bs.progression_system.add_memory(10)
 	bs.progression_system.add_experience(25)
@@ -39,7 +39,7 @@ func test_commit_is_noop_when_no_local_system():
 func test_commit_does_not_duplicate_on_idempotent_system_reset():
 	# Se a cena já commitou, os valores foram zerados/resetados — garantir que um
 	# sistema local vazio não injeta lixo (0 adições, deltas positivos apenas).
-	var empty = preload("res://scripts/narrative/progression_system.gd").new()
+	var empty = preload("res://scripts/progression_system.gd").new()
 	bs.progression_system = empty
 	bs._commit_progression()
 	assert_eq(GameManager.progression_system.total_memory, _before["total_memory"], "progression vazia = nenhum ganho")

@@ -3,7 +3,7 @@ extends "res://addons/gut/test.gd"
 ## Bug corrigido: setup() procurava o filho "Sprite2D" pelo nome, mas add_child
 ## sem nome gera "@Sprite2D@N" → idle/hit/cast/death ficavam null e mortos.
 
-const UnitAnimatorScript := preload("res://scripts/visual/unit_animator.gd")
+const UnitAnimatorScript := preload("res://scripts/unit_animator.gd")
 
 func _make_unit_with_sprite() -> Node2D:
 	# Reproduz create_unit: sprite adicionado SEM nome explícito.

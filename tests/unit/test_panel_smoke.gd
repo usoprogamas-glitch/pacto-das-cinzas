@@ -7,7 +7,7 @@ extends "res://addons/gut/test.gd"
 ##   + toast (combat_feedback.show_status_effect) emitido.
 ## Complementa test_battle_actions.gd, que só valida a emissão do sinal.
 
-const BattleSceneScript := preload("res://scripts/battle/battle_scene.gd")
+const BattleSceneScript := preload("res://scripts/battle_scene.gd")
 
 var bs: Node
 # toasts capturados pelo stub do combat_feedback
@@ -19,15 +19,15 @@ func before_each() -> void:
 	bs.combat_feedback = _make_combat_feedback_stub()
 	# Monta progress_system + os 4 sistemas §6-7 e conecta os sinais
 	# (mesma ligação de setup_systems(), sem montar a cena .tscn)
-	bs.progression_system = preload("res://scripts/narrative/progression_system.gd").new()
-	bs.traversal_system = preload("res://scripts/battle/traversal_system.gd").new()
-	bs.campfire_system = preload("res://scripts/battle/campfire_system.gd").new()
-	bs.cooking_system = preload("res://scripts/battle/cooking_system.gd").new()
-	bs.tavern_minigame = preload("res://scripts/battle/tavern_minigame.gd").new()
-	bs.combo_system = preload("res://scripts/battle/combo_system.gd").new()
-	bs.balance_system = preload("res://scripts/battle/balance_system.gd").new()
-	bs.boss_system = preload("res://scripts/battle/boss_system.gd").new()
-	bs.lock_system = preload("res://scripts/battle/lock_system.gd").new()
+	bs.progression_system = preload("res://scripts/progression_system.gd").new()
+	bs.traversal_system = preload("res://scripts/traversal_system.gd").new()
+	bs.campfire_system = preload("res://scripts/campfire_system.gd").new()
+	bs.cooking_system = preload("res://scripts/cooking_system.gd").new()
+	bs.tavern_minigame = preload("res://scripts/tavern_minigame.gd").new()
+	bs.combo_system = preload("res://scripts/combo_system.gd").new()
+	bs.balance_system = preload("res://scripts/balance_system.gd").new()
+	bs.boss_system = preload("res://scripts/boss_system.gd").new()
+	bs.lock_system = preload("res://scripts/lock_system.gd").new()
 	bs.traversal_system.traversal_completed.connect(bs._on_traversal_completed)
 	bs.campfire_system.rest_completed.connect(bs._on_camp_rest_completed)
 	bs.cooking_system.recipe_crafted.connect(bs._on_recipe_crafted)

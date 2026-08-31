@@ -3,7 +3,7 @@ extends "res://addons/gut/test.gd"
 ## apontava para scenes/menu/settings.tscn que NÃO existia → change_scene_to_file
 ## com path inexistente = crash. Agora existe e abre.
 
-var _packed: PackedScene = load("res://scenes/menu/settings.tscn")
+var _packed: PackedScene = load("res://scenes/settings.tscn")
 var _inst: Node
 
 
@@ -36,7 +36,7 @@ func test_settings_script_attached_and_maps_back():
 	assert_not_null(node.get_script(), "script de settings deve estar anexado")
 
 	# _on_back usa SceneManager.go_to_main_menu — valida que o path main_menu existe
-	var sm_prefab = load("res://scripts/ui/scene_manager.gd").new()
+	var sm_prefab = load("res://scripts/scene_manager.gd").new()
 	assert_has(sm_prefab.scenes, "main_menu", "SceneManager deve mapear main_menu")
 	assert_has(sm_prefab.scenes, "settings", "SceneManager deve mapear settings (apontado pelo menu)")
 	assert_true(ResourceLoader.exists(sm_prefab.scenes.settings), "path de settings deve existir no disco")

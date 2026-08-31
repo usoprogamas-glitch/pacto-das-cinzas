@@ -5,13 +5,13 @@ extends "res://addons/gut/test.gd"
 ## Fecha o loop: antes a fé era estática (só +25 no start_new_game), e os sinais
 ## faith_changed/faith_level_up nunca disparam em runtime.
 
-const BattleSceneScript := preload("res://scripts/battle/battle_scene.gd")
+const BattleSceneScript := preload("res://scripts/battle_scene.gd")
 
 var bs: Node
 
 func before_each() -> void:
 	bs = BattleSceneScript.new()
-	bs.progression_system = preload("res://scripts/narrative/progression_system.gd").new()
+	bs.progression_system = preload("res://scripts/progression_system.gd").new()
 	# Estado determinístico (não somar): FaithSystem do GameManager é autoload
 	# persistente que acumula entre testes — seta Kroug direto em 25/Neutro.
 	GameManager.faith_system.faith_data["Kroug"] = {"faith": 25, "level": "Neutro", "bonuses": {}}
