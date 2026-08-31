@@ -22,9 +22,23 @@ func build_turn_order(units: Array) -> Array:
 	return TurnOrderManager.build_order(units)
 
 
+## Leitura de stats com duck typing: Unit (data.attack/defense) ou objeto cru
+## com atk/def diretos.
+func _attack_of(u) -> int:
+	if u.data != null and u.data.get("attack") != null:
+		return int(u.data.attack)
+	return int(u.atk)
+
+
+func _defense_of(u) -> int:
+	if u.data != null and u.data.get("defense") != null:
+		return int(u.data.defense)
+	return int(u.def)
+
+
 ## Dano base: attack vs defense com variação ±15% (mesma curva do grid).
 func calculate_damage(attacker, target, timing_multiplier: float = 1.0) -> int:
-	var base := maxi(1, attacker.atk - target.def)
+	var base := maxi(1, _attack_of(attacker) - _defense_of(target))
 	var variation := randf_range(0.85, 1.15)
 	return maxi(1, int(base * variation * timing_multiplier))
 
@@ -34,7 +48,7 @@ func cast_damage_spell(caster, target) -> Dictionary:
 	if caster.current_mp < MAGIC_COST:
 		return {"success": false, "damage": 0}
 	caster.current_mp -= MAGIC_COST
-	var base := maxi(1, int(caster.atk * MAGIC_MULTIPLIER) - int(target.def * 0.5))
+	var base := maxi(1, int(_attack_of(caster) * MAGIC_MULTIPLIER) - int(_defense_of(target) * 0.5))
 	var variation := randf_range(0.85, 1.15)
 	return {"success": true, "damage": maxi(1, int(base * variation))}
 
@@ -46,8 +60,9 @@ func apply_hit(attacker, target, damage: int) -> int:
 
 
 ## IA inimiga: alvo jogador de menor HP (foca kill), desempate aleatório.
+## Só considera unidades do lado do jogador (o array pode vir sujo).
 func choose_enemy_target(players: Array):
-	var alive := players.filter(func(u): return u.is_alive())
+	var alive := players.filter(func(u): return u.is_alive() and u.is_player_side())
 	if alive.is_empty():
 		return null
 	alive.sort_custom(func(a, b): return a.current_hp < b.current_hp)

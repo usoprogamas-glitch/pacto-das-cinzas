@@ -13,6 +13,9 @@ var ability_system: AbilitySystem
 var progression_system: ProgressionSystem
 var character_progression: CharacterProgression  # conectado ao ProgressionSystem p/ evolucao de forma
 var lineage_system: LineageSystem  # canonico (RefCounted): evolucao dos apostolos por ato
+# Fonte de verdade da party do jogador (persistida no save). Cada entrada descreve
+# um membro recrutado: { "name", "class", "hp", "atk", "def", "mov", "rng" }.
+var party_data: Array[Dictionary] = []
 var naming_system: NamingSystem  # Pacto de Alma (GDD 2.1/4): nomear criaturas -> apostolos
 var campaign_system: CampaignSystem  # Ato/stage/gating/persistencia (ROADMAP #2)
 
@@ -125,6 +128,17 @@ func start_new_game() -> void:
   "first_pact": game_data.first_pact
  }
 
+ # Party inicial: o Kael sempre; Kroug entra via Pacto (fonte p/ arena e grid).
+ party_data = [{
+  "name": "Kael",
+  "class": "Imp Menor",
+  "hp": 80,
+  "atk": 12,
+  "def": 8,
+  "mov": 3,
+  "rng": 1
+ }]
+
  # Registrar aliados baseado na escolha
  if game_data.starting_ally == "kroug":
   # Pacto de Alma vivo (GDD 2.1): nomear Kroug forja o 1o pacto + vira apostolo
@@ -133,6 +147,7 @@ func start_new_game() -> void:
    faith_system.register_apostle("Kroug")
    # +25 de fe inicial por ser o primeiro pacto
    faith_system.add_faith("Kroug", 25)
+   add_to_party({"name": "Kroug", "class": "Goblin da Lama", "hp": 120, "atk": 10, "def": 15, "mov": 2, "rng": 1})
  elif game_data.starting_ally == "none":
   # Sem aliado inicial
   pass
@@ -156,6 +171,30 @@ func add_gold(amount: int) -> void:
 func get_game_data() -> Dictionary:
  return game_data
 
+func apply_victory_rewards(rewards) -> void:
+ add_soul_ether(rewards.soul_ether)
+ add_gold(rewards.gold)
+ if progression_system:
+  progression_system.add_experience(rewards.xp)
+ for soul in rewards.captured_souls:
+  if naming_system:
+   naming_system.name_soul(soul["type"], soul["display_name"])
+ game_data["victory_rewards"] = rewards.serialize() if rewards.has_method("serialize") else {
+  "soul_ether": rewards.soul_ether,
+  "gold": rewards.gold,
+  "xp": rewards.xp,
+  "captured_souls": rewards.captured_souls,
+  "unlocks": rewards.unlocks
+ }
+
+## Adiciona um membro à party (sem duplicar por nome). Usado ao recrutar apóstolos
+## via Pacto de Alma / construções.
+func add_to_party(member: Dictionary) -> void:
+ for existing in party_data:
+  if existing.get("name", "") == member.get("name", ""):
+   return
+ party_data.append(member)
+
 ## Fluxo linear de enredo (decisão 2026-08-31): o caminho principal nunca passa
 ## pelo map_select — intro/cutscene/pós-vitória entram direto na batalha do
 ## estágio atual da campanha. Fonte única do map_id é o CampaignSystem.
@@ -176,8 +215,9 @@ func save_game() -> void:
   "character_progression": character_progression.serialize(),
   "lineage_system": lineage_system.serialize(),
   "naming_system": naming_system.save_data(),
-  "campaign_system": campaign_system.serialize() if campaign_system else {}
- }
+  "campaign_system": campaign_system.serialize() if campaign_system else {},
+  "party_data": party_data
+  }
  var file = FileAccess.open("user://save_game.json", FileAccess.WRITE)
  if file:
   file.store_string(JSON.stringify(save_data))
@@ -209,6 +249,8 @@ func load_game() -> bool:
     naming_system.load_data(save_data.naming_system)
    if campaign_system and save_data.has("campaign_system"):
     campaign_system.deserialize(save_data.campaign_system)
+   if save_data.has("party_data"):
+    party_data = save_data.party_data
    return true
   return false
  return false

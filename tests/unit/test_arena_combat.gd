@@ -3,7 +3,7 @@ extends "res://addons/gut/test.gd"
 ## Núcleo de combate arena (molde Sea of Stars, opção 3): ordem por agilidade,
 ## dano/magia, IA de foco e condição de fim — tudo puro, sem cena.
 
-var arena  # ArenaCombat
+var arena: ArenaCombat
 
 
 func before_each() -> void:
@@ -28,7 +28,7 @@ func _make(name: String, is_player: bool, hp: int, atk: int, def: int, spd: int)
 func test_turn_order_follows_agility():
 	var slow := _make("Bruto", false, 50, 10, 5, 5)
 	var fast := _make("Kael", true, 80, 12, 8, 11)
-	var order := arena.build_turn_order([slow, fast])
+	var order: Array = arena.build_turn_order([slow, fast])
 	assert_eq(order[0], fast, "mais ágil age primeiro (SoS §5.1)")
 	assert_eq(order[1], slow)
 
@@ -37,7 +37,7 @@ func test_damage_respects_defense_floor():
 	var a := _make("Kael", true, 80, 20, 0, 10)
 	var t := _make("Bruto", false, 100, 5, 15, 5)
 	seed(42)
-	var dmg := arena.calculate_damage(a, t)
+	var dmg: int = arena.calculate_damage(a, t)
 	assert_between(dmg, 1, int((20 - 15) * 1.15), "dano = (atk - def) ±15%, mínimo 1")
 
 
@@ -53,7 +53,7 @@ func test_magic_costs_mp_and_pierces_defense():
 	mage.current_mp = 50
 	var tank := _make("Muralha", false, 500, 0, 50, 5)
 	var before := mage.current_mp
-	var cast := arena.cast_damage_spell(mage, tank)
+	var cast: Dictionary = arena.cast_damage_spell(mage, tank)
 	assert_true(cast.success, "MP suficiente = cast bem-sucedido")
 	assert_eq(mage.current_mp, before - ArenaCombat.MAGIC_COST, "custo descontado")
 	assert_gt(cast.damage, 1, "magia perfura a defesa (dano > floor)")
@@ -63,7 +63,7 @@ func test_magic_fails_without_mp():
 	var mage := _make("Kael", true, 80, 20, 0, 10)
 	mage.current_mp = 0
 	var t := _make("Bruto", false, 100, 5, 5, 5)
-	var cast := arena.cast_damage_spell(mage, t)
+	var cast: Dictionary = arena.cast_damage_spell(mage, t)
 	assert_false(cast.success, "sem MP = falha")
 	assert_eq(mage.current_mp, 0, "MP não fica negativo")
 

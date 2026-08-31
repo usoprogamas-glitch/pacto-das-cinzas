@@ -512,13 +512,48 @@ func _spawn_player_party() -> void:
  var hp: int = stats.get("hp", 80)
  var atk: int = 12
  var def: int = 8
- spawn_player_unit(Vector2i(2, 6), "Kael", Color(0.2, 0.8, 0.3), "Imp Menor", hp, atk, def, 3, 1)
- # Nomes já no campo (evita duplicar apóstolo canônico com alma nomeada).
- var spawned: Array[String] = ["Kael"]
- if GameManager and GameManager.game_data.get("starting_ally") == "kroug":
-  spawn_player_unit(Vector2i(1, 7), "Kroug", Color(0.8, 0.3, 0.1), "Goblin da Lama", 120, 10, 15, 2, 1)
-  spawned.append("Kroug")
- _spawn_named_souls(spawned)
+ # Fonte da verdade: GameManager.party_data (persistida no save). Fallback para
+ # jogo novo / caminho legado sem party registrada.
+ var party: Array[Dictionary] = []
+ if GameManager and GameManager.party_data and not GameManager.party_data.is_empty():
+  party = GameManager.party_data
+ else:
+  party = [{"name": "Kael", "class": "Imp Menor", "hp": hp, "atk": atk, "def": def, "mov": 3, "rng": 1}]
+  if GameManager and GameManager.game_data.get("starting_ally") == "kroug":
+   party.append({"name": "Kroug", "class": "Goblin da Lama", "hp": 120, "atk": 10, "def": 15, "mov": 2, "rng": 1})
+ for i in range(party.size()):
+  var m: Dictionary = party[i]
+  var grid_pos = Vector2i(2 + i, 6)
+  spawn_player_unit(
+   grid_pos,
+   m.get("name", "Kael"),
+   _party_color(m.get("name", "")),
+   m.get("class", "Imp Menor"),
+   int(m.get("hp", 80)),
+   int(m.get("atk", atk)),
+   int(m.get("def", def)),
+   int(m.get("mov", 3)),
+   int(m.get("rng", 1))
+  )
+ _spawn_named_souls(_party_names(party))
+
+func _party_names(party: Array) -> Array:
+ var names: Array = []
+ for m in party:
+  names.append(m.get("name", ""))
+ return names
+
+func _party_color(member_name: String) -> Color:
+ match member_name:
+  "Kroug":
+   return Color(0.8, 0.3, 0.1)
+  "Lira":
+   return Color(0.3, 0.8, 0.4)
+  "Thal'kor":
+   return Color(0.4, 0.3, 0.8)
+  _:
+   return Color(0.2, 0.8, 0.3)
+
 
 # Spawna as almas nomeadas do save (NamingSystem) como aliados vivos, usando o
 # NOME real persistido + stats evoluídos (ROADMAP #9). Almas canônicas já
