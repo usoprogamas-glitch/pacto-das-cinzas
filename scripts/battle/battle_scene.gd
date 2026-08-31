@@ -1526,10 +1526,38 @@ func _apply_protagonist_form_stats(new_form: String) -> void:
    var hp_ratio := float(unit.data.current_hp) / float(unit.data.max_hp)
    unit.data.max_hp = stats.get("hp", unit.data.max_hp)
    unit.data.current_hp = int(unit.data.max_hp * hp_ratio)
-  unit.data.attack = stats.get("attack", unit.data.attack)
-  unit.data.defense = stats.get("defense", unit.data.defense)
-  unit.data.magic = stats.get("magic", unit.data.magic)
-  unit.data.speed = stats.get("speed", unit.data.speed)
+   unit.data.attack = stats.get("attack", unit.data.attack)
+   unit.data.defense = stats.get("defense", unit.data.defense)
+   unit.data.magic = stats.get("magic", unit.data.magic)
+   unit.data.speed = stats.get("speed", unit.data.speed)
+   # P0-3: a evolução é VISÍVEL — sprite da unit vira a png da forma nova.
+   _swap_protagonist_sprite(unit, new_form)
+
+## Troca a textura do sprite da unit para a png da forma nova (§8 / P0-3).
+## Reusa o NÓ do sprite (animator mantém a referência); png ausente → mantém atual.
+func _swap_protagonist_sprite(unit: Unit, new_form: String) -> void:
+ var new_sprite := _load_hd_sprite("res://assets/sprites/" + _sprite_key(new_form) + ".png")
+ if new_sprite == null:
+  return
+ var old_sprite := _find_unit_sprite(unit)
+ if old_sprite == null:
+  new_sprite.free()
+  return
+ old_sprite.texture = new_sprite.texture
+ old_sprite.scale = new_sprite.scale
+ _normalize_sprite_to_tile(old_sprite)  # 1024px cru → célula de 32px
+ new_sprite.free()
+
+## Primeiro Sprite2D filho da unit (nome automático "@Sprite2D@N" impede path fixo).
+func _find_unit_sprite(unit: Unit) -> Sprite2D:
+ if unit == null:
+  return null
+ if unit.has_node("Sprite2D"):
+  return unit.get_node("Sprite2D") as Sprite2D
+ for child in unit.get_children():
+  if child is Sprite2D:
+   return child as Sprite2D
+ return null
 
 func _update_progression_hud() -> void:
  if not progression_hud or not progression_system:

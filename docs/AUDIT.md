@@ -20,12 +20,10 @@
 - **Fix**: key por instância (`unit.get_instance_id()`) ou guardar o animator como filho nomeado da Unit e buscar nele; lookup em `_on_unit_attacked`/`_on_unit_died` muda junto.
 - **Teste**: spawnar 2 units de mesmo nome → 2 animators independentes.
 
-### 3. Evolução de forma NÃO troca o sprite 🐛
+### 3. Evolução de forma NÃO troca o sprite 🐛 ✅ CORRIGIDO (2026-08-31)
 - **Onde**: `battle_scene.gd::_on_protagonist_form_changed` — só pisca o FormLabel.
 - **Problema**: os 4 sprites de forma (`imp_menor`, `nobre_abissal`, `arquidemonio`, `avatar_primordial`) foram gerados mas **nunca aparecem** — a unit do Kael continua com o sprite da forma 1 o jogo inteiro.
-- **Impacto**: a evolução visual (gancho principal da progressão §8) é invisível.
-- **Fix**: no handler, trocar `sprite.texture` pela png da nova forma (reusar `_load_hd_sprite` + `_normalize_sprite_to_tile`) e tocar `play_evolution()`.
-- **Teste**: emitir `form_changed` → textura da unit mudou, escala continua 32px.
+- **Fix aplicado**: `_apply_protagonist_form_stats` agora chama `_swap_protagonist_sprite(unit, new_form)` — troca a textura do MESMO nó Sprite2D (animator não perde referência) + re-normaliza à célula de 32px. Png ausente → textura mantida. 6 testes (`test_form_sprite_swap.gd`).
 
 ### 4. Música não existe em runtime 🐛
 - **Onde**: `map_database.gd` define `"music": "exploration"/"battle"` por mapa — **nenhum código lê esse campo**. `SoundManager.play_sfx` é chamado (select/step/hit/death), mas zero BGM.
@@ -93,8 +91,8 @@
 | # | Item | Racional |
 |---|---|---|
 | ~~1~~ | ~~P0-1 Boss por nome~~ | ✅ feito (2026-08-31) |
-| 2 | P0-2 animators por instância | correção de bug pequena e isolada |
-| 3 | P0-3 troca de sprite na evolução | usa os 4 sprites já gerados |
+| ~~2~~ | ~~P0-2 animators por instância~~ | ✅ feito (2026-08-31) |
+| ~~3~~ | ~~P0-3 troca de sprite na evolução~~ | ✅ feito (2026-08-31) |
 | 4 | P0-4 BGM data-driven | campo `music` já existe nos dados |
 | 5 | P0-6 pre-check de png | trivial, limpa o log |
 | 6 | P0-5 shaders | médio; isolar shader por shader |
