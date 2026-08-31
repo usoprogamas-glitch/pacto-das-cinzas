@@ -24,10 +24,15 @@ func setup(unit_ref: Node2D) -> void:
 func _find_sprite(unit_ref: Node2D) -> Sprite2D:
  # O sprite Ã© adicionado via add_child sem nome explÃ­cito â†’ Godot nomeia
  # "@Sprite2D@N" e has_node("Sprite2D") NUNCA casava (idle/hit/cast mortos).
+ # A arena (molde SoS) adiciona um dummy INVISÍVEL "Sprite2D" para os @onready
+ # do Unit — por isso o primeiro passe procura um Sprite2D visível.
  if unit_ref == null:
   return null
  if unit_ref is Sprite2D:
   return unit_ref
+ for child in unit_ref.get_children():
+  if child is Sprite2D and child.visible:
+   return child
  if unit_ref.has_node("Sprite2D"):
   return unit_ref.get_node("Sprite2D") as Sprite2D
  for child in unit_ref.get_children():

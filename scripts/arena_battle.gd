@@ -31,13 +31,19 @@ var action_menu: VBoxContainer
 var turn_label: Label
 var log_label: Label
 var _hp_labels: Dictionary = {}  # unit -> Label
+var _animators: Dictionary = {}  # instance_id -> UnitAnimator (P0-2: key por instância)
+var _home_positions: Dictionary = {}  # instance_id -> Vector2 (destino da entrada)
+var _entrance_tweens: Array = []
+var combat_frozen := false  # testes: congela o loop de turnos (IA não age)
 
 
 func _ready() -> void:
 	combat = ArenaCombatLib.new()
 	_build_arena()
 	_setup_from_campaign()
-	_start_round()
+	_entrance_walk()
+	if not combat_frozen:
+		_start_round()
 
 
 # --- Setup ---
@@ -111,6 +117,7 @@ func _make_combatant(unit_name: String, is_player: bool, hp: int, atk: int, def:
 func _arena_position(u: Unit, pos: Vector2, color: Color, sprite_key: String) -> void:
 	u.position = pos
 	u.visible = true
+	_home_positions[u.get_instance_id()] = pos
 	var path := "res://assets/sprites/%s.png" % sprite_key
 	var sprite: Sprite2D
 	if FileAccess.file_exists(path):
@@ -135,6 +142,59 @@ func _arena_position(u: Unit, pos: Vector2, color: Color, sprite_key: String) ->
 	bar.show_percentage = false
 	u.add_child(bar)
 	u.hp_changed.connect(func(hp): bar.value = hp)
+
+	# Animador (idle respirando; lunge/hit/death/victory nos eventos).
+	var animator := UnitAnimator.new()
+	u.add_child(animator)
+	animator.setup(u)
+	animator.play_idle()
+	_animators[u.get_instance_id()] = animator
+
+
+func _animator_for(u) -> UnitAnimator:
+	if u == null or not _animators.has(u.get_instance_id()):
+		return null
+	return _animators[u.get_instance_id()]
+
+
+## Entrada no molde SoS: cada grupo caminha até sua posição de arena
+## (jogadores pela esquerda, inimigos pela direita).
+func _entrance_walk() -> void:
+	for u in combatants:
+		var animator := _animator_for(u)
+		var target: Vector2 = _home_positions[u.get_instance_id()]
+		var from_x: float = -80.0 if u.is_player_side() else 1360.0
+		u.position = Vector2(from_x, target.y)
+		if animator:
+			animator.current_animation = "walk"
+			animator.face_direction(target.x - from_x)
+		var tween := create_tween()
+		_entrance_tweens.append(tween)
+		tween.tween_property(u, "position", target, 0.9).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		if animator and animator.sprite:
+			tween.parallel().tween_property(animator.sprite, "rotation", 0.08, 0.45)
+			tween.tween_property(animator.sprite, "rotation", 0.0, 0.45)
+		tween.finished.connect(_on_entrance_finished.bind(animator))
+
+
+func _on_entrance_finished(animator) -> void:
+	if animator:
+		animator.current_animation = "idle"
+
+
+## Mata os tweens de entrada e encaixa todos nos destinos (evita conflito de
+## tween quando o primeiro golpe sai durante a caminhada).
+func _finish_entrance() -> void:
+	for t in _entrance_tweens:
+		if t.is_valid():
+			t.kill()
+	_entrance_tweens.clear()
+	for u in combatants:
+		if _home_positions.has(u.get_instance_id()):
+			u.position = _home_positions[u.get_instance_id()]
+			var animator := _animator_for(u)
+			if animator and animator.current_animation == "walk":
+				animator.current_animation = "idle"
 
 
 func _sprite_key(unit_name: String) -> String:
@@ -200,6 +260,11 @@ func _finish(victory: bool) -> void:
 	if victory:
 		for m in enemies_meta:
 			rewards["soul_ether"] += m["soul_ether"]
+		# Vitória: sobreviventes celebram. (Derrota não anima: is_battle_over
+		# só encerra com a party inteira morta — o luto é da result screen.)
+		for u in combatants:
+			if u.is_player_side() and u.is_alive() and _animator_for(u):
+				_animator_for(u).play_victory()
 	_log("VITÓRIA!" if victory else "DERROTA...")
 	battle_ended.emit(victory, rewards)
 
@@ -282,6 +347,12 @@ func _resolve_action(multiplier: float, grade: String) -> void:
 	if _pending_target == null or not _pending_target.is_alive():
 		_advance()
 		return
+	var attacker_anim := _animator_for(current_actor)
+	if attacker_anim:
+		if _pending_is_magic:
+			await attacker_anim.play_magic_cast()
+		else:
+			await attacker_anim.play_attack(_pending_target)
 	var damage: int
 	if _pending_is_magic:
 		var cast: Dictionary = combat.cast_damage_spell(current_actor, _pending_target)
@@ -295,8 +366,19 @@ func _resolve_action(multiplier: float, grade: String) -> void:
 	combat.apply_hit(current_actor, _pending_target, damage)
 	_pending_target.hp_changed.emit(_pending_target.current_hp)
 	_log("%s → %s: %d de dano (%s)" % [current_actor.data.unit_name, _pending_target.data.unit_name, damage, grade])
+	await _play_aftermath(_pending_target)
 	_pending_target = null
 	_advance()
+
+
+func _play_aftermath(target) -> void:
+	var target_anim := _animator_for(target)
+	if target_anim == null:
+		return
+	if target.is_alive():
+		await target_anim.play_hit()
+	else:
+		await target_anim.play_death()
 
 
 # --- IA inimiga ---
@@ -309,6 +391,9 @@ func _enemy_act() -> void:
 	if target == null:
 		return
 	# Janela de defesa reativa (timed block) durante o golpe inimigo.
+	var actor_anim := _animator_for(current_actor)
+	if actor_anim:
+		await actor_anim.play_attack(target)
 	_block_window_open = true
 	_block_start = Time.get_ticks_msec() / 1000.0
 	_block_reduction = 0.0
@@ -320,6 +405,7 @@ func _enemy_act() -> void:
 	combat.apply_hit(current_actor, target, damage)
 	target.hp_changed.emit(target.current_hp)
 	_log("%s sofreu %d de dano" % [target.data.unit_name, damage])
+	await _play_aftermath(target)
 	if not _check_end():
 		_advance()
 
