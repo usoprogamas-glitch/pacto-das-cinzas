@@ -30,11 +30,12 @@
 - **Impacto**: jogo inteiro em silêncio de fundo; campo de dados morto.
 - **Fix aplicado**: `play_music()` agora define stream (procedural, mesmo padrão dos SFX) com loop infinito + cache; 2 faixas (`create_exploration_music`: drone pentatônico menor / `create_battle_music`: pulso percussivo + baixo em oitavas); `setup_battle` lê `current_map.music`. Faixa desconhecida → no-op. 8 testes (`test_bgm_data_driven.gd`).
 
-### 5. Shaders do PixelArtRenderer não compilam 🐛
+### 5. Shaders do PixelArtRenderer não compilam 🐛 ✅ CORRIGIDO E VALIDADO (2026-08-31)
 - **Onde**: `pixel_art_renderer.gd` (853 linhas) — GLSL inválido: `Range hint is for 'float' and 'int' only` (uniforms com hint em tipos errados), `Tokenizer: Unknown character #1` (caracteres não-ASCII dentro de shader code).
 - **Impacto**: outline, glow, rim light, water, grass, dither — **todos mortos silenciosamente** no jogo.
 - **Fix**: corrigir hints (`hint_range` só em float/int), remover/caracteres especiais dos comentários GLSL, validar cada shader.
 - **Teste**: headless não compila shader — validar via script de sanity (material != null, shader.code ASCII-safe) + inspeção visual.
+- **Executado**: fix em `6e918f7` (hints só em float, matriz Bayer indexada por int, comentários ASCII, CRLF normalizado via `_clean_shader`) + `test_pixel_shaders.gd` (11 testes estáticos). **Validação de compilação REAL (2026-08-31)**: `tools/probe_shaders.gd` — desenha os 6 shaders em 6 sprites por 5 frames com renderer OpenGL 3.3 real (headless usa RasterizerDummy e não compila shader): `PROBE OK`, zero linhas `SHADER ERROR`. Regressão futura: rodar o probe após qualquer mudança de shader.
 
 ### 6. Log poluído por probe de png faltante 🐛 ✅ CORRIGIDO (2026-08-31)
 - **Onde**: `_load_hd_sprite` faz `img.load()` direto → Godot imprime ERROR para cada nome sem png (`fantasma`, `guerreiro`, `teia`...).
@@ -116,9 +117,10 @@
 | ~~3~~ | ~~P0-3 troca de sprite na evolução~~ | ✅ feito (2026-08-31) |
 | ~~4~~ | ~~P0-4 BGM data-driven~~ | ✅ feito (2026-08-31) |
 | ~~5~~ | ~~P0-6 pre-check de png~~ | ✅ feito (2026-08-31) |
-| 6 | P0-5 shaders | médio; isolar shader por shader |
-| 7 | P1 #11 timed blocks | ✅ feito (2026-08-31) |
-| 8 | P1 #10 encounters/puzzles | destrava sistemas órfãos |
+| ~~6~~ | ~~P0-5 shaders~~ | ✅ feito e validado (2026-08-31, probe opengl3) |
+| 7 | P1 #10 encounters/puzzles | destrava sistemas órfãos |
+| 8 | P1 #9 ondas do Ato III | decisão #7 tomada, falta executar |
+| 9 | P1 #10 locks do cast inimigo | GDD §3.2 simétrico |
 
 ---
 
