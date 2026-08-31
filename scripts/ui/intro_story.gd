@@ -145,20 +145,19 @@ func setup_story() -> void:
    "portrait": null
   },
   {
-   "text": "O que você faz?",
-   "speaker": "choice",
-   "portrait": null,
-   "choices": [
-    {"id": "save_goblin", "text": "Canalizar sua ínfima mana e salvá-lo (Gasta 15 Mana)", "consequence": "first_pact", "description": "Forja o primeiro Pacto de Alma. O goblin vira Hobgoblin. Kroug nasce."},
-    {"id": "ignore", "text": "Ignorar e fugir para sobreviver", "consequence": "lone_survivor", "description": "Sobrevive sozinho. Mais difícil. Sem aliado inicial. Kaelen desaprova."},
-    {"id": "observe", "text": "Observar e aprender com Kaelen antes de agir", "consequence": "cautious_start", "description": "Ganha conhecimento. Kaelen ensina mais. Começa com +10 Mana."}
-   ]
+   "text": "Kaelen avalia o quadro em um instante: \"Sua mana é ínfima — quinze pontos, nada mais. Gaste. Um aliado vale mais do que prudência para quem não tem nada.\"",
+   "speaker": "kaelen",
+   "portrait": "kaelen"
   },
   {
-   "text": "Sua escolha definirá o início de sua jornada. O Éter aguarda.",
-   "speaker": "choice",
-   "portrait": null,
-   "choices": []
+   "text": "Você canaliza até a última fagulha e toca a mão estendida. A essência do goblin se refaz: ele cresce, o couro vira couraída pálida, os olhos ardem em âmbar — Hobgoblin. \"Kroug,\" você diz. O primeiro Pacto de Alma em milênios está forjado.",
+   "speaker": "narrator",
+   "portrait": null
+  },
+  {
+   "text": "O Éter aguarda.",
+   "speaker": "narrator",
+   "portrait": null
   }
  ]
 
@@ -184,23 +183,10 @@ func show_current_step() -> void:
  else:
   kaelen_portrait.visible = false
  
- # Mostrar escolhas se houver
- if step.get("choices", []) and step.choices.size() > 0:
-  choice_container.visible = true
-  for child in choice_container.get_children():
-   child.queue_free()
-
-  for choice in step.choices:
-   var btn = Button.new()
-   btn.text = choice.text
-   btn.custom_minimum_size = Vector2(300, 60)
-   btn.pressed.connect(func(): _on_choice_selected(choice))
-   choice_container.add_child(btn)
- else:
-  choice_container.visible = false
-  # Narrativa sem escolha: aguarda o player apertar A (intro_next).
-  # Auto-advance removido — player pediu para avançar SOMENTE no input.
-  _kill_advance_tween()
+ # Intro é história: sem slides de escolha, o container nunca aparece.
+ choice_container.visible = false
+ # Narrativa: aguarda o player apertar A (intro_next).
+ _kill_advance_tween()
 
 func _kill_advance_tween() -> void:
  if _advance_tween:
@@ -214,33 +200,21 @@ func _advance_step() -> void:
  current_step += 1
  show_current_step()
 
-func _on_choice_selected(choice: Dictionary) -> void:
- player_choices[story_text[current_step].text] = choice
-
- # Gravar apenas a ESCOLHA; quem aplica as consequências de verdade é o handler
- # do GameManager (roda sincronamente no emit), fonte de verdade única. Antes a
- # mana era mexida aqui E no handler → dupla aplicação (e.g. -15 duas vezes).
- match choice.consequence:
-  "first_pact":
-   player_choices["starting_ally"] = "kroug"
-   player_choices["first_pact"] = true
-  "lone_survivor":
-   player_choices["starting_ally"] = "none"
-   player_choices["kaelen_approval"] = -10
-   player_choices["difficulty"] = "hard"
-  "cautious_start":
-   player_choices["starting_ally"] = "none"
-   player_choices["knowledge_bonus"] = true
-   player_choices["difficulty"] = "normal"
-
- _advance_step()
+func _build_final_choices() -> Dictionary:
+ # Pacto de Alma canônico (GDD 2.1): a intro NARRA o 1º pacto, então Kroug
+ # nasce sempre. O handler do GameManager consome "first_pact" (-15 mana,
+ # naming + fé + spawn na batalha). Pular a intro também segue o cânone.
+ player_choices["first_pact_choice"] = {"consequence": "first_pact"}
+ return player_choices
 
 func complete_intro() -> void:
- intro_completed.emit(player_choices)
+ intro_completed.emit(_build_final_choices())
  visible = false
  # Próxima cena jogável (mesmo idiom do main_menu): o emit acima roda sincronamente,
  # então o GameManager já aplicou as escolhas e chamou start_new_game().
- SceneManager.go_to_map_select()
+ # Fora da árvore (testes GUT) não há cena viva para trocar.
+ if is_inside_tree():
+  SceneManager.go_to_map_select()
 
 func skip_intro() -> void:
  player_choices["skipped"] = true
