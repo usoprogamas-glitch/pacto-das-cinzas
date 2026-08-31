@@ -39,7 +39,7 @@ PRIORIDADE 2 (após a campanha existir):
 
 | # | Pendência | Estado | Nota |
 |---|---|---|---|
-| 10 | Conectar SeamlessEncounter + LightPuzzle ao overworld | 🟡 | sistemas prontos, zero instanciação runtime |
+| 10 | Conectar SeamlessEncounter + LightPuzzle ao overworld | ✅ feito (encounters no MVP SoS 2026-08-31; puzzles data-driven na exploração 2026-08-31) |
 | 11 | Timed **blocks** (mitigação de dano na defesa) | ✅ feito (2026-08-31) | pipeline espelhado do timed hit: janela 0.2s reativa durante o ataque inimigo |
 | 12 | Taberna: apostas + recompensas exclusivas (hoje autobattle) | 🟡 parcial | vira conteúdo |
 | 13 | Travessia vertical / arpéu (hoje só dash) | 🟡 parcial | vira conteúdo |
@@ -83,8 +83,8 @@ Exploração/campo (§6–§7) — ```scripts/battle/```
 | Sistema | GDD | Código | Wiring | Teste | Gap vs GDD |
 |---|---|---|---|---|---|
 | Traversal | §6.1 | ✅ | ✅ | ✅ | só dash; sem vertical/arpéu (#13) |
-| Seamless Encounter | §6.2 | ✅ | 🟡 morto | ✅ | zero instanciação runtime (#10) |
-| Light Puzzle | §6.3 | ✅ | 🟡 morto | ✅ | zero puzzles posicionados (#10) |
+| Seamless Encounter | §6.2 | ✅ | ✅ | ✅ | destravado no molde SoS (encontros por proximidade) |
+| Light Puzzle | §6.3 | ✅ | ✅ | ✅ | 2 puzzles data-driven nos Atos I-II (#10) |
 | Campfire | §7.1 | ✅ | ✅ | ✅ | sem árvores de diálogo |
 | Cooking | §7.2 | ✅ | ✅ | ✅ | bônus só temporários (#14) |
 | Tavern | §7.3 | ✅ | ✅ | ✅ | autobattle, sem apostas (#12) |
@@ -100,7 +100,7 @@ Narrativa/mundo — ```scripts/narrative/```
 
 ## Como usar este roadmap
 
-- **A cada sessão**: comece pelo item de maior prioridade não-'✅' — a fila atual está em [AUDIT.md](AUDIT.md) (P0 100% fechado 2026-08-31; próximo: P1 #10 encounters/puzzles, depois #9 ondas do Ato III e locks do cast inimigo).
+- **A cada sessão**: comece pelo item de maior prioridade não-'✅' — a fila atual está em [AUDIT.md](AUDIT.md) (próximo: P1 #9 ondas do Ato III, depois locks do cast inimigo e taberna/travessia/culinária).
 - **Regra do projeto**: 1 mecânica por prompt + teste GUT junto + commit por feature + conteúdo data-driven (nada hardcoded).
 - **Ao concluir um item**, atualize a tabela acima + a memória do projeto (commit e contagem GUT).
 

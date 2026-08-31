@@ -3,20 +3,28 @@ extends Node2D
 ## Cena de exploração contínua no molde Sea of Stars (opção 3): o grupo anda
 ## pelo mapa em tempo real; inimigos visíveis patrulham/perseguem (SeamlessEncounterSystem)
 ## e o contato abre a arena de batalha IN-PLACE, sem troca de cena (GDD §6.2).
+## Puzzles de luz data-driven do MapDatabase (GDD §6.3) spawham no mapa: espelhos
+## de obsidiana e relógio cósmico giram com E; resolvidos, projetam o feixe e
+## pagam as recompensas declaradas nos dados.
 ##
-## Teclas: setas/WASD move.
+## Teclas: setas/WASD move, E interage com puzzle.
 
 const SPEED := 220.0  ## px/s
 const TILE := 64.0
+const PUZZLE_RANGE := 52.0  ## px de distância para interagir
+const HINT_BASE := "Setas/WASD: mover  |  E: puzzle  |  Encoste no inimigo para lutar (Timed Hit/Block: clique!)"
 
 var encounter  # SeamlessEncounterSystem
 var player: Node2D
 var enemy_nodes: Array = []
 var arena: Node = null
 var map_id: int = 0
+var puzzles: Array = []  # [{id, data, system, nodes, clock_node, solved}]
 
 var _enemy_tile_ids: Array = []  # ids registrados no SeamlessEncounterSystem
 var _ui: CanvasLayer
+var _hint_label: Label
+var _e_was_down := false
 
 
 func _ready() -> void:
@@ -25,6 +33,7 @@ func _ready() -> void:
 	_build_map()
 	_spawn_party()
 	_spawn_enemies()
+	_spawn_puzzles()
 	_build_ui()
 
 
@@ -116,11 +125,11 @@ func _build_ui() -> void:
 	label.add_theme_font_size_override("font_size", 20)
 	label.text = "%s  (HP 80 | MP 50)" % MapDatabase.get_map(map_id).get("name", "")
 	_ui.add_child(label)
-	var hint := Label.new()
-	hint.position = Vector2(20, 680)
-	hint.add_theme_font_size_override("font_size", 15)
-	hint.text = "Setas/WASD: mover  |  Encoste no inimigo para lutar (Timed Hit/Block: clique!)"
-	_ui.add_child(hint)
+	_hint_label = Label.new()
+	_hint_label.position = Vector2(20, 680)
+	_hint_label.add_theme_font_size_override("font_size", 15)
+	_hint_label.text = HINT_BASE
+	_ui.add_child(_hint_label)
 
 
 func _process(delta: float) -> void:
@@ -147,6 +156,7 @@ func _process(delta: float) -> void:
 			node.position += to_player.normalized() * 90.0 * delta
 
 	_check_contact()
+	_process_puzzles(delta)
 
 
 func in_encounter() -> bool:
@@ -213,3 +223,167 @@ func _advance_story() -> void:
 	# Próximo estágio: recarrega a exploração com o novo mapa/estágio.
 	GameManager.sync_current_map_from_campaign()
 	get_tree().reload_current_scene()
+
+
+# === PUZZLES DE LUZ (GDD §6.3) — data-driven via MapDatabase.puzzles ===
+
+func _spawn_puzzles() -> void:
+	var map: Dictionary = MapDatabase.get_map(map_id)
+	for cfg in map.get("puzzles", []):
+		var sys := LightPuzzleSystem.new()
+		if not sys.start_puzzle(String(cfg["id"]), String(cfg["type"]), cfg.get("light", Vector2i.ZERO), cfg.get("target", Vector2i.ZERO)):
+			continue  # tipo inválido nos dados: pula sem quebrar a cena
+		var entry := {"id": String(cfg["id"]), "data": cfg, "system": sys, "nodes": {}, "solved": false}
+		for m in cfg.get("mirrors", []):
+			sys.add_mirror(String(m["id"]), m.get("pos", Vector2i.ZERO), int(m.get("angle", 0)))
+			var node := _make_mirror_node(m)
+			entry["nodes"][String(m["id"])] = node
+			_update_pointer(entry, String(m["id"]))
+		entry["light_node"] = _make_pedestal(cfg.get("light", Vector2i.ZERO), Color(1.0, 0.85, 0.3))
+		entry["target_node"] = _make_pedestal(cfg.get("target", Vector2i.ZERO), Color(0.75, 0.3, 0.8))
+		if LightPuzzleSystem.PUZZLE_TYPES.get(String(cfg["type"]), {}).get("has_clock", false):
+			entry["clock_node"] = _make_clock_node(cfg.get("clock", Vector2i(4, 1)))
+		sys.puzzle_solved.connect(_on_puzzle_solved.bind(entry))
+		puzzles.append(entry)
+
+
+func _tile_center(tile: Vector2) -> Vector2:
+	return Vector2(tile.x * TILE + TILE / 2.0, tile.y * TILE + TILE / 2.0)
+
+
+func _make_mirror_node(m: Dictionary) -> Node2D:
+	var node := Node2D.new()
+	node.position = _tile_center(m.get("pos", Vector2i.ZERO))
+	var core := ColorRect.new()
+	core.size = Vector2(14, 14)
+	core.position = Vector2(-7, -7)
+	core.color = Color(0.65, 0.85, 1.0)
+	node.add_child(core)
+	var pointer := Line2D.new()
+	pointer.points = PackedVector2Array([Vector2.ZERO, Vector2(22, 0)])
+	pointer.width = 3.0
+	pointer.default_color = Color(1, 1, 1, 0.85)
+	node.add_child(pointer)
+	node.set_meta("pointer", pointer)
+	add_child(node)
+	return node
+
+
+func _make_pedestal(tile: Vector2i, color: Color) -> Node2D:
+	var node := Node2D.new()
+	node.position = _tile_center(tile)
+	var core := ColorRect.new()
+	core.size = Vector2(16, 16)
+	core.position = Vector2(-8, -8)
+	core.color = color
+	node.add_child(core)
+	add_child(node)
+	return node
+
+
+func _make_clock_node(tile: Vector2i) -> Node2D:
+	var node := _make_pedestal(tile, Color(0.95, 0.95, 0.85))
+	var sign_label := Label.new()
+	sign_label.position = Vector2(-30, -26)
+	sign_label.add_theme_font_size_override("font_size", 12)
+	sign_label.text = "RELÓGIO"
+	node.add_child(sign_label)
+	return node
+
+
+func _update_pointer(entry: Dictionary, mirror_id: String) -> void:
+	var node: Node2D = entry["nodes"].get(mirror_id)
+	if node == null or not node.has_meta("pointer"):
+		return
+	var mirror: Dictionary = entry["system"].get_mirror(mirror_id)
+	var pointer: Line2D = node.get_meta("pointer")
+	# Ângulo 0 do sistema = Norte: Line2D aponta +X, então rotaciona -90°.
+	pointer.rotation = deg_to_rad(float(int(mirror.get("angle", 0)) * 45 - 90))
+	node.modulate = Color(0.6, 1.0, 0.6) if mirror.get("aligned", false) else Color.WHITE
+
+
+func _process_puzzles(_delta: float) -> void:
+	if Input.is_key_pressed(KEY_E) and not _e_was_down:
+		_interact_puzzles()
+	_e_was_down = Input.is_key_pressed(KEY_E)
+	_update_puzzle_hint()
+
+
+func _nearest_puzzle_node() -> Dictionary:
+	if player == null:
+		return {}
+	var best := {}
+	var best_dist := PUZZLE_RANGE
+	for entry in puzzles:
+		if entry.get("solved", false):
+			continue
+		for mirror_id in entry["nodes"]:
+			var node: Node2D = entry["nodes"][mirror_id]
+			var d: float = player.position.distance_to(node.position)
+			if d < best_dist:
+				best_dist = d
+				best = {"entry": entry, "kind": "mirror", "id": mirror_id}
+		var clock = entry.get("clock_node")
+		if clock != null:
+			var dc: float = player.position.distance_to(clock.position)
+			if dc < best_dist:
+				best_dist = dc
+				best = {"entry": entry, "kind": "clock", "id": ""}
+	return best
+
+
+func _interact_puzzles() -> void:
+	var target := _nearest_puzzle_node()
+	if target.is_empty():
+		return
+	var entry: Dictionary = target["entry"]
+	var sys = entry["system"]
+	if String(target["kind"]) == "mirror":
+		sys.rotate_mirror(String(target["id"]), 1)
+		_update_pointer(entry, String(target["id"]))
+	else:
+		sys.advance_clock()
+	if not entry["solved"] and sys.check_solved():
+		sys.complete_puzzle(entry["data"].get("rewards", {}))
+
+
+func _on_puzzle_solved(puzzle_id: String, rewards: Dictionary, entry: Dictionary) -> void:
+	entry["solved"] = true
+	if GameManager:
+		if int(rewards.get("soul_ether", 0)) > 0:
+			GameManager.add_soul_ether(int(rewards["soul_ether"]))
+		if int(rewards.get("gold", 0)) > 0:
+			GameManager.add_gold(int(rewards["gold"]))
+		if rewards.has("xp") and GameManager.progression_system:
+			GameManager.progression_system.add_experience(int(rewards["xp"]))
+	_show_beam(entry)
+	if _hint_label:
+		_hint_label.text = "Puzzle resolvido: %s (+recompensa)" % puzzle_id
+
+
+func _show_beam(entry: Dictionary) -> void:
+	var data: Dictionary = entry["data"]
+	var points: Array = [_tile_center(data.get("light", Vector2i.ZERO))]
+	for m in data.get("mirrors", []):
+		points.append(_tile_center(m.get("pos", Vector2i.ZERO)))
+	points.append(_tile_center(data.get("target", Vector2i.ZERO)))
+	var beam := Line2D.new()
+	beam.points = PackedVector2Array(points)
+	beam.width = 5.0
+	beam.default_color = Color(1.0, 0.9, 0.4, 0.9)
+	add_child(beam)
+	entry["beam"] = beam
+
+
+func _update_puzzle_hint() -> void:
+	if _hint_label == null:
+		return
+	var target := _nearest_puzzle_node()
+	if target.is_empty():
+		if _hint_label.text != HINT_BASE and _hint_label.text.begins_with("E:"):
+			_hint_label.text = HINT_BASE
+		return
+	if String(target["kind"]) == "mirror":
+		_hint_label.text = "E: girar espelho de obsidiana"
+	else:
+		_hint_label.text = "E: girar o relógio cósmico"

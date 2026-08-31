@@ -2,16 +2,29 @@ class_name MapDatabase
 extends RefCounted
 
 static var maps: Dictionary = {
- 0: {
-  "name": "Fronteira Cinzenta",
-  "size": Vector2i(10, 10),
-  "terrain": "mixed",
-  "enemies": ["mercenario", "cacador"],
-  "enemy_count": 3,
-  "description": "Onde tudo começou. Terreno baldio com vegetação morta.",
-  "music": "exploration",
-  "tiles": generate_frontier_map()
- },
+  0: {
+   "name": "Fronteira Cinzenta",
+   "size": Vector2i(10, 10),
+   "terrain": "mixed",
+   "enemies": ["mercenario", "cacador"],
+   "enemy_count": 3,
+   "description": "Onde tudo começou. Terreno baldio com vegetação morta.",
+   "music": "exploration",
+   "puzzles": [
+    {
+     "id": "fronteira_espelhos",
+     "type": "mirror_alignment",
+     "light": Vector2i(3, 3),
+     "target": Vector2i(12, 3),
+     "mirrors": [
+      {"id": "m1", "pos": Vector2i(6, 3), "angle": 1},
+      {"id": "m2", "pos": Vector2i(9, 3), "angle": 7}
+     ],
+     "rewards": {"soul_ether": 5, "gold": 10, "xp": 40}
+    }
+   ],
+   "tiles": generate_frontier_map()
+  },
  1: {
   "name": "Floresta Sombria",
   "size": Vector2i(12, 12),
@@ -53,16 +66,29 @@ static var maps: Dictionary = {
   "tiles": generate_volcanic_map()
  },
 	 # ===== ATO II — CARDEAIS =====
-	 5: {
-	  "name": "Vale dos Despojos — Ignis",
-	  "size": Vector2i(12, 12),
-	  "terrain": "volcanic",
-	  "enemies": ["cardeal_ignis"],
-	  "enemy_count": 1,
-	  "description": "Plataformas sobre lava branca. Ignis aguarda no vulcão.",
-	  "music": "battle",
-	  "tiles": generate_volcanic_map()
-	 },
+ 	 5: {
+ 	  "name": "Vale dos Despojos — Ignis",
+ 	  "size": Vector2i(12, 12),
+ 	  "terrain": "volcanic",
+ 	  "enemies": ["cardeal_ignis"],
+ 	  "enemy_count": 1,
+ 	  "description": "Plataformas sobre lava branca. Ignis aguarda no vulcão.",
+ 	  "music": "battle",
+ 	  "puzzles": [
+ 	   {
+ 	    "id": "despojos_sombras",
+ 	    "type": "shadow_reveal",
+ 	    "light": Vector2i(2, 6),
+ 	    "target": Vector2i(9, 6),
+ 	    "clock": Vector2i(8, 4),
+ 	    "mirrors": [
+ 	     {"id": "m1", "pos": Vector2i(5, 6), "angle": 6}
+ 	    ],
+ 	    "rewards": {"soul_ether": 8, "gold": 15, "xp": 80}
+ 	   }
+ 	  ],
+ 	  "tiles": generate_volcanic_map()
+ 	 },
 	 6: {
 	  "name": "Floresta dos Ventos — Zephyr",
 	  "size": Vector2i(14, 14),

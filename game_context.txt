@@ -11,7 +11,7 @@ Janela: 1280x720, stretch canvas_items
 - scenes/intro_story.tscn - cena inicial (main_scene), história contínua (1º Pacto canônico: Kroug sempre nasce)
 - scenes/explore_scene.tscn - exploração contínua estilo Sea of Stars (MVP 2026-08-31: caminho principal)
 - scenes/battle_scene.tscn - batalha tática em grid (LEGADO, fora do caminho principal)
-- scripts/explore_scene.gd - exploração contínua (encontros por proximidade via SeamlessEncounterSystem)
+- scripts/explore_scene.gd - exploração contínua (encontros por proximidade via SeamlessEncounterSystem + puzzles de luz data-driven GDD §6.3, interação com E)
 - scripts/arena_combat.gd + arena_battle.gd - combate arena (turnos por agilidade, timed hit/block, sem grid)
 - scripts/main_menu.tscn, settings.tscn - menu
 - scripts/battle_scene.gd, BattleManager.gd, grid.gd, enemy_ai.gd, magic_system.gd etc - combate legado grid
@@ -81,6 +81,7 @@ Janela: 1280x720, stretch canvas_items
 13. ~~Culinária e Elixires (GDD v2 §7.2)~~ ✅
 14. ~~Minigame Taberna — Guerra de Runas (GDD v2 §7.3)~~ ✅
 15. ~~§8 Progressão Global (tabela de níveis, experience curve)~~ ✅
+16. ~~Puzzles de Luz wired na exploração (data-driven via MapDatabase.puzzles)~~ ✅ (mapas 0 e 5)
 
 ## Próximos passos sugeridos
 - ~~Integrar novos sistemas (Traversal, SeamlessEncounters, LightPuzzles, Campfire, Cooking, Tavern) no battle_scene.gd~~ ✅ (2026-08-25)

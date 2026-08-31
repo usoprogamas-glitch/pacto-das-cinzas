@@ -50,8 +50,9 @@
 - **Onde**: `timed_combat_system.gd` já tinha `resolve_block_timing`/`apply_block` testados, mas o fluxo de combate só usava o caminho de ataque (`battle_scene.gd::_timed_hit_*` → `BattleManager.attack_unit(timing_bonus)`).
 - **Fix aplicado**: pipeline espelhado. `BattleManager` ganhou `timed_block_resolver: Callable` + sinal `timed_block_window` — ataque inimigo em alvo jogador abre a janela de 0.2s (`BLOCK_WINDOW`) antes de aplicar dano; `battle_scene` instala o resolver (`_resolve_timed_block`: indicador "TIMED BLOCK!" + aguardo do clique reativo) e o clique gradua via `resolve_block_timing` (PERFECT -50% / GREAT -30% / GOOD -10%). Redução entra no pipeline de dano depois do timing bonus; clique reativo vale no ENEMY_TURN (`_input` intercepta antes do gate `can_interact`). Sem resolver (headless/testes), dano integral — comportamento antigo preservado. 7 testes (`test_timed_block.gd`).
 
-### 8. ROADMAP #10 — SeamlessEncounter + LightPuzzle órfãos 🟡
-- Sistemas prontos e testados, **zero instanciação runtime**. Conectar: encuentros por proximidade no overworld/map_select e 1-2 puzzles posicionados data-driven em mapas dos Atos I-II.
+### 8. ROADMAP #10 — SeamlessEncounter + LightPuzzle órfãos 🟡 ✅ FEITO (2026-08-31)
+- **SeamlessEncounter**: destravado no MVP SoS — `explore_scene` registra inimigos e abre encontros por proximidade (sem troca de cena).
+- **LightPuzzle**: wiring concluído (2026-08-31) — `explore_scene._spawn_puzzles` lê `MapDatabase.puzzles` (data-driven), spawna espelhos de obsidiana/pedestais/relógio cósmico; E gira o objeto próximo; solução paga as recompensas declaradas (soul_ether/gold/xp) e projeta o feixe luz→espelhos→alvo. Posicionados: mapa 0 `fronteira_espelhos` (mirror_alignment, Ato I) e mapa 5 `despojos_sombras` (shadow_reveal + eclipse, Ato II). 6 testes (`test_explore_puzzles.gd`). Restante é conteúdo: mais puzzles e persistência de "resolvido" no save (opcional).
 
 ### 9. Ato III em ONDAS (decisão #7 pendente de execução) 🟡
 - Decisão tomada (turno por-fase + ondas escaladas), execução inexistente. `BattleManager` precisa de wave spawner (reinjetar inimigos com stats escalados por onda).
@@ -118,7 +119,7 @@
 | ~~4~~ | ~~P0-4 BGM data-driven~~ | ✅ feito (2026-08-31) |
 | ~~5~~ | ~~P0-6 pre-check de png~~ | ✅ feito (2026-08-31) |
 | ~~6~~ | ~~P0-5 shaders~~ | ✅ feito e validado (2026-08-31, probe opengl3) |
-| 7 | P1 #10 encounters/puzzles | destrava sistemas órfãos |
+| ~~7~~ | ~~P1 #10 encounters/puzzles~~ | ✅ feito (2026-08-31, puzzles data-driven) |
 | 8 | P1 #9 ondas do Ato III | decisão #7 tomada, falta executar |
 | 9 | P1 #10 locks do cast inimigo | GDD §3.2 simétrico |
 
