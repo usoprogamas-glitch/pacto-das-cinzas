@@ -5,6 +5,12 @@
   "size": [1024, 1024],
   "sprites": [
     {
+      "key": "goblin_da_lama",
+      "unit_name": "Goblin da Lama",
+      "act": "I",
+      "prompt": "small mud-covered goblin survivor, humble cloth rags, big loyal amber eyes, muddy swamp ground, fragile but brave stance"
+    },
+    {
       "key": "chefe_orc",
       "unit_name": "Chefe Orc",
       "act": "I",

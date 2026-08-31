@@ -46,3 +46,28 @@ func test_sprite_key_normalizes_em_dash_and_extra_accents():
 func test_hd_sprite_missing_falls_back():
 	var sprite = fake_battle_scene.create_unit_sprite("FANTASMA", Color.WHITE, true)
 	assert_not_null(sprite, "Fallback procedural ainda existe")
+
+
+## Contrato de cobertura (GDD §10.1, HD 2D): todo inimigo do EnemyDatabase e
+## toda forma do protagonista precisa resolver para um png HD existente.
+func test_all_enemy_database_names_have_hd_sprites():
+	var missing := []
+	for type in EnemyDatabase.enemies.keys():
+		var unit_name: String = EnemyDatabase.enemies[type].name
+		var key: String = fake_battle_scene._sprite_key(unit_name)
+		if not FileAccess.file_exists("res://assets/sprites/" + key + ".png"):
+			missing.append(unit_name + " -> " + key + ".png")
+	assert_eq(missing.size(), 0, "inimigos sem png HD: " + ", ".join(missing))
+
+func test_all_protagonist_forms_have_hd_sprites():
+	var missing := []
+	for form in ["Imp Menor", "Nobre Abissal", "Arquidemonio", "Arquidemônio", "Avatar Primordial"]:
+		var key: String = fake_battle_scene._sprite_key(form)
+		if not FileAccess.file_exists("res://assets/sprites/" + key + ".png"):
+			missing.append(form + " -> " + key + ".png")
+	# "Arquidemonio" (sem acento) e "Arquidemônio" (com) resolvem para a MESMA
+	# chave pós-normalização — dedup para a mensagem não repetir.
+	var unique := {}
+	for m in missing:
+		unique[m] = true
+	assert_eq(unique.size(), 0, "formas sem png HD: " + ", ".join(unique.keys()))
