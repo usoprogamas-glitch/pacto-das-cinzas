@@ -85,7 +85,7 @@
   - `scripts/battle/arena_combat.gd` — núcleo puro: turnos por agilidade (TurnOrderManager), dano/magia perfurante, IA de foco, condição de fim. 10 testes.
   - `scripts/battle/arena_battle.gd` — overlay de arena: menu Atacar/Magia/Fugir, Timed Hit (clique no impacto) e Timed Block (clique no golpe inimigo), barras de HP flutuantes, Soul Éter.
   - Fluxo linear: intro → exploração → arena → vitória → próximo estágio → ... → cutscene de ato → ... → epílogo. Grid tático (battle_scene) permanece como código legado, fora do caminho principal.
-- **Pendências visuais para iterar com o usuário**: tiles decorados/animados, animações de caminhada/ataque na arena, música por mapa, result screen dedicada.
+- **Pendências visuais para iterar com o usuário**: ~~tiles decorados~~ ✅ (2026-08-31: grade 10x6 de tiles procedurais do PixelArtRenderer/TERRAINS no explore_scene, shaders de água/grama, layout determinístico por seed — `test_explore_terrain.gd`), animações de caminhada/ataque na arena, ~~música por mapa~~ ✅ (P0-4), result screen dedicada.
 
 ---
 

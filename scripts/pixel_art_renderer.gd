@@ -405,7 +405,6 @@ static var TERRAINS: Dictionary = {
 # === FUNÇÕES DE CRIAÇÃO AVANÇADAS ===
 
 func create_detailed_character(char_type: String, size: int = 64) -> Sprite2D:
- var sprite = Sprite2D.new()
  var image = Image.create(size, size, false, Image.FORMAT_RGBA8)
  image.fill(Color(0, 0, 0, 0))
  
@@ -545,7 +544,6 @@ func _draw_ellipse_shadow(image: Image, cx: int, cy: int, rx: int, ry: int, colo
 # === TERRENOS AVANÇADOS ===
 
 func create_detailed_terrain(terrain_type: String, size: int = 64, animated: bool = false) -> Sprite2D:
- var sprite = Sprite2D.new()
  var image = Image.create(size, size, false, Image.FORMAT_RGBA8)
  
  var terrain = TERRAINS.get(terrain_type, TERRAINS.grass)

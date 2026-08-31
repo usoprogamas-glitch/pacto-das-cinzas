@@ -12,6 +12,8 @@ extends Node2D
 const SPEED := 220.0  ## px/s
 const TILE := 64.0
 const PUZZLE_RANGE := 52.0  ## px de distância para interagir
+const TERRAIN_TILE_PX := 128  ## tile visual decorado (PixelArtRenderer)
+const TERRAIN_GRID := Vector2i(10, 6)  ## 1280x720 coberto por tiles de 128px
 const HINT_BASE := "Setas/WASD: mover  |  E: puzzle  |  Encoste no inimigo para lutar (Timed Hit/Block: clique!)"
 
 var encounter  # SeamlessEncounterSystem
@@ -20,6 +22,8 @@ var enemy_nodes: Array = []
 var arena: Node = null
 var map_id: int = 0
 var puzzles: Array = []  # [{id, data, system, nodes, clock_node, solved}]
+var terrain_tiles: Array = []  # [{node, kind}] - fundo decorado data-driven
+var pixel_renderer  # PixelArtRenderer
 
 var _enemy_tile_ids: Array = []  # ids registrados no SeamlessEncounterSystem
 var _ui: CanvasLayer
@@ -39,20 +43,55 @@ func _ready() -> void:
 
 func _build_map() -> void:
 	var map: Dictionary = MapDatabase.get_map(map_id)
+	var terrain_name: String = String(map.get("terrain", "mixed"))
 	var bg := ColorRect.new()
-	bg.color = _terrain_color(String(map.get("terrain", "mixed")))
+	bg.color = _terrain_color(terrain_name).darkened(0.25)
 	bg.size = Vector2(1280, 720)
 	add_child(bg)
 
+	# Fundo decorado (molde SoS): grade de tiles procedurais do PixelArtRenderer,
+	# escolhidos pelo terreno do mapa; água/grama elegíveis ganham shader.
+	pixel_renderer = PixelArtRenderer.new()
+	add_child(pixel_renderer)
 	var rng := RandomNumberGenerator.new()
-	rng.seed = hash(map_id)
+	rng.seed = hash("terrain_%d" % map_id)
+	for ty in range(TERRAIN_GRID.y):
+		for tx in range(TERRAIN_GRID.x):
+			var kind := _terrain_tile_kind(terrain_name, rng)
+			var want_shader := rng.randf()
+			var tile: Sprite2D = pixel_renderer.create_detailed_terrain(kind, TERRAIN_TILE_PX)
+			tile.position = Vector2(tx * TERRAIN_TILE_PX + TERRAIN_TILE_PX / 2.0, ty * TERRAIN_TILE_PX + TERRAIN_TILE_PX / 2.0)
+			if kind == "water" and want_shader < 0.5:
+				pixel_renderer.apply_water_shader(tile)
+			elif kind == "grass" and want_shader < 0.4:
+				pixel_renderer.apply_grass_shader(tile)
+			add_child(tile)
+			terrain_tiles.append({"node": tile, "kind": kind})
+
+	var rng2 := RandomNumberGenerator.new()
+	rng2.seed = hash(map_id)
 	for i in range(24):
 		var deco := ColorRect.new()
-		var s := rng.randf_range(10, 26)
+		var s := rng2.randf_range(10, 26)
 		deco.size = Vector2(s, s)
-		deco.position = Vector2(rng.randf_range(20, 1240), rng.randf_range(20, 660))
-		deco.color = bg.color.darkened(0.35)
+		deco.position = Vector2(rng2.randf_range(20, 1240), rng2.randf_range(20, 660))
+		deco.color = _terrain_color(terrain_name).darkened(0.5)
 		add_child(deco)
+
+
+func _terrain_tile_kind(terrain: String, rng: RandomNumberGenerator) -> String:
+	var roll := rng.randf()
+	match terrain:
+		"forest":
+			return "forest" if roll < 0.7 else ("grass" if roll < 0.9 else "stone")
+		"cave":
+			return "cave" if roll < 0.6 else "stone"
+		"castle":
+			return "castle" if roll < 0.7 else "stone"
+		"volcanic":
+			return "lava" if roll < 0.5 else "stone"
+		_:
+			return "grass" if roll < 0.7 else ("stone" if roll < 0.9 else "water")
 
 
 func _terrain_color(terrain: String) -> Color:
