@@ -268,8 +268,8 @@ func damage_boss(damage: int) -> void:
 
 
 func _max_hp() -> int:
-	var data := CARDINALS.get(_current_boss)
-	if data:
+	var data: Dictionary = CARDINALS.get(_current_boss, {})
+	if not data.is_empty():
 		return data.hp
 	if _current_boss == "Aurius":
 		return AURIUS.phases[0].hp

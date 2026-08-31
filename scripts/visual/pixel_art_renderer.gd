@@ -22,12 +22,12 @@ func create_shaders() -> void:
  # === OUTLINE SHADER (melhorado) ===
  outline_shader = ShaderMaterial.new()
  var outline = Shader.new()
- outline.code = """
+ outline.code = _clean_shader("""
 shader_type canvas_item;
 
 uniform float outline_width : hint_range(0.0, 4.0) = 1.5;
 uniform vec4 outline_color : source_color = vec4(0.05, 0.05, 0.1, 1.0);
-uniform bool use_dither : hint_range(0, 1) = true;
+uniform bool use_dither = true;
 
 void fragment() {
  vec4 tex_color = texture(TEXTURE, UV);
@@ -47,7 +47,7 @@ void fragment() {
  
  outline_sum /= samples;
  
-// Dithering para transição suave
+// Dithering para transicao suave
  float alpha_threshold = 0.15;
  if(use_dither) {
   vec2 dither_uv = UV * 100.0;
@@ -61,19 +61,19 @@ void fragment() {
   COLOR = tex_color;
  }
  }
- """
+ """)
  outline_shader.shader = outline
 
  # === GLOW SHADER (melhorado com pulsação) ===
  glow_shader = ShaderMaterial.new()
  var glow = Shader.new()
- glow.code = """
+ glow.code = _clean_shader("""
 shader_type canvas_item;
 
 uniform float glow_intensity : hint_range(0.0, 3.0) = 0.8;
 uniform vec4 glow_color : source_color = vec4(1.0, 0.95, 0.7, 1.0);
 uniform float pulse_speed : hint_range(0.0, 5.0) = 2.0;
-uniform bool pulse : hint_range(0, 1) = true;
+uniform bool pulse = true;
 
 void fragment() {
  vec4 tex_color = texture(TEXTURE, UV);
@@ -86,13 +86,13 @@ void fragment() {
  vec3 glow = tex_color.rgb * glow_color.rgb * glow_intensity * pulse_factor;
  COLOR = vec4(tex_color.rgb + glow * tex_color.a, tex_color.a);
  }
- """
+ """)
  glow_shader.shader = glow
 
  # === WATER SHADER (animado, reflexos) ===
  water_shader = ShaderMaterial.new()
  var water = Shader.new()
- water.code = """
+ water.code = _clean_shader("""
 shader_type canvas_item;
 
 uniform float time : hint_range(0.0, 100.0) = 0.0;
@@ -105,38 +105,38 @@ uniform vec4 foam_color : source_color = vec4(0.9, 0.95, 1.0, 0.8);
 void fragment() {
  vec2 uv = UV;
  
-// Ondas animadas
+// Ondas animadas
  float wave1 = sin(uv.x * 20.0 + time * wave_speed) * wave_height * 0.5;
  float wave2 = sin(uv.y * 15.0 - time * wave_speed * 0.7) * wave_height * 0.3;
  float wave3 = sin((uv.x + uv.y) * 10.0 + time * wave_speed * 1.3) * wave_height * 0.2;
  
  float wave = wave1 + wave2 + wave3;
  
-// Profundidade baseada na posição Y + ondas
+// Profundidade baseada na posicao Y + ondas
  float depth = uv.y + wave * 0.02;
  
-// Interpolação entre cor profunda e rasa
+// Interpolacao entre cor profunda e rasa
  vec3 color = mix(deep_color.rgb, shallow_color.rgb, smoothstep(0.3, 0.8, depth));
  
-// Espuma nas cristas das ondas
+// Espuma nas cristas das ondas
  float foam = smoothstep(0.85, 1.0, sin(uv.x * 30.0 + time * 3.0) * 0.5 + 0.5);
  foam *= smoothstep(0.7, 1.0, depth);
  
  vec3 final_color = color + foam_color.rgb * foam;
  
-// Reflexo sutil
+// Reflexo sutil
  float reflection = smoothstep(0.1, 0.3, depth) * sin(uv.x * 50.0 + time * 2.0) * 0.1;
  final_color += vec3(reflection);
  
  COLOR = vec4(final_color, 1.0);
  }
- """
+ """)
  water_shader.shader = water
 
  # === GRASS SHADER (ondulante) ===
  grass_shader = ShaderMaterial.new()
  var grass = Shader.new()
- grass.code = """
+ grass.code = _clean_shader("""
 shader_type canvas_item;
 
 uniform float time : hint_range(0.0, 100.0) = 0.0;
@@ -148,13 +148,13 @@ uniform vec4 grass_dark : source_color = vec4(0.2, 0.35, 0.15, 1.0);
 void fragment() {
  vec2 uv = UV;
  
-// Vento nas gramas
+// Vento nas gramas
  float wind = sin(uv.x * 25.0 + time * wind_speed * 2.0) * wind_strength * 0.02;
  wind += sin(uv.y * 15.0 - time * wind_speed * 1.5) * wind_strength * 0.01;
  
  uv.x += wind;
  
-// Textura de grama procedural
+// Textura de grama procedural
  float grass_pattern = 0.0;
  for(int i = 0; i < 5; i++) {
   float freq = float(i + 1) * 20.0;
@@ -162,35 +162,35 @@ void fragment() {
  }
  grass_pattern *= 0.15;
  
-// Cor base com variação
+// Cor base com variacao
  vec3 color = mix(grass_dark.rgb, grass_light.rgb, smoothstep(0.3, 0.7, uv.y + grass_pattern));
  
-// Highlights nas pontas
+// Highlights nas pontas
  float highlight = smoothstep(0.85, 1.0, uv.y + grass_pattern * 0.5);
  color += vec3(0.15, 0.2, 0.1) * highlight;
  
  COLOR = vec4(color, 1.0);
  }
- """
+ """)
  grass_shader.shader = grass
 
  # === RIM LIGHT SHADER (iluminação de contorno) ===
  rim_light_shader = ShaderMaterial.new()
  var rim = Shader.new()
- rim.code = """
+ rim.code = _clean_shader("""
 shader_type canvas_item;
 
 uniform vec4 rim_color : source_color = vec4(0.2, 0.6, 1.0, 1.0);
 uniform float rim_width : hint_range(0.0, 2.0) = 0.5;
 uniform float rim_intensity : hint_range(0.0, 2.0) = 0.8;
-uniform vec2 light_direction : hint_range(-1.0, 1.0) = vec2(0.5, -0.5);
+uniform vec2 light_direction = vec2(0.5, -0.5);
 
 void fragment() {
  vec4 tex_color = texture(TEXTURE, UV);
  
  if(tex_color.a < 0.01) discard;
  
-// Calcular normal aproximada baseada na transparência
+// Calcular normal aproximada baseada na transparencia
  vec2 pixel_size = SCREEN_PIXEL_SIZE;
  float alpha_center = tex_color.a;
  float alpha_left = texture(TEXTURE, UV - vec2(pixel_size.x, 0.0)).a;
@@ -200,57 +200,63 @@ void fragment() {
  
  vec2 normal = normalize(vec2(alpha_left - alpha_right, alpha_up - alpha_down));
  
-// Produto escalar com direção da luz
+// Produto escalar com direcao da luz
  float rim = max(0.0, dot(normal, normalize(light_direction)));
  rim = pow(rim, 2.0) * rim_intensity;
  
-// Aplicar rim light apenas nas bordas
+// Aplicar rim light apenas nas bordas
  float edge = step(0.1, tex_color.a) * step(0.99, tex_color.a);
  rim *= (1.0 - edge) * 2.0;
  
  COLOR = vec4(tex_color.rgb + rim_color.rgb * rim * tex_color.a, tex_color.a);
  }
- """
+ """)
  rim_light_shader.shader = rim
 
  # === DITHER SHADER (transições suaves estilo retro) ===
  dither_shader = ShaderMaterial.new()
  var dither = Shader.new()
- dither.code = """
+ dither.code = _clean_shader("""
 shader_type canvas_item;
 
 uniform float dither_amount : hint_range(0.0, 1.0) = 0.3;
-uniform vec2 dither_scale : hint_range(1.0, 100.0) = vec2(50.0, 50.0);
+uniform vec2 dither_scale = vec2(50.0, 50.0);
 
 void fragment() {
  vec4 tex_color = texture(TEXTURE, UV);
  
-// Bayer dithering 4x4
+// Bayer dithering 4x4
  vec2 dither_uv = UV * dither_scale;
  float dither_pattern = 0.0;
  
-// Matriz de Bayer 4x4
- float bayer[16] = float[16](
+// Matriz de Bayer 4x4
+ float bayer_raw[16] = float[16](
   0.0, 8.0, 2.0, 10.0,
   12.0, 4.0, 14.0, 6.0,
   3.0, 11.0, 1.0, 9.0,
   15.0, 7.0, 13.0, 5.0
- ) / 16.0;
+ );
  
  int x = int(mod(floor(UV.x * dither_scale.x), 4.0));
  int y = int(mod(floor(UV.y * dither_scale.y), 4.0));
- float bayer_val = bayer[y * 4 + x];
+ float bayer_val = bayer_raw[int(y) * 4 + int(x)] / 16.0;
  
  float threshold = bayer_val + dither_amount * 0.5;
  
-// Aplicar dithering na transparência
+// Aplicar dithering na transparencia
  float alpha = tex_color.a;
  alpha = mix(alpha, step(threshold, alpha), dither_amount);
  
  COLOR = vec4(tex_color.rgb, alpha);
  }
- """
+ """)
  dither_shader.shader = dither
+
+## P0-5: o working copy pode ter CRLF (git autocrlf) — o tokenizer de shader do
+## Godot rejeita \r ("Unknown character #1"). Normaliza ANTES da atribuição,
+## porque o shader compila no momento do `.code =`.
+func _clean_shader(code: String) -> String:
+ return code.replace("\r\n", "\n").replace("\r", "\n")
 
 # === PALETAS SEA OF STARS AUTÊNTICAS ===
 static var PALETTES: Dictionary = {
