@@ -156,6 +156,15 @@ func add_gold(amount: int) -> void:
 func get_game_data() -> Dictionary:
  return game_data
 
+## Fluxo linear de enredo (decisão 2026-08-31): o caminho principal nunca passa
+## pelo map_select — intro/cutscene/pós-vitória entram direto na batalha do
+## estágio atual da campanha. Fonte única do map_id é o CampaignSystem.
+func sync_current_map_from_campaign() -> void:
+ if campaign_system:
+  var stage: Dictionary = campaign_system.get_current_stage()
+  if not stage.is_empty():
+   game_data["current_map"] = stage.get("map_id", game_data.get("current_map", 0))
+
 func save_game() -> void:
  if progression_system:
   game_data["progression"] = progression_system.serialize()

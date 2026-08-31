@@ -39,7 +39,8 @@ func test_reset_clears_completion():
 func test_post_victory_destination_routes_to_epilogue():
 	var bs: Node = BattleSceneScript.new()
 	GameManager.campaign_system.reset()
-	assert_eq(bs._get_post_victory_destination(), "map_select", "campanha em curso → map_select")
+	# Fluxo linear de enredo: campanha em curso → próxima batalha.
+	assert_eq(bs._get_post_victory_destination(), "explore", "campanha em curso → exploração")
 	GameManager.campaign_system.game_completed = true
 	assert_eq(bs._get_post_victory_destination(), "epilogue", "campanha completa → epílogo")
 	GameManager.campaign_system.reset()
@@ -49,7 +50,8 @@ func test_post_victory_destination_safe_without_campaign():
 	var bs: Node = BattleSceneScript.new()
 	var cs_backup = GameManager.campaign_system
 	GameManager.campaign_system = null
-	assert_eq(bs._get_post_victory_destination(), "map_select", "sem campaign_system → map_select")
+	# Sem campanha, o fallback linear continua sendo a próxima batalha.
+	assert_eq(bs._get_post_victory_destination(), "explore", "sem campaign_system → exploração (fallback linear)")
 	GameManager.campaign_system = cs_backup
 	bs.free()
 

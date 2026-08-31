@@ -90,10 +90,11 @@ func test_post_victory_priority_epilogue_over_cutscene():
 	GameManager.campaign_system.reset()
 	bs.free()
 
-func test_post_victory_routes_to_map_select_when_nothing_pending():
+func test_post_victory_routes_to_next_battle_when_nothing_pending():
 	var bs: Node = BattleSceneScript.new()
 	GameManager.campaign_system.reset()
-	assert_eq(bs._get_post_victory_destination(), "map_select", "ato em curso, cutscene já vista → map_select")
+	# Fluxo linear de enredo: sem cutscene pendente → próxima batalha da campanha.
+	assert_eq(bs._get_post_victory_destination(), "explore", "ato em curso, cutscene já vista → exploração")
 	bs.free()
 
 # === Conteúdo data-driven da cena ===

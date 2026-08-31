@@ -1228,17 +1228,20 @@ func _on_menu() -> void:
  SceneManager.change_scene("main_menu")
 
 func _on_continue() -> void:
+ # Fluxo linear (molde SoS): "Continuar" entra na EXPLORAÇÃO do próximo
+ # estágio; cutscene/epílogo rotas pela mesma porta.
+ GameManager.sync_current_map_from_campaign()
  SceneManager.change_scene(_get_post_victory_destination())
 
-# Destino pós-vitória (ROADMAP #2): campanha completa → epílogo; abertura de
-# ato pendente → cutscene do ato; senão map_select.
+# Destino pós-vitória (fluxo linear): campanha completa → epílogo; abertura de
+# ato pendente → cutscene do ato; senão a EXPLORAÇÃO do próximo estágio.
 func _get_post_victory_destination() -> String:
  if GameManager and GameManager.campaign_system:
   if GameManager.campaign_system.is_game_complete():
    return "epilogue"
   if GameManager.campaign_system.has_pending_act_intro():
    return "act_cutscene"
- return "map_select"
+ return "explore"
 
 func _on_tutorial_message(message: String, position: Vector2) -> void:
  # Mostrar mensagem do tutorial

@@ -210,11 +210,12 @@ func _build_final_choices() -> Dictionary:
 func complete_intro() -> void:
  intro_completed.emit(_build_final_choices())
  visible = false
- # Próxima cena jogável (mesmo idiom do main_menu): o emit acima roda sincronamente,
- # então o GameManager já aplicou as escolhas e chamou start_new_game().
+ # Fluxo linear de enredo (molde SoS): a intro desagua na EXPLORAÇÃO do
+ # estágio atual da campanha (Ato I — "Socorro aos Goblins").
  # Fora da árvore (testes GUT) não há cena viva para trocar.
  if is_inside_tree():
-  SceneManager.go_to_map_select()
+  GameManager.sync_current_map_from_campaign()
+  SceneManager.go_to_explore()
 
 func skip_intro() -> void:
  player_choices["skipped"] = true

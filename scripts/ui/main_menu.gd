@@ -25,12 +25,17 @@ func animate_title() -> void:
  tween.tween_property(title_label, "modulate:a", 1.0, 1.0)
 
 func _on_new_game() -> void:
+ # Fluxo linear (molde SoS): novo jogo entra na EXPLORAÇÃO do estágio atual
+ # da campanha (Ato I — "Socorro aos Goblins"), sem menu de mapas.
  GameManager.start_new_game()
- SceneManager.change_scene("map_select")
+ GameManager.sync_current_map_from_campaign()
+ SceneManager.change_scene("explore")
 
 func _on_continue() -> void:
  if GameManager.load_game():
-  SceneManager.change_scene("village")
+  # Retomar a jornada na exploração do estágio salvo (campaign desserializada).
+  GameManager.sync_current_map_from_campaign()
+  SceneManager.change_scene("explore")
  else:
   print("Erro ao carregar save")
 

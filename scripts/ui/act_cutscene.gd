@@ -113,13 +113,14 @@ func _advance_page() -> void:
  _show_current_page()
 
 func _finish() -> void:
- # Consome o flag da campanha e segue o loop (mesmo idiom do intro/epílogo).
+ # Consome o flag da campanha e segue o loop linear (molde SoS: exploração).
  if GameManager and GameManager.campaign_system:
   GameManager.campaign_system.mark_act_intro_seen()
   if GameManager.has_method("save_game"):
    GameManager.save_game()
  if SceneManager:
-  SceneManager.change_scene("map_select")
+  GameManager.sync_current_map_from_campaign()
+  SceneManager.change_scene("explore")
 
 func _input(event: InputEvent) -> void:
  if event.is_action_pressed("intro_next"):
