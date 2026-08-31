@@ -9,8 +9,8 @@ extends RefCounted
 const ACT_STAGES: Dictionary = {
  1: [
    {"name": "Socorro aos Goblins", "map_id": 0, "boss": false},
-   {"name": "O Chefe Orc", "map_id": 0, "boss": true, "final": true}
- ],
+   {"name": "O Chefe Orc", "map_id": 0, "boss": true, "final": true, "boss_enemy": "orc_chefe"}
+  ],
  2: [
    {"name": "Cardeal Ignis — Lava Branca", "map_id": 5, "boss": true},
    {"name": "Cardeal Zephyr — Tempestades", "map_id": 6, "boss": true},

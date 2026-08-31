@@ -32,7 +32,7 @@ Agente auditoria (per-aspect):
 | 5 | **Kaelen HUD** (análise bio/psi/tática, "nome sugerido") | KaelenSystem | ✅ feito | painel revela ao selecionar inimigo e oculta ao deselecionar; fraquezas casam por tipo de criatura (nome) via `match_weakness_type`; sep recorrente era `sep.color` inválido → theme override |
 | 6 | **Feedback de evolução de forma** | CharacterProgression | ✅ feito | `form_changed` → `_on_protagonist_form_changed`: FormLabel flash + status effect + stats aplicados na unit viva do Kael (via `_apply_protagonist_form_stats`); conectado no `connect_signals` |
 | 7 | **Decisão: turno individual vs 1.000+ unidades** | TurnOrderManager | ✅ decidido (a) | **manter turno por-fase individual**; Ato III = batalhas em ONDAS escaladas (reusa a mesma batalha); velocity-sort permanece como ferramenta p/ encontros selecionados |
-| 8 | **Conteúdo de chefes de verdade** | BossSystem | 🟡 1-way | Só alcançável marcando inimigo "Boss"; os 5 Cardeais + Aurius de 3 fases são spec |
+| 8 | **Conteúdo de chefes de verdade** | BossSystem | ✅ feito | Swap hardcoded `orc_chefe` removido: estágio pode declarar `boss_enemy` (Ato I, mapa compartilhado); Atos II-IV usam o pool data-driven do mapa (5 Cardeais + Aurius 3 fases, já no EnemyDatabase com classe Boss → runtime BossSystem/HP). Restante é polir labels do cardinal no BOSS_CARDINAL_BY_CLASS |
 | 9 | **Continuidade do nome no save** | unit nome | ✅ feito | `_spawn_named_souls` lê `NamingSystem.get_all_souls()` e spawna aliados com nome+stats persistidos; dedup com apóstolos canônicos (Kroug via starting_ally) |
 
 PRIORIDADE 2 (após a campanha existir):

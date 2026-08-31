@@ -453,17 +453,13 @@ func setup_battle() -> void:
  # Obter o mapa atual
  var current_map = MapDatabase.get_map(GameManager.game_data.get("current_map", 0))
  if current_map:
-  # Act-boss swap: act-final stage replaces the map pool with the boss enemy
-  # and limits to 1 enemy.
-  var is_act_boss = false
-  var enemies = current_map.enemies
-  var enemy_count = current_map.enemy_count
-  if GameManager and GameManager.campaign_system:
-   var stage = GameManager.campaign_system.get_current_stage()
-   if stage.get("final", false):
-    is_act_boss = true
-    enemies = ["orc_chefe"]
-    enemy_count = 1
+  # Pool de inimigos resolvido de forma data-driven (ROADMAP #8): o estágio
+  # pode declarar "boss_enemy" para substituir o pool do mapa (Ato I
+  # compartilha o mapa 0 com batalhas comuns); Atos II-IV têm pool próprio
+  # no mapa (Cardeais/Aurius, 1 unidade).
+  var pool = _resolve_enemy_pool(current_map)
+  var enemies = pool.enemies
+  var enemy_count = pool.count
 
   var enemy_positions = MapDatabase.get_enemy_spawn_positions(GameManager.game_data.get("current_map", 0), enemy_count)
 
@@ -481,6 +477,20 @@ func setup_battle() -> void:
  # Iniciar tutorial na primeira batalha
  if not FileAccess.file_exists("user://tutorial_completed"):
   tutorial_system.start_tutorial()
+
+# Pool de inimigos da batalha (ROADMAP #8): fonte de verdade data-driven.
+# Estágio de campanha pode declarar "boss_enemy" (chefe sem mapa próprio);
+# caso contrário vale o pool do mapa (Cardeais/Aurius já definidos lá).
+func _resolve_enemy_pool(current_map: Dictionary) -> Dictionary:
+ var enemies: Array = current_map.get("enemies", [])
+ var enemy_count: int = current_map.get("enemy_count", 1)
+ if GameManager and GameManager.campaign_system:
+  var stage: Dictionary = GameManager.campaign_system.get_current_stage()
+  var boss_enemy: String = stage.get("boss_enemy", "")
+  if boss_enemy != "":
+   enemies = [boss_enemy]
+   enemy_count = 1
+ return {"enemies": enemies, "count": enemy_count}
 
 func _spawn_player_party() -> void:
  # Stats de CharacterProgression (runtime) — literais preservam o balanço herdado

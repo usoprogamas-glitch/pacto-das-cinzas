@@ -75,17 +75,14 @@ func test_spawn_player_party_includes_named_souls_from_save():
 	GameManager.naming_system.named_souls.clear()
 	GameManager.naming_system.total_named = 0
 
-func test_act_boss_stage_swaps_enemy_pool_to_orc_chefe():
-	# O swap de inimigo é decidido por CampaignSystem.get_current_stage().final.
-	# Verifica a decisão de dados, não o spawn (que precisa de árvore).
+func test_act_boss_stage_declares_boss_enemy_data_driven():
+	# ROADMAP #8: o estágio declara "boss_enemy" (data-driven); o battle_scene
+	# usa o helper _resolve_enemy_pool. Verifica a decisão de dados.
 	var cs = CampaignSystem.new()
 	var act1_stage1 = cs.get_current_stage()   # act 1, stage 0 → não final
 	assert_false(act1_stage1.get("final", false), "stage 0 de ato 1 não é boss")
+	assert_true(act1_stage1.get("boss_enemy", "") == "", "stage comum não declara boss_enemy")
 	cs.advance_stage()                          # stage 1 → boss final
 	var boss_stage = cs.get_current_stage()
 	assert_true(boss_stage.get("final", false), "stage 1 de ato 1 é o chefe")
-	# A lógica de swap no battle_scene mapeia final→["orc_chefe"]:
-	var enemies = ["mercenario", "cacador"]
-	if boss_stage.get("final", false):
-		enemies = ["orc_chefe"]
-	assert_eq(enemies, ["orc_chefe"], "chefe de ato spawna orc_chefe")
+	assert_eq(boss_stage.get("boss_enemy", ""), "orc_chefe", "chefe de ato 1 declara orc_chefe")
