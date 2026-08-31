@@ -25,11 +25,10 @@
 - **Problema**: os 4 sprites de forma (`imp_menor`, `nobre_abissal`, `arquidemonio`, `avatar_primordial`) foram gerados mas **nunca aparecem** — a unit do Kael continua com o sprite da forma 1 o jogo inteiro.
 - **Fix aplicado**: `_apply_protagonist_form_stats` agora chama `_swap_protagonist_sprite(unit, new_form)` — troca a textura do MESMO nó Sprite2D (animator não perde referência) + re-normaliza à célula de 32px. Png ausente → textura mantida. 6 testes (`test_form_sprite_swap.gd`).
 
-### 4. Música não existe em runtime 🐛
+### 4. Música não existe em runtime 🐛 ✅ CORRIGIDO (2026-08-31)
 - **Onde**: `map_database.gd` define `"music": "exploration"/"battle"` por mapa — **nenhum código lê esse campo**. `SoundManager.play_sfx` é chamado (select/step/hit/death), mas zero BGM.
 - **Impacto**: jogo inteiro em silêncio de fundo; campo de dados morto.
-- **Fix**: `SoundManager.play_music(track)` procedural (sound_generator já gera áudio) chamado no `setup_battle` lendo `current_map.music`, data-driven.
-- **Teste**: setup_battle → SoundManager recebe track do mapa.
+- **Fix aplicado**: `play_music()` agora define stream (procedural, mesmo padrão dos SFX) com loop infinito + cache; 2 faixas (`create_exploration_music`: drone pentatônico menor / `create_battle_music`: pulso percussivo + baixo em oitavas); `setup_battle` lê `current_map.music`. Faixa desconhecida → no-op. 8 testes (`test_bgm_data_driven.gd`).
 
 ### 5. Shaders do PixelArtRenderer não compilam 🐛
 - **Onde**: `pixel_art_renderer.gd` (853 linhas) — GLSL inválido: `Range hint is for 'float' and 'int' only` (uniforms com hint em tipos errados), `Tokenizer: Unknown character #1` (caracteres não-ASCII dentro de shader code).
@@ -93,7 +92,7 @@
 | ~~1~~ | ~~P0-1 Boss por nome~~ | ✅ feito (2026-08-31) |
 | ~~2~~ | ~~P0-2 animators por instância~~ | ✅ feito (2026-08-31) |
 | ~~3~~ | ~~P0-3 troca de sprite na evolução~~ | ✅ feito (2026-08-31) |
-| 4 | P0-4 BGM data-driven | campo `music` já existe nos dados |
+| ~~4~~ | ~~P0-4 BGM data-driven~~ | ✅ feito (2026-08-31) |
 | 5 | P0-6 pre-check de png | trivial, limpa o log |
 | 6 | P0-5 shaders | médio; isolar shader por shader |
 | 7 | P1 #11 timed blocks | próximo mecânica-assinatura |

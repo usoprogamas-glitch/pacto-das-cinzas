@@ -440,6 +440,12 @@ func _create_boss_ui() -> void:
  vbox.add_child(boss_hp_bar)
 
 func setup_battle() -> void:
+ # BGM data-driven (P0-4): o campo "music" do mapa (exploration/battle) nunca
+ # era lido — batalhas rodavam em silêncio de fundo.
+ var current_map_for_music = MapDatabase.get_map(GameManager.game_data.get("current_map", 0))
+ if current_map_for_music and SoundManager:
+  SoundManager.play_music(current_map_for_music.get("music", "exploration"))
+
  # Inicializar sistema de autotile para o mapa (aplicado sobre a camada de terreno do grid)
  autotile_system.auto_tile_map(grid.terrain_layer, 0, Rect2i(0, 0, 12, 12))
  autotile_system.setup_animated_tiles(grid.terrain_layer)
