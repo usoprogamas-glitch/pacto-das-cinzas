@@ -37,7 +37,7 @@ var maps: Array[Dictionary] = [
   "description": "Terra de ninguém. Feras elementais e lava.",
   "difficulty": 5
  },
- // ===== ATO II — CARDEAIS =====
+ # ===== ATO II — CARDEAIS =====
  {
   "id": 5,
   "name": "Vale dos Despojos — Ignis",
@@ -68,7 +68,7 @@ var maps: Array[Dictionary] = [
   "description": "Ilusões de luz negra. A máscara aguarda.",
   "difficulty": 8
  },
- // ===== ATO IV — AURIUS =====
+ # ===== ATO IV — AURIUS =====
  {
   "id": 10,
   "name": "Solaria — Sala do Trono",

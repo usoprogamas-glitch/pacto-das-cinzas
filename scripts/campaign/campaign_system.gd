@@ -29,6 +29,13 @@ const ACT_STAGES: Dictionary = {
  ]
 }
 
+# Mapas de exploração que não são estágios de campanha, mas pertencem a um ato.
+# Só ficam jogáveis quando o ato dono já foi concluído (conteúdo lateral).
+const SIDE_MAP_ACTS: Dictionary = {
+ 1: 1,  # Floresta Sombria — conteúdo lateral do Ato I
+ 2: 3   # Caverna Profunda — conteúdo lateral do Ato III
+}
+
 var current_act: int = 1
 var current_stage: int = 0
 
@@ -71,11 +78,11 @@ func is_stage_playable(map_id: int) -> bool:
 # Ato dono do mapa (1ª aparição em ACT_STAGES). Fonte única de verdade para
 # map_select exibir o badge de ato sem duplicar a tabela hardcoded.
 func act_for_map(map_id: int) -> int:
- for act in ACT_STAGES.keys():
-  for stage in ACT_STAGES[act]:
-   if stage.map_id == map_id:
-    return act
- return 1
+  for act in ACT_STAGES.keys():
+   for stage in ACT_STAGES[act]:
+    if stage.map_id == map_id:
+     return act
+  return SIDE_MAP_ACTS.get(map_id, 1)
 
 func serialize() -> Dictionary:
  return {"current_act": current_act, "current_stage": current_stage}
