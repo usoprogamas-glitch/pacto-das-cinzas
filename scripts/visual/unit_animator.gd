@@ -54,7 +54,10 @@ func play_walk(target_position: Vector2) -> void:
  if not unit:
   return
 
- # AnimaÃ§Ã£o de caminhada
+ # Virar para a direção do movimento
+ face_direction(target_position.x - unit.position.x)
+
+ # Animação de caminhada
  var tween = create_tween()
  var distance = unit.position.distance_to(target_position)
  var duration = distance / 200.0 # Velocidade de movimento
@@ -65,6 +68,14 @@ func play_walk(target_position: Vector2) -> void:
   var offset = Vector2(0, sin(i * PI) * 3)
   tween.tween_property(unit, "position", unit.position + offset, duration / steps)
 
+ # Balanço do sprite durante os passos (sem sprite, só os passos bastam)
+ if sprite:
+  var base_rotation := sprite.rotation
+  tween.tween_property(sprite, "rotation", base_rotation + 0.08, duration * 0.25)
+  tween.tween_property(sprite, "rotation", base_rotation - 0.08, duration * 0.25)
+  tween.tween_property(sprite, "rotation", base_rotation, duration * 0.25)
+  tween.parallel().tween_property(sprite, "rotation", base_rotation, 0.01)
+
  await tween.finished
 
 func play_attack(target: Node2D) -> void:
@@ -72,14 +83,17 @@ func play_attack(target: Node2D) -> void:
  if not unit or not target:
   return
 
- # AnimaÃ§Ã£o de ataque
+ # Virar para o alvo
+ face_direction(target.position.x - unit.position.x)
+
+ # Animação de ataque
  var original_position = unit.position
  var attack_direction = (target.position - unit.position).normalized()
  var attack_position = unit.position + attack_direction * 20
 
  var tween = create_tween()
 
- # AvanÃ§o rÃ¡pido
+ # Avanço rápido
  tween.tween_property(unit, "position", attack_position, 0.1).set_ease(Tween.EASE_OUT)
 
  # Pausa no impacto
@@ -89,6 +103,14 @@ func play_attack(target: Node2D) -> void:
  tween.tween_property(unit, "position", original_position, 0.15).set_ease(Tween.EASE_IN_OUT)
 
  await tween.finished
+
+## Vira o sprite horizontalmente (flip) conforme a direção do movimento/alvo.
+## sprite HD é simétrico o suficiente para flip; frames direcionais ficam para
+## um futuro pipeline de sprite sheet.
+func face_direction(horizontal_dir: float) -> void:
+ if not sprite or absf(horizontal_dir) < 0.01:
+  return
+ sprite.flip_h = horizontal_dir < 0.0
 
 func play_magic_cast() -> void:
  current_animation = "cast"

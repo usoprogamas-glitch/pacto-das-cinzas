@@ -80,3 +80,40 @@ func test_death_fades_sprite_out():
 	await animator.play_death()
 	var sprite: Sprite2D = unit.get_children()[0]
 	assert_almost_eq(sprite.modulate.a, 0.0, 0.01, "morte: sprite some")
+
+## Direção: virar para o alvo/movimento via flip horizontal.
+func test_face_direction_flips_sprite_left():
+	var unit = _make_unit_with_sprite()
+	add_child_autofree(unit)
+	var animator = UnitAnimatorScript.new()
+	add_child_autofree(animator)
+	animator.setup(unit)
+	animator.face_direction(-10.0)
+	assert_true(animator.sprite.flip_h, "movimento para a esquerda → flip")
+
+func test_face_direction_unflips_sprite_right():
+	var unit = _make_unit_with_sprite()
+	add_child_autofree(unit)
+	var animator = UnitAnimatorScript.new()
+	add_child_autofree(animator)
+	animator.setup(unit)
+	animator.sprite.flip_h = true
+	animator.face_direction(10.0)
+	assert_false(animator.sprite.flip_h, "movimento para a direita → sem flip")
+
+func test_face_direction_zero_delta_keeps_flip():
+	var unit = _make_unit_with_sprite()
+	add_child_autofree(unit)
+	var animator = UnitAnimatorScript.new()
+	add_child_autofree(animator)
+	animator.setup(unit)
+	animator.sprite.flip_h = true
+	animator.face_direction(0.0)
+	assert_true(animator.sprite.flip_h, "delta ~0 não mexe no flip")
+
+func test_face_direction_without_sprite_is_null_safe():
+	var animator = UnitAnimatorScript.new()
+	add_child_autofree(animator)
+	animator.setup(Node2D.new())
+	animator.face_direction(-5.0)
+	assert_eq(animator.get_current_animation(), "idle", "sem sprite: sem crash")
