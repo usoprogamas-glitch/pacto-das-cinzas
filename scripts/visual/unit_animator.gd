@@ -1,8 +1,8 @@
-class_name UnitAnimator
+﻿class_name UnitAnimator
 extends Node
 
-# Sistema de animação para unidades
-# - Idle (respiração)
+# Sistema de animaÃ§Ã£o para unidades
+# - Idle (respiraÃ§Ã£o)
 # - Walk (movimento)
 # - Attack (golpe)
 # - Hit (dano)
@@ -19,25 +19,42 @@ func _ready() -> void:
 
 func setup(unit_ref: Node2D) -> void:
  unit = unit_ref
- sprite = unit.get_node("Sprite2D") if unit.has_node("Sprite2D") else null
+ sprite = _find_sprite(unit_ref)
+
+func _find_sprite(unit_ref: Node2D) -> Sprite2D:
+ # O sprite Ã© adicionado via add_child sem nome explÃ­cito â†’ Godot nomeia
+ # "@Sprite2D@N" e has_node("Sprite2D") NUNCA casava (idle/hit/cast mortos).
+ if unit_ref == null:
+  return null
+ if unit_ref is Sprite2D:
+  return unit_ref
+ if unit_ref.has_node("Sprite2D"):
+  return unit_ref.get_node("Sprite2D") as Sprite2D
+ for child in unit_ref.get_children():
+  if child is Sprite2D:
+   return child
+ return null
 
 func play_idle() -> void:
  current_animation = "idle"
  if not sprite:
   return
 
- # Animação de respiração sutil
+ # RespiraÃ§Ã£o sutil: squash & stretch RELATIVO Ã  escala real do sprite.
+ # Sprites HD normalizados chegam com scale ~0.03 (1024px â†’ 32px): animar
+ # para escala absoluta 1.0/1.02 os explodia em tela.
+ var base_scale := sprite.scale
  var tween = create_tween()
  tween.set_loops()
- tween.tween_property(sprite, "scale", Vector2(1.0, 1.02), 0.5)
- tween.tween_property(sprite, "scale", Vector2(1.0, 1.0), 0.5)
+ tween.tween_property(sprite, "scale", base_scale * Vector2(1.0, 1.06), 0.6).set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE)
+ tween.tween_property(sprite, "scale", base_scale, 0.6).set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE)
 
 func play_walk(target_position: Vector2) -> void:
  current_animation = "walk"
  if not unit:
   return
 
- # Animação de caminhada
+ # AnimaÃ§Ã£o de caminhada
  var tween = create_tween()
  var distance = unit.position.distance_to(target_position)
  var duration = distance / 200.0 # Velocidade de movimento
@@ -55,14 +72,14 @@ func play_attack(target: Node2D) -> void:
  if not unit or not target:
   return
 
- # Animação de ataque
+ # AnimaÃ§Ã£o de ataque
  var original_position = unit.position
  var attack_direction = (target.position - unit.position).normalized()
  var attack_position = unit.position + attack_direction * 20
 
  var tween = create_tween()
 
- # Avanço rápido
+ # AvanÃ§o rÃ¡pido
  tween.tween_property(unit, "position", attack_position, 0.1).set_ease(Tween.EASE_OUT)
 
  # Pausa no impacto
@@ -78,7 +95,7 @@ func play_magic_cast() -> void:
  if not sprite:
   return
 
- # Animação de conjuração
+ # AnimaÃ§Ã£o de conjuraÃ§Ã£o
  var tween = create_tween()
 
  # Levantar
@@ -100,7 +117,7 @@ func play_hit() -> void:
  if not sprite:
   return
 
- # Animação de dano
+ # AnimaÃ§Ã£o de dano
  var original_position = sprite.position
  var original_modulate = sprite.modulate
 
@@ -124,11 +141,12 @@ func play_death() -> void:
  if not sprite:
   return
 
- # Animação de morte
+ # AnimaÃ§Ã£o de morte
+ var base_scale := sprite.scale
  var tween = create_tween()
 
  # Encolher
- tween.tween_property(sprite, "scale", Vector2(0.5, 0.5), 0.2)
+ tween.tween_property(sprite, "scale", base_scale * Vector2(0.5, 0.5), 0.2)
 
  # Desaparecer
  tween.tween_property(sprite, "modulate:a", 0.0, 0.3)
@@ -143,11 +161,12 @@ func play_evolution() -> void:
  if not sprite:
   return
 
- # Animação de evolução
+ # AnimaÃ§Ã£o de evoluÃ§Ã£o (relativa Ã  escala base â€” ver play_idle)
+ var base_scale := sprite.scale
  var tween = create_tween()
 
  # Crescer
- tween.tween_property(sprite, "scale", Vector2(1.5, 1.5), 0.3)
+ tween.tween_property(sprite, "scale", base_scale * Vector2(1.5, 1.5), 0.3)
 
  # Brilhar
  tween.tween_property(sprite, "modulate", Color(2, 2, 2), 0.3)
@@ -156,7 +175,7 @@ func play_evolution() -> void:
  tween.tween_property(sprite, "modulate", Color(0.5, 0.5, 2), 0.2)
 
  # Normalizar
- tween.tween_property(sprite, "scale", Vector2(1.0, 1.0), 0.3)
+ tween.tween_property(sprite, "scale", base_scale, 0.3)
  tween.tween_property(sprite, "modulate", Color.WHITE, 0.3)
 
  await tween.finished
@@ -166,7 +185,7 @@ func play_victory() -> void:
  if not sprite:
   return
 
- # Animação de vitória
+ # AnimaÃ§Ã£o de vitÃ³ria
  var tween = create_tween()
  tween.set_loops(3)
 
@@ -181,7 +200,7 @@ func play_defeat() -> void:
  if not sprite:
   return
 
- # Animação de derrota
+ # AnimaÃ§Ã£o de derrota
  var tween = create_tween()
 
  # Encher
