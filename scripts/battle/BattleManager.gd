@@ -12,6 +12,7 @@ signal battle_won()
 signal battle_lost()
 signal soul_ether_gained(amount: int)
 signal ether_boost_applied(unit, charges: int)
+signal timed_block_window(attacker: Unit, target: Unit)
 
 enum Phase { PLAYER_TURN, ENEMY_TURN, ANIMATING }
 
@@ -33,6 +34,13 @@ var _flanking_system: FlankingSystem = FlankingSystem.new()
 var _adjacency_system: AdjacencySystem = AdjacencySystem.new()
 var _timed_combat_system: TimedCombatSystem = TimedCombatSystem.new()
 var _magic_system: MagicSystem = MagicSystem.new()
+
+# Timed Block (GDD v2 §3.1): callable opcional que resolve a janela defensiva
+# reativa (0.2s) antes do dano de um ataque inimigo em alvo jogador. Recebe
+# (attacker, target) e retorna a fração de dano bloqueada (0.0–0.5). O
+# battle_scene instala o resolver; sem ele, o dano chega integral (comportamento
+# antigo — testes headless ficam síncronos).
+var timed_block_resolver: Callable = Callable()
 
 # Ordem de turnos velocity-based (GDD v2 §5.1): quem é mais rápido age primeiro.
 # Quando ativo, cada unidade tem seu próprio turno dentro do round.
@@ -117,14 +125,14 @@ func execute_enemy_ai(enemy: Unit) -> void:
    if action.has("target") and action.target.current_hp > 0:
     var dist = enemy.grid_position.distance_to(action.target.grid_position)
     if dist <= enemy.data.attack_range:
-     attack_unit(enemy, action.target)
+     await attack_unit(enemy, action.target)
     else:
      var move_pos = get_closer_position(enemy, action.target)
      if move_pos != enemy.grid_position:
       move_unit(enemy, move_pos)
       await get_tree().create_timer(0.2).timeout
       if enemy.grid_position.distance_to(action.target.grid_position) <= enemy.data.attack_range:
-       attack_unit(enemy, action.target)
+       await attack_unit(enemy, action.target)
   "cast":
    if action.has("spell_id") and action.has("target") and action.target.current_hp > 0:
     cast_magic(enemy, action.spell_id, action.target)
@@ -258,6 +266,14 @@ func attack_unit(attacker: Unit, target: Unit, attacker_terrain: String = "", ta
 
  # Timed Hit bonus (GDD v2 §3.1)
  damage = int(damage * timing_bonus)
+
+ # Timed Block (GDD v2 §3.1): defesa reativa — ataque inimigo em alvo jogador
+ # abre a janela de 0.2s; o resolver do battle_scene retorna a redução obtida.
+ var block_reduction := 0.0
+ if timed_block_resolver.is_valid() and not is_player_side(attacker) and is_player_side(target):
+  timed_block_window.emit(attacker, target)
+  block_reduction = await timed_block_resolver.call(attacker, target)
+ damage = int(damage * (1.0 - block_reduction))
 
  damage = maxi(1, damage)
 

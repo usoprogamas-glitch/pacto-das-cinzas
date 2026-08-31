@@ -81,6 +81,11 @@ var _timed_hit_active: bool = false
 var _timed_hit_start_time: float = 0.0
 var _timed_hit_target: Unit = null
 
+# Estado de timed block (defesa reativa — espelho do timed hit, GDD v2 §3.1)
+var _timed_block_active: bool = false
+var _timed_block_start_time: float = 0.0
+var _timed_block_reduction: float = 0.0
+
 var selected_unit: Unit = null
 var is_unit_selected: bool = false
 var can_interact: bool = true
@@ -673,6 +678,9 @@ func connect_signals() -> void:
  BattleManager.battle_won.connect(_on_battle_won)
  BattleManager.battle_lost.connect(_on_battle_lost)
  BattleManager.soul_ether_gained.connect(_on_soul_ether_gained)
+ # Resolver da janela defensiva: o BattleManager aguarda este callable antes
+ # de aplicar o dano ao protagonista (núcleo headless segue testável sem ele).
+ BattleManager.timed_block_resolver = _resolve_timed_block
 
  # Kaelen System (§3.4) - conectar sinais
  kaelen_system.target_analyzed.connect(_on_kaelen_target_analyzed)
@@ -797,6 +805,11 @@ func _create_fallback_sprite(color: Color, is_player: bool) -> Sprite2D:
  return sprite_node
 
 func _input(event: InputEvent) -> void:
+ # Timed Block: o clique reativo vale mesmo fora do turno do jogador
+ # (a janela abre durante o ENEMY_TURN, quando can_interact é false).
+ if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT and _timed_block_active:
+  _resolve_block_input()
+  return
  if not can_interact:
   return
  if event is InputEventMouseButton and event.pressed:
@@ -911,6 +924,37 @@ func attack_with_selected_unit(target: Unit) -> void:
   # Se jogador não clicou a tempo, aplicar dano sem bônus
   if _timed_hit_active:
    _apply_attack_result(target, 1.0, "MISS")
+
+
+# --- Timed Block: defesa reativa (espelho do timed hit, GDD v2 §3.1) ---
+
+## Chamado pelo BattleManager quando um ataque inimigo mira um aliado jogador:
+## abre a janela de 0.2s e aguarda o clique reativo antes do dano ser aplicado.
+func _resolve_timed_block(_attacker: Unit, target: Unit) -> float:
+ _timed_block_active = true
+ _timed_block_start_time = Time.get_ticks_msec() / 1000.0
+ _timed_block_reduction = 0.0
+
+ combat_feedback.show_status_effect(target.global_position + Vector2(0, -40), "TIMED BLOCK!")
+ SoundManager.play_select()
+
+ # Espera o input do jogador dentro da janela (0.2s) e devolve a redução
+ # para o pipeline de dano do BattleManager.
+ await get_tree().create_timer(TimedCombatSystem.BLOCK_WINDOW).timeout
+ _timed_block_active = false
+ return _timed_block_reduction
+
+
+## Clique reativo dentro da janela: gradua o timing e trava a redução obtida.
+func _resolve_block_input() -> void:
+ var elapsed = (Time.get_ticks_msec() / 1000.0) - _timed_block_start_time
+ var result = timed_combat.resolve_block_timing(elapsed)
+ _timed_block_reduction = timed_combat.get_block_reduction(result)
+
+ combat_feedback.show_status_effect(Vector2(640, 300), "BLOCK " + result.grade)
+ if _timed_block_reduction > 0.0:
+  combat_feedback.shake_light()
+  SoundManager.play_hit()
 
 
 func _apply_attack_result(target: Unit, multiplier: float, grade: String) -> void:
