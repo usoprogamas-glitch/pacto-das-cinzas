@@ -2,8 +2,8 @@ extends "res://addons/gut/test.gd"
 ## Controles da intro: A avança o slide, Start/ESC (e ESC) pulam a intro.
 ## Valida o _input com InputEventAction. O story é instanciado FORA da árvore
 ## (sem _ready → sem tween/auto-advance), e _input é chamado direto — sem o
-## side-effect de trocar a cena (SceneManager.go_to_map_select) que quebraria a
-## run do GUT.
+## side-effect de trocar a cena (complete_intro navega para a exploração) que
+## quebraria a run do GUT.
 
 func make_story() -> Node:
 	var story = load("res://scripts/ui/intro_story.gd").new()

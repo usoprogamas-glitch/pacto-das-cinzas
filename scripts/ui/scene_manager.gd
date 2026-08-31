@@ -11,8 +11,6 @@ var scenes: Dictionary = {
  "main_menu": "res://scenes/menu/main_menu.tscn",
  "battle": "res://scenes/battle/battle_scene.tscn",
  "explore": "res://scenes/battle/explore_scene.tscn",
- "village": "res://scenes/village/village_scene.tscn",
- "map_select": "res://scenes/menu/map_select.tscn",
  "settings": "res://scenes/menu/settings.tscn",
  "epilogue": "res://scenes/ui/epilogue.tscn",
  "act_cutscene": "res://scenes/ui/act_cutscene.tscn"
@@ -38,12 +36,6 @@ func go_to_battle(map_id: int = 0) -> void:
 
 func go_to_explore() -> void:
  change_scene("explore")
-
-func go_to_village() -> void:
- change_scene("village")
-
-func go_to_map_select() -> void:
- change_scene("map_select")
 
 func go_to_settings() -> void:
  change_scene("settings")
