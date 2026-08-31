@@ -21,7 +21,7 @@ extends Node2D
 var tutorial_system: TutorialSystem
 var combat_feedback: CombatFeedback
 var screen_effects: ScreenEffects
-var unit_animators: Dictionary = {}
+var unit_animators: Dictionary = {}  # chave: instance_id da Unit (NÃO nome — nomes duplicados colidiam)
 var autotile_system: AutoTileSystem
 var pixel_art_renderer: PixelArtRenderer
 
@@ -621,7 +621,9 @@ func create_unit(grid_pos: Vector2i, unit_name: String, color: Color, unit_class
  animator.name = "Animator"
  (unit as Node).add_child(animator)
  animator.setup(unit)
- unit_animators[unit_name] = animator
+ # Chave por instância: 2 inimigos de mesmo nome ("Mercenário" ×2) compartilhavam
+ # UMA entrada → animações tocavam na unidade errada. Instance ID é único.
+ unit_animators[unit.get_instance_id()] = animator
  animator.play_idle()
 
  # Aplicar efeitos visuais avançados
@@ -872,7 +874,7 @@ func deselect_unit() -> void:
 func move_selected_unit(grid_pos: Vector2i) -> void:
  if selected_unit and not selected_unit.has_moved:
   # Animação de movimento
-  var animator = unit_animators.get(selected_unit.name)
+  var animator = _get_animator(selected_unit)
   if animator:
    animator.play_walk(grid.grid_to_pixel(grid_pos))
 
@@ -906,7 +908,7 @@ func _apply_attack_result(target: Unit, multiplier: float, grade: String) -> voi
   return
 
  # Animação de ataque
- var attacker_animator = unit_animators.get(selected_unit.name)
+ var attacker_animator = _get_animator(selected_unit)
  if attacker_animator:
   await attacker_animator.play_attack(target)
 
@@ -925,7 +927,7 @@ func _apply_attack_result(target: Unit, multiplier: float, grade: String) -> voi
   update_balance_ui()
 
  # Animação de dano no alvo
- var target_animator = unit_animators.get(target.name)
+ var target_animator = _get_animator(target)
  if target_animator:
   target_animator.play_hit()
 
@@ -1022,9 +1024,13 @@ func _on_unit_attacked(attacker: Unit, target: Unit, damage: int) -> void:
 
 func _on_unit_died(unit: Unit) -> void:
  # Animação de morte
- var animator = unit_animators.get(unit.name)
+ var animator = _get_animator(unit)
  if animator:
   await animator.play_death()
+
+## Animator da unidade por instância (ver unit_animators).
+func _get_animator(unit: Unit) -> UnitAnimator:
+ return unit_animators.get(unit.get_instance_id())
 
  SoundManager.play_death()
  combat_feedback.shake_medium()
