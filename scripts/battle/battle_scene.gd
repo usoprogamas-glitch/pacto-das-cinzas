@@ -746,8 +746,12 @@ func _sprite_key(unit_name: String) -> String:
  return key
 
 ## HD 2D: carrega textura png de assets/sprites se existir; null → fallback procedural.
+## Pre-check file_exists (P0-6): img.load em arquivo ausente imprime ERROR no
+## console para CADA probe (fantasma/teia/guerreiro...) — mascara erros reais.
 func _load_hd_sprite(path: String) -> Sprite2D:
  var img := Image.new()
+ if not FileAccess.file_exists(path):
+  return null
  if img.load(path) != OK:
   return null
  var sprite = Sprite2D.new()

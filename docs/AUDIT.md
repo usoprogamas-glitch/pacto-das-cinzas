@@ -36,10 +36,10 @@
 - **Fix**: corrigir hints (`hint_range` só em float/int), remover/caracteres especiais dos comentários GLSL, validar cada shader.
 - **Teste**: headless não compila shader — validar via script de sanity (material != null, shader.code ASCII-safe) + inspeção visual.
 
-### 6. Log poluído por probe de png faltante
+### 6. Log poluído por probe de png faltante 🐛 ✅ CORRIGIDO (2026-08-31)
 - **Onde**: `_load_hd_sprite` faz `img.load()` direto → Godot imprime ERROR para cada nome sem png (`fantasma`, `guerreiro`, `teia`...).
-- **Impacto**: cosmetico, mas mascara erros reais em produção.
-- **Fix**: `FileAccess.file_exists(path)` antes do load (o teste de fallback continua válido).
+- **Impacto**: cosmético, mas mascara erros reais em produção.
+- **Fix aplicado**: `FileAccess.file_exists(path)` antes do load. Suíte confirmada sem nenhum "Error opening file". 3 testes (`test_png_precheck.gd`).
 
 ---
 
@@ -93,7 +93,7 @@
 | ~~2~~ | ~~P0-2 animators por instância~~ | ✅ feito (2026-08-31) |
 | ~~3~~ | ~~P0-3 troca de sprite na evolução~~ | ✅ feito (2026-08-31) |
 | ~~4~~ | ~~P0-4 BGM data-driven~~ | ✅ feito (2026-08-31) |
-| 5 | P0-6 pre-check de png | trivial, limpa o log |
+| ~~5~~ | ~~P0-6 pre-check de png~~ | ✅ feito (2026-08-31) |
 | 6 | P0-5 shaders | médio; isolar shader por shader |
 | 7 | P1 #11 timed blocks | próximo mecânica-assinatura |
 | 8 | P1 #10 encounters/puzzles | destrava sistemas órfãos |
