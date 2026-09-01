@@ -34,6 +34,10 @@ var _enemy_tile_ids: Array = []  # ids registrados no SeamlessEncounterSystem
 var _ui: CanvasLayer
 var _hint_label: Label
 var _e_was_down := false
+# Travessia §6.1 (data-driven via MapDatabase.traversal_nodes)
+var traversal  # TraversalSystem
+var traversal_nodes: Array = []  # [{id, data, node, solved}]
+var _traversal_hint: Label
 
 
 func _ready() -> void:
@@ -43,6 +47,7 @@ func _ready() -> void:
 	_spawn_party()
 	_spawn_enemies()
 	_spawn_puzzles()
+	_spawn_traversal_nodes()
 	_build_ui()
 
 
@@ -211,6 +216,11 @@ func _build_ui() -> void:
 	_hint_label.add_theme_font_size_override("font_size", 15)
 	_hint_label.text = HINT_BASE
 	_ui.add_child(_hint_label)
+	_traversal_hint = Label.new()
+	_traversal_hint.position = Vector2(20, 650)
+	_traversal_hint.add_theme_font_size_override("font_size", 14)
+	_traversal_hint.text = "TRAVESSIA: aproxime-se de um nó e pressione E"
+	_ui.add_child(_traversal_hint)
 
 
 func _process(delta: float) -> void:
@@ -394,10 +404,88 @@ func _update_pointer(entry: Dictionary, mirror_id: String) -> void:
 
 
 func _process_puzzles(_delta: float) -> void:
+	if traversal:
+		traversal.regen_stamina(_delta)
 	if Input.is_key_pressed(KEY_E) and not _e_was_down:
+		_interact_traversal()
 		_interact_puzzles()
 	_e_was_down = Input.is_key_pressed(KEY_E)
 	_update_puzzle_hint()
+
+
+# === TRAVESSIA DINÂMICA (GDD §6.1) — nós data-driven via MapDatabase ===
+
+func _spawn_traversal_nodes() -> void:
+	traversal = TraversalSystem.new()
+	# Asas de Cinzas: unlock de progressão (data-driven do save); sem elas, nós
+	# de arpéu exibem o motivo (§6.1) e continuam no mapa.
+	traversal.setup(bool(GameManager.game_data.get("has_wings", false)) if GameManager else false)
+	var map: Dictionary = MapDatabase.get_map(map_id)
+	for cfg in map.get("traversal_nodes", []):
+		var node := _make_traversal_node(cfg)
+		traversal_nodes.append({"id": String(cfg["id"]), "data": cfg, "node": node, "solved": false})
+
+
+func _make_traversal_node(cfg: Dictionary) -> Node2D:
+	var node := Node2D.new()
+	node.position = _tile_center(cfg.get("pos", Vector2i.ZERO))
+	var core := ColorRect.new()
+	core.size = Vector2(18, 18)
+	core.position = Vector2(-9, -9)
+	core.color = Color(0.4, 0.9, 0.8)
+	node.add_child(core)
+	var sign_label := Label.new()
+	sign_label.position = Vector2(-40, -30)
+	sign_label.add_theme_font_size_override("font_size", 11)
+	sign_label.text = String(cfg.get("label", "TRAVESSIA"))
+	node.add_child(sign_label)
+	add_child(node)
+	return node
+
+
+func _nearest_traversal_node() -> Dictionary:
+	if player == null:
+		return {}
+	var best := {}
+	var best_dist: float = PUZZLE_RANGE
+	for entry in traversal_nodes:
+		if entry.get("solved", false):
+			continue
+		var node: Node2D = entry["node"]
+		var d: float = player.position.distance_to(node.position)
+		if d < best_dist:
+			best_dist = d
+			best = entry
+	return best
+
+
+func _interact_traversal() -> void:
+	var entry := _nearest_traversal_node()
+	if entry.is_empty():
+		return
+	var result: Dictionary = traversal.attempt_traversal(String(entry["data"]["ability"]))
+	if not result.can:
+		_show_traversal_hint("TRAVESSIA: " + result.reason)
+		return
+	traversal.end_traversal()
+	entry["solved"] = true
+	entry["node"].modulate = Color(0.5, 1.0, 0.5)
+	var rewards: Dictionary = entry["data"].get("rewards", {})
+	if int(rewards.get("soul_ether", 0)) > 0 and GameManager:
+		GameManager.add_soul_ether(int(rewards["soul_ether"]))
+	if int(rewards.get("gold", 0)) > 0 and GameManager:
+		GameManager.add_gold(int(rewards["gold"]))
+	if rewards.has("xp") and GameManager and GameManager.progression_system:
+		GameManager.progression_system.add_experience(int(rewards["xp"]))
+	if entry["data"].get("grants_wings", false) and GameManager:
+		GameManager.game_data["has_wings"] = true
+		traversal.setup(true)
+	_show_traversal_hint("TRAVESSIA CONCLUÍDA! +%d éter, +%d ouro" % [int(rewards.get("soul_ether", 0)), int(rewards.get("gold", 0))])
+
+
+func _show_traversal_hint(text: String) -> void:
+	if _traversal_hint and is_instance_valid(_traversal_hint):
+		_traversal_hint.text = text
 
 
 func _nearest_puzzle_node() -> Dictionary:

@@ -89,21 +89,49 @@ static var maps: Dictionary = {
  	    "mirrors": [
  	     {"id": "m1", "pos": Vector2i(5, 6), "angle": 6}
  	    ],
- 	    "rewards": {"soul_ether": 8, "gold": 15, "xp": 80}
- 	   }
- 	  ],
+    "rewards": {"soul_ether": 8, "gold": 15, "xp": 80}
+   }
+  ],
+  "traversal_nodes": [
+   {
+    "id": "fenda_ignis",
+    "ability": "ether_harpoon",
+    "pos": Vector2i(6, 2),
+    "label": "FENDA DE ÉTER — E para arpéu (precisa de Asas)",
+    "rewards": {"soul_ether": 12, "gold": 20, "xp": 120},
+    "grants_wings": false
+   },
+   {
+    "id": "penhasco_ignis",
+    "ability": "climb",
+    "pos": Vector2i(2, 3),
+    "label": "PENHASCO — E para escalar",
+    "rewards": {"soul_ether": 6, "gold": 10, "xp": 60},
+    "grants_wings": false
+   }
+  ],
  	  "tiles": generate_volcanic_map()
  	 },
-	 6: {
-	  "name": "Floresta dos Ventos — Zephyr",
-	  "size": Vector2i(14, 14),
-	  "terrain": "forest",
-	  "enemies": ["cardeal_zephyr"],
-	  "enemy_count": 1,
-	  "description": "Tempestades de vento. Zephyr comanda as alturas.",
-	  "music": "battle",
-	  "tiles": generate_forest_map()
-	 },
+ 6: {
+  "name": "Floresta dos Ventos — Zephyr",
+  "size": Vector2i(14, 14),
+  "terrain": "forest",
+  "enemies": ["cardeal_zephyr"],
+  "enemy_count": 1,
+  "description": "Tempestades de vento. Zephyr comanda as alturas.",
+  "music": "battle",
+  "traversal_nodes": [
+   {
+    "id": "desfiladeiro_zephyr",
+    "ability": "dash",
+    "pos": Vector2i(4, 7),
+    "label": "DESFILADEIRO — E para impulso",
+    "rewards": {"soul_ether": 8, "gold": 12, "xp": 90},
+    "grants_wings": true
+   }
+  ],
+  "tiles": generate_forest_map()
+ },
 	 7: {
 	  "name": "Lago Corrosivo — Aqua",
 	  "size": Vector2i(12, 12),

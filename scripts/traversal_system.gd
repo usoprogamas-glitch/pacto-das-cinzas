@@ -148,6 +148,52 @@ func end_traversal() -> void:
  traversal_completed.emit("")
 
 
+## --- Nós de travessia do mapa (GDD §6.1, data-driven via MapDatabase) ---
+
+## Valida + executa a travessia de um nó do mapa (fenda de arpéu, penhasco,
+## desfiladeiro). meta opcional: {"height": int} para escalada, {"distance": int}
+## para arpéu/impulso/salto. Consome stamina e emite traversal_started.
+## Retorna {"can": true} ou {"can": false, "reason": motivo}.
+func attempt_traversal(ability_name: String, meta: Dictionary = {}) -> Dictionary:
+ var ability: Dictionary = TRAVERSAL_ABILITIES.get(ability_name, {})
+ if ability.is_empty():
+  return {"can": false, "reason": "Habilidade desconhecida"}
+
+ # O nó do mapa é o próprio terreno: escalada = penhasco, planar = ar, nado = água.
+ var terrain_map: Dictionary = {"climb": "cliff", "glide": "air", "swim": "water"}
+ var old_terrain: String = _current_terrain
+ if terrain_map.has(ability_name):
+  _current_terrain = terrain_map[ability_name]
+ var check = can_traverse(ability_name)
+ _current_terrain = old_terrain
+ if not check.can:
+  return check
+
+ var fail: String = _validate_node(ability, meta)
+ if fail != "":
+  return {"can": false, "reason": fail}
+
+ _current_stamina = maxi(0, _current_stamina - int(ability.stamina_cost))
+ _is_traversing = true
+ traversal_started.emit(ability_name)
+ return {"can": true, "speed": float(ability.get("speed_multiplier", 1.0))}
+
+
+## Regras por nó: altura dentro do alcance da escalada, distância dentro do
+## alcance da habilidade declarada no nó.
+func _validate_node(ability: Dictionary, meta: Dictionary) -> String:
+ if meta.has("height") and ability.has("max_height") and int(meta["height"]) > int(ability["max_height"]):
+  return "Altura além do alcance da escalada"
+ if meta.has("distance"):
+  if ability.has("range") and int(meta["distance"]) > int(ability["range"]):
+   return "Fora de alcance do arpéu"
+  if ability.has("dash_distance") and int(meta["distance"]) > int(ability["dash_distance"]):
+   return "Distância além do impulso"
+  if ability.has("jump_distance") and int(meta["distance"]) > int(ability["jump_distance"]):
+   return "Distância além do salto"
+ return ""
+
+
 ## Atualizar stamina (chamado a cada frame ou timer).
 func regen_stamina(delta: float) -> void:
  if not _is_traversing:
