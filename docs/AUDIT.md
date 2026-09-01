@@ -121,13 +121,20 @@
 | ~~6~~ | ~~P0-5 shaders~~ | ✅ feito e validado (2026-08-31, probe opengl3) |
 | ~~7~~ | ~~P1 #10 encounters/puzzles~~ | ✅ feito (2026-08-31, puzzles data-driven) |
 | ~~8~~ | ~~P1 #9 ondas do Ato III~~ | ✅ feito (2026-09-01) |
-| 9 | P1 #10 locks do cast inimigo | GDD §3.2 simétrico |
+| ~~9~~ | ~~P1 #10 locks do cast inimigo~~ | ✅ feito (2026-09-01) |
 
 ### P1 #9 — Ondas escaladas do Ato III ✅ FEITO (2026-09-01)
 - **Onde**: `arena_battle.gd` (caminho principal SoS) e `BattleManager.gd` (grid legado), dados em `map_database.gd`.
 - **Implementação**: mapa pode declarar `"waves": [{"enemies": [...], "stat_scale": f}]` data-driven. Onda 1 é o spawn inicial (composição da onda, não `enemy_count`); ondas 2..N são reinjetadas ao limpar a arena, com stats escalados por `stat_scale` (padrão 1.0 + 0.25/onda), nome sufijado "(Onda N)" e entrada com vida cheia. `battle_ended`/`battle_won` só dispara após a última onda. Castelo Solaris (mapa 3, Ato III) declara 3 ondas (1.0 → 1.25 → 1.5 com santo_cardeal).
 - **Legado**: `BattleManager.setup_waves()/spawn_next_wave()` espelha o mesmo contrato no grid, com fábrica opcional de unidades e `wave_started` emitida por reinjeção.
 - **Testes**: `test_arena_waves.gd` (6) + `test_wave_spawner.gd` (5). Suíte: 611/611.
+
+### P1 #10 — Locks do cast inimigo (GDD §3.2) ✅ FEITO (2026-09-01)
+- **Onde**: `arena_combat.gd` (núcleo puro) + `arena_battle.gd` (cena), dados em `enemy_database.gd`.
+- **Dados**: campo opcional `enemy_spell` por inimigo (`{name, damage, charge_turns, locks:[{type,hits}]}`) — Inquisidor e todos os 9 bosses (5 Cardeais + Aurius 3 fases + Santo Cardeal). Canais limitados a Corte/Éter (os dois tipos que o jogador entrega: físico/magia).
+- **Núcleo**: `start_charge` cria locks via LockSystem; `hit_charge` dentes locks do tipo do golpe e faz spellbreak (charge limpo + stun 1 turno) ao quebrar todos; `tick_charge` no turno do canalizador — contador zerado = feitiço sai; `tick_stun` consome o spellbreak.
+- **Cena**: IA com `enemy_spell` + MP inicia o canal em vez de atacar; alvo do jogador prioriza canalizador (locks atraem o golpe); físico = Corte, magia = Éter; stun faz o inimigo perder o turno.
+- **Testes**: `test_enemy_spell_locks.gd` (8). Suíte: 619/619.
 
 ---
 

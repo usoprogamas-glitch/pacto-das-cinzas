@@ -1,7 +1,7 @@
 # ROADMAP — O Pacto das Cinzas
 
 > Documento vivo de progresso (não especulação): estado verificado contra o código em 2026-08-30.
-> **Engine** Godot 4.3 | **Testes** GUT headless 611/611 ✅ | **Último commit** (ondas escaladas do Ato III)
+> **Engine** Godot 4.3 | **Testes** GUT headless 619/619 ✅ | **Último commit** (locks do cast inimigo)
 > Fonte de lore/spec: [GDD_Completo_v2.md](GDD_Completo_v2.md) | Tracking técnico anterior: memória do projeto
 
 **Legenda de estado**
@@ -65,7 +65,7 @@ Combate (§3–§5) — ```scripts/battle/```
 | Sistema | GDD | Código | Wiring | Teste | Gap vs GDD |
 |---|---|---|---|---|---|
 | Timed Hits | §3.1 | ✅ | ✅ | ✅ | timed block: ✅ (janela reativa 0.2s no ataque inimigo) |
-| Locks | §3.2 | ✅ | ✅ | ✅ | locks não nascem do cast inimigo |
+| Locks | §3.2 | ✅ | ✅ | ✅ | locks nascem do cast inimigo na arena (enemy_spell data-driven, 2026-09-01) |
 | Combos (CP) | §3.1 | ✅ | ✅ | ✅ | Triple Combo é dado-only (depende da party) |
 | Éter/Fúria/Balance | §3.3 | ✅ | ✅ | ✅ | escala 1.000+ unidades ausente (ver #7) |
 | Adjacency | §3 | ✅ | ✅ | ✅ | — |

@@ -45,6 +45,7 @@ var _entrance_tweens: Array = []
 var combat_frozen := false  # testes: congela o loop de turnos (IA não age)
 var _wave_specs: Array = []  # ondas data-driven (MapDatabase.waves)
 var _wave_index := 0
+var _charge_specs: Dictionary = {}  # instance_id -> enemy_spell do EnemyDatabase
 
 
 func _ready() -> void:
@@ -105,6 +106,8 @@ func _setup_from_campaign() -> void:
 			int(round(float(e["def"]) * scale_spawn)), int(round(float(e["spd"]) * scale_spawn)),
 			int(e.get("mp", 30)))
 		combatants.append(foe)
+		if e.has("enemy_spell"):
+			_charge_specs[foe.get_instance_id()] = e["enemy_spell"]
 		_arena_position(foe, Vector2(pos_x, 400 + i * 130), Color(e["color"]), _sprite_key(e["name"]))
 		pos_x += 40
 		enemies_meta.append({"type": type, "soul_ether": e.get("soul_ether", 10)})
@@ -396,6 +399,8 @@ func _spawn_next_wave() -> void:
 			int(round(float(e["def"]) * scale)), int(round(float(e["spd"]) * scale)),
 			int(e.get("mp", 30)))
 		combatants.append(foe)
+		if e.has("enemy_spell"):
+			_charge_specs[foe.get_instance_id()] = e["enemy_spell"]
 		_arena_position(foe, Vector2(pos_x, 380 + (_wave_index % 2) * 90), Color(e["color"]), _sprite_key(e["name"]))
 		pos_x += 40
 		enemies_meta.append({"type": String(type), "soul_ether": int(e.get("soul_ether", 10))})
@@ -446,13 +451,15 @@ func _can_player_act() -> bool:
 
 
 func _begin_timed_hit() -> void:
-	# Alvo: inimigo vivo de menor HP (foca kill, espelho da IA).
+	# Alvo: inimigo vivo de menor HP (foca kill, espelho da IA). Canalizador
+	# de feitiço tem prioridade: os locks visíveis atraem o golpe (GDD §3.2).
 	var foes := combatants.filter(func(u): return u.is_alive() and not u.is_player_side())
 	if foes.is_empty():
 		_advance()
 		return
 	foes.sort_custom(func(a, b): return a.current_hp < b.current_hp)
-	_pending_target = foes[0]
+	var charging := foes.filter(func(u): return combat.is_charging(u))
+	_pending_target = charging[0] if charging.size() > 0 else foes[0]
 	_timed_hit_active = true
 	_timed_hit_start = Time.get_ticks_msec() / 1000.0
 	_log("TIMED HIT! Clique no impacto!")
@@ -498,6 +505,15 @@ func _resolve_action(multiplier: float, grade: String) -> void:
 		damage = combat.calculate_damage(current_actor, _pending_target, multiplier)
 	combat.apply_hit(current_actor, _pending_target, damage)
 	_pending_target.hp_changed.emit(_pending_target.current_hp)
+	# Cast com locks (GDD §3.2): golpe no canalizador dentes o lock do canal
+	# (físico = Corte, magia = Éter). Quebrar todos = spellbreak (stun + CP).
+	if combat.is_charging(_pending_target):
+		var atk_type := ArenaCombatLib.PLAYER_MAGIC_TYPE if _pending_is_magic else ArenaCombatLib.PLAYER_PHYSICAL_TYPE
+		var lock_result: Dictionary = combat.hit_charge(_pending_target, atk_type)
+		if lock_result["interrupted"]:
+			_log("SPELLBREAK! Feitiço de %s interrompido — stun!" % _pending_target.data.unit_name)
+		elif lock_result["hit"]:
+			_log("Lock de %s atingido!" % _pending_target.data.unit_name)
 	_log("%s → %s: %d de dano (%s)" % [current_actor.data.unit_name, _pending_target.data.unit_name, damage, grade])
 	await _play_aftermath(_pending_target)
 	_pending_target = null
@@ -522,6 +538,40 @@ func _enemy_act() -> void:
 	var players := combatants.filter(func(u): return u.is_alive() and u.is_player_side())
 	var target = combat.choose_enemy_target(players)
 	if target == null:
+		return
+	if combat.tick_stun(current_actor):
+		_log("%s está atordoado! (spellbreak)" % current_actor.data.unit_name)
+		_advance()
+		return
+	# Já canalizando: tick do contador. Feitiço sai ao zerar (estado limpo
+	# no tick — captura antes para saber nome/dano do feitiço lançado).
+	var charge: Dictionary = combat.get_charge(current_actor)
+	var tick: String = combat.tick_charge(current_actor)
+	if tick == "casting":
+		_log("%s lança %s!" % [current_actor.data.unit_name, charge.get("spell_name", "Feitiço")])
+		var damage: int = int(charge.get("damage", 0))
+		combat.apply_hit(current_actor, target, damage)
+		target.hp_changed.emit(target.current_hp)
+		_log("%s sofreu %d de dano" % [target.data.unit_name, damage])
+		await _play_aftermath(target)
+		if not _check_end():
+			_advance()
+		return
+	elif tick == "charging":
+		var locks_left: int = 0
+		for lock in charge.get("locks", []):
+			if lock["remaining"] > 0:
+				locks_left += 1
+		_log("%s canaliza %s — quebre os locks! (%d restantes)" % [current_actor.data.unit_name, charge.get("spell_name", "Feitiço"), locks_left])
+		_advance()
+		return
+	# Não canaliza: caster com feitiço declarado e MP inicia o canal (GDD §3.2).
+	var spec: Dictionary = _charge_specs.get(current_actor.get_instance_id(), {})
+	if not spec.is_empty() and current_actor.current_mp >= ArenaCombatLib.MAGIC_COST:
+		current_actor.current_mp -= ArenaCombatLib.MAGIC_COST
+		combat.start_charge(current_actor, spec)
+		_log("%s começa a canalizar %s! Ataque com o tipo certo!" % [current_actor.data.unit_name, spec.get("name", "Feitiço")])
+		_advance()
 		return
 	# Janela de defesa reativa (timed block) durante o golpe inimigo.
 	var actor_anim := _animator_for(current_actor)

@@ -46,6 +46,12 @@ static var enemies: Dictionary = {
   "soul_ether": 30,
   "ai_type": "caster",
   "spell": "shadow_bolt",
+  "enemy_spell": {
+   "name": "Corrente Rúnica",
+   "damage": 14,
+   "charge_turns": 2,
+   "locks": [{"type": "Corte", "hits": 2}]
+  },
   "description": "Mago fanático com correntes rúnicas"
  },
  "paladino": {
@@ -136,6 +142,12 @@ static var enemies: Dictionary = {
   "color": Color(1.0, 0.9, 0.3),
   "soul_ether": 200,
   "ai_type": "boss",
+  "enemy_spell": {
+   "name": "Julgamento Solar",
+   "damage": 24,
+   "charge_turns": 3,
+   "locks": [{"type": "Éter", "hits": 1}, {"type": "Corte", "hits": 1}]
+  },
   "description": "Avatar de um deus usurpador"
  },
  "goblin_lama": {
@@ -185,6 +197,12 @@ static var enemies: Dictionary = {
   "color": Color(1.0, 0.3, 0.1),
   "soul_ether": 200,
   "ai_type": "boss",
+  "enemy_spell": {
+   "name": "Erupção Vulcânica",
+   "damage": 28,
+   "charge_turns": 3,
+   "locks": [{"type": "Éter", "hits": 2}]
+  },
   "description": "Santo Cardeal do Fogo - Lava Branca"
  },
 
@@ -201,6 +219,12 @@ static var enemies: Dictionary = {
   "color": Color(0.3, 0.7, 1.0),
   "soul_ether": 200,
   "ai_type": "boss",
+  "enemy_spell": {
+   "name": "Lâmina de Vento",
+   "damage": 22,
+   "charge_turns": 2,
+   "locks": [{"type": "Corte", "hits": 1}, {"type": "Éter", "hits": 1}]
+  },
   "description": "Santo Cardeal do Vento - Tempestades de Vento"
  },
 
@@ -217,6 +241,12 @@ static var enemies: Dictionary = {
   "color": Color(0.2, 0.6, 1.0),
   "soul_ether": 200,
   "ai_type": "boss",
+  "enemy_spell": {
+   "name": "Água Benta Corrosiva",
+   "damage": 26,
+   "charge_turns": 3,
+   "locks": [{"type": "Éter", "hits": 1}, {"type": "Corte", "hits": 2}]
+  },
   "description": "Santo Cardeal da Água - Água Benta Corrosiva"
  },
 
@@ -233,6 +263,12 @@ static var enemies: Dictionary = {
   "color": Color(0.5, 0.4, 0.3),
   "soul_ether": 200,
   "ai_type": "boss",
+  "enemy_spell": {
+   "name": "Sismo de Mármore",
+   "damage": 30,
+   "charge_turns": 3,
+   "locks": [{"type": "Corte", "hits": 2}, {"type": "Éter", "hits": 2}]
+  },
   "description": "Santo Cardeal da Terra - Muralhas de Mármore"
  },
 
@@ -249,6 +285,12 @@ static var enemies: Dictionary = {
   "color": Color(0.3, 0.1, 0.5),
   "soul_ether": 200,
   "ai_type": "boss",
+  "enemy_spell": {
+   "name": "Luz Negra",
+   "damage": 26,
+   "charge_turns": 2,
+   "locks": [{"type": "Éter", "hits": 2}]
+  },
   "description": "Santo Cardeal das Trevas - Ilusões de Luz Negra"
  },
 
@@ -267,6 +309,12 @@ static var enemies: Dictionary = {
   "color": Color(1.0, 0.95, 0.3),
   "soul_ether": 500,
   "ai_type": "boss",
+  "enemy_spell": {
+   "name": "Ordenação do Demiurgo",
+   "damage": 32,
+   "charge_turns": 3,
+   "locks": [{"type": "Éter", "hits": 2}, {"type": "Corte", "hits": 1}]
+  },
   "description": "Aurius Fase 1: Falso Demiurgo no Trono Monumental"
  },
 
@@ -283,6 +331,12 @@ static var enemies: Dictionary = {
   "color": Color(1.0, 0.8, 0.2),
   "soul_ether": 500,
   "ai_type": "boss",
+  "enemy_spell": {
+   "name": "Chama do Serafim",
+   "damage": 30,
+   "charge_turns": 2,
+   "locks": [{"type": "Éter", "hits": 2}]
+  },
   "description": "Aurius Fase 2: Serafim Tirano com Asas Solares"
  },
 
@@ -299,6 +353,12 @@ static var enemies: Dictionary = {
   "color": Color(1.0, 1.0, 0.5),
   "soul_ether": 500,
   "ai_type": "boss",
+  "enemy_spell": {
+   "name": "Luz Desesperada",
+   "damage": 34,
+   "charge_turns": 2,
+   "locks": [{"type": "Corte", "hits": 2}, {"type": "Éter", "hits": 2}]
+  },
   "description": "Aurius Fase 3: Luz Desesperada - Núcleo Instável"
  }
 }
