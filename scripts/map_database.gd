@@ -132,47 +132,83 @@ static var maps: Dictionary = {
   ],
   "tiles": generate_forest_map()
  },
-	 7: {
-	  "name": "Lago Corrosivo — Aqua",
-	  "size": Vector2i(12, 12),
-	  "terrain": "cave",
-	  "enemies": ["cardeal_aqua"],
-	  "enemy_count": 1,
-	  "description": "Águas bentas corrosivas. O cálice aguarda.",
-	  "music": "battle",
-	  "tiles": generate_cave_map()
-	 },
-	 8: {
-	  "name": "Fortaleza de Mármore — Terra",
-	  "size": Vector2i(14, 14),
-	  "terrain": "castle",
-	  "enemies": ["cardeal_terra"],
-	  "enemy_count": 1,
-	  "description": "Muralhas vivas se fecham. Terra não cede.",
-	  "music": "battle",
-	  "tiles": generate_castle_map()
-	 },
-	 9: {
-	  "name": "Abismo das Sombras — Umbra",
-	  "size": Vector2i(14, 14),
-	  "terrain": "castle",
-	  "enemies": ["cardeal_umbra"],
-	  "enemy_count": 1,
-	  "description": "Ilusões de luz negra. A máscara aguarda.",
-	  "music": "battle",
-	  "tiles": generate_castle_map()
-	 },
+ 7: {
+  "name": "Lago Corrosivo — Aqua",
+  "size": Vector2i(12, 12),
+  "terrain": "cave",
+  "enemies": ["cardeal_aqua"],
+  "enemy_count": 1,
+  "description": "Águas bentas corrosivas. O cálice aguarda.",
+  "music": "battle",
+  "traversal_nodes": [
+   {
+    "id": "corrente_subterranea",
+    "ability": "ether_harpoon",
+    "pos": Vector2i(3, 8),
+    "label": "CORRENTE DE ÉTER — E para arpéu",
+    "rewards": {"soul_ether": 10, "gold": 18, "xp": 110}
+   }
+  ],
+  "tiles": generate_cave_map()
+ },
+ 8: {
+  "name": "Fortaleza de Mármore — Terra",
+  "size": Vector2i(14, 14),
+  "terrain": "castle",
+  "enemies": ["cardeal_terra"],
+  "enemy_count": 1,
+  "description": "Muralhas vivas se fecham. Terra não cede.",
+  "music": "battle",
+  "traversal_nodes": [
+   {
+    "id": "muralha_terra",
+    "ability": "climb",
+    "pos": Vector2i(5, 4),
+    "label": "MURALHA VIVA — E para escalar",
+    "rewards": {"soul_ether": 10, "gold": 16, "xp": 120}
+   }
+  ],
+  "tiles": generate_castle_map()
+ },
+ 9: {
+  "name": "Abismo das Sombras — Umbra",
+  "size": Vector2i(14, 14),
+  "terrain": "castle",
+  "enemies": ["cardeal_umbra"],
+  "enemy_count": 1,
+  "description": "Ilusões de luz negra. A máscara aguarda.",
+  "music": "battle",
+  "traversal_nodes": [
+   {
+    "id": "fosso_umbra",
+    "ability": "dash",
+    "pos": Vector2i(6, 9),
+    "label": "FOSSO DAS SOMBRAS — E para impulso",
+    "rewards": {"soul_ether": 12, "gold": 20, "xp": 140}
+   }
+  ],
+  "tiles": generate_castle_map()
+ },
 	 # ===== ATO IV — AURIUS =====
-	 10: {
-	  "name": "Solaria — Sala do Trono",
-	  "size": Vector2i(16, 16),
-	  "terrain": "castle",
-	  "enemies": ["aurius_fase1"],
-	  "enemy_count": 1,
-	  "description": "Trono monumental. O Falso Demiurgo aguarda.",
-	  "music": "battle",
-	  "tiles": generate_castle_map()
-	 },
+ 10: {
+  "name": "Solaria — Sala do Trono",
+  "size": Vector2i(16, 16),
+  "terrain": "castle",
+  "enemies": ["aurius_fase1"],
+  "enemy_count": 1,
+  "description": "Trono monumental. O Falso Demiurgo aguarda.",
+  "music": "battle",
+  "traversal_nodes": [
+   {
+    "id": "escada_trono",
+    "ability": "climb",
+    "pos": Vector2i(7, 10),
+    "label": "ESCADADA DO TRONO — E para escalar",
+    "rewards": {"soul_ether": 15, "gold": 25, "xp": 160}
+   }
+  ],
+  "tiles": generate_castle_map()
+ },
 	 11: {
 	  "name": "Solaria — Cúpula Solar",
 	  "size": Vector2i(16, 16),

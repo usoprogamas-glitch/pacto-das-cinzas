@@ -74,6 +74,13 @@ func test_map_database_declares_traversal_nodes():
 	assert_true(node0.has_all(["id", "ability", "pos", "rewards"]), "nó declarado completo")
 
 
+func test_traversal_content_covers_act_3_and_4():
+	# Conteúdo (AUDIT fila): cada mapa de boss do Ato III/IV tem ao menos 1 nó.
+	for map_id in [5, 6, 7, 8, 9, 10]:
+		var map: Dictionary = MapDatabase.get_map(map_id)
+		assert_gt(map.get("traversal_nodes", []).size(), 0, "mapa %d tem nó de travessia" % map_id)
+
+
 # --- Cena: spawn + payout ---
 
 func _open_explore() -> Node:
