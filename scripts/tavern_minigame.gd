@@ -11,6 +11,21 @@ signal game_started(player1: String, player2: String)
 signal card_played(player: String, card_id: String, damage: int)
 signal turn_changed(current_player: String)
 signal game_over(winner: String, loser: String)
+signal bet_resolved(won: bool, payout: int)
+signal exclusive_reward_earned(reward_id: String)
+
+## --- Apostas e recompensas exclusivas (GDD v2 §7.3, ROADMAP #12) ---
+## O protagonista aposta ouro contra o rival da taberna. Vitória paga
+## PAYOUT_MULTIPLIER x a aposta; derrota perde a aposta. Sequência de vitórias
+## destrava recompensas exclusivas (data-driven em REWARD_TIERS).
+const PAYOUT_MULTIPLIER := 2
+
+## Recompensas exclusivas da Guerra de Runas por sequência de vitórias.
+const REWARD_TIERS: Dictionary = {
+ 1: {"id": "amuleto_runico", "name": "Amuleto Rúnico", "description": "Talismã de osso gravado com a primeira vitória."},
+ 2: {"id": "colar_de_ossos", "name": "Colar de Ossos", "description": "Troféu dos fiéis da taberna — dois rivais caídos."},
+ 3: {"id": "coroa_da_guerra_de_runas", "name": "Coroa da Guerra de Runas", "description": "Insignia suprema: ninguém mais ousa apostar contra você."},
+}
 
 ## --- Runas disponíveis ---
 const RUNES: Dictionary = {
@@ -95,12 +110,17 @@ var _game_active: bool = false
 var _winner: String = ""
 var _deck_p1: Array = []
 var _deck_p2: Array = []
+var _bet: int = 0  ## aposta atual em ouro (0 = jogo casual)
+var _last_payout: int = 0  ## ouro ganho na última partida (0 se derrota/casual)
+var _win_streak: int = 0  ## sequência de vitórias destrava recompensas
+var _rewards_earned: Array = []  ## ids de recompensas exclusivas já obtidas
 
 
 ## --- Inicialização ---
 
-## Iniciar novo jogo.
-func start_game(player1: String, player2: String) -> void:
+## Iniciar novo jogo. bet = ouro apostado (0 = casual, sem payout).
+func start_game(player1: String, player2: String, bet: int = 0) -> void:
+ _bet = maxi(0, bet)
  _players[player1] = {
   "hp": GAME_CONFIG.starting_hp,
   "ether": GAME_CONFIG.starting_ether,
@@ -242,13 +262,43 @@ func play_rune(player_id: String, rune_id: String) -> Dictionary:
  card_played.emit(player_id, rune_id, damage_done)
 
  if opponent.hp <= 0:
-  _game_active = false
-  _winner = player_id
-  game_over.emit(player_id, opponent_id)
+  _end_game(player_id, opponent_id)
   return {"damage": damage_done, "effect": rune.effect, "winner": player_id}
 
  _advance_turn()
  return {"damage": damage_done, "effect": rune.effect}
+
+
+## Encerra a partida e resolve aposta + sequência de recompensas.
+## player1 é sempre o lado do protagonista (apostador).
+func _end_game(winner: String, loser: String) -> void:
+ _game_active = false
+ _winner = winner
+ var protagonist_won: bool = winner == _players.keys()[0]
+ var payout := 0
+ if protagonist_won:
+  _win_streak += 1
+  if _bet > 0:
+   payout = _bet * PAYOUT_MULTIPLIER
+ else:
+  _win_streak = 0
+ _last_payout = payout
+ bet_resolved.emit(protagonist_won, payout)
+ var reward_id: String = _check_reward_tier()
+ game_over.emit(winner, loser)
+ if reward_id != "":
+  exclusive_reward_earned.emit(reward_id)
+
+
+## Recompensa exclusiva do novo streak (só se ainda não foi obtida).
+func _check_reward_tier() -> String:
+ if not REWARD_TIERS.has(_win_streak):
+  return ""
+ var reward: Dictionary = REWARD_TIERS[_win_streak]
+ if reward["id"] in _rewards_earned:
+  return ""
+ _rewards_earned.append(reward["id"])
+ return reward["id"]
 
 
 func _advance_turn() -> void:
@@ -301,6 +351,11 @@ func get_player_hand(player_id: String) -> Array:
 func get_player_shield(player_id: String) -> int:
  return _players.get(player_id, {}).get("shield", 0)
 
+## Ajusta HP direto (testes e replay/debug da mesa).
+func set_player_hp(player_id: String, hp: int) -> void:
+ if _players.has(player_id):
+  _players[player_id].hp = hp
+
 func is_game_active() -> bool:
  return _game_active
 
@@ -312,3 +367,18 @@ func get_turn_count() -> int:
 
 func get_all_runes() -> Dictionary:
  return RUNES
+
+func get_bet() -> int:
+ return _bet
+
+func get_win_streak() -> int:
+ return _win_streak
+
+func get_rewards_earned() -> Array:
+ return _rewards_earned.duplicate()
+
+func get_reward_tiers() -> Dictionary:
+ return REWARD_TIERS
+
+func get_last_payout() -> int:
+ return _last_payout

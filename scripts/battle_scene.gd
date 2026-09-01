@@ -1122,10 +1122,6 @@ func _on_unit_died(unit: Unit) -> void:
  if animator:
   await animator.play_death()
 
-## Animator da unidade por instância (ver unit_animators).
-func _get_animator(unit: Unit) -> UnitAnimator:
- return unit_animators.get(unit.get_instance_id())
-
  SoundManager.play_death()
  combat_feedback.shake_medium()
 
@@ -1137,6 +1133,11 @@ func _get_animator(unit: Unit) -> UnitAnimator:
 
  # Verificar vitória
  check_battle_end()
+
+## Animator da unidade por instância (ver unit_animators).
+func _get_animator(unit: Unit) -> UnitAnimator:
+ return unit_animators.get(unit.get_instance_id())
+
 
 func check_battle_end() -> void:
  if BattleManager.player_units.size() == 0:
