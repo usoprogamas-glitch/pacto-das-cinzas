@@ -168,6 +168,40 @@ func add_gold(amount: int) -> void:
  game_data.gold += amount
  building_system.add_resource("gold", amount)
 
+## Elixires (§7.2): bônus PERMANENTES persistem no save e alimentam a party
+## (grid lê party_data; a arena recebe stats no spawn). max_hp/max_ether somam
+## ao base; attack_percent é ACUMULADO no save e recalculado do atk base —
+## nunca composto sobre o atk já buffado (idempotente no reload).
+func apply_elixir_bonuses(bonuses: Dictionary) -> void:
+ if bonuses.is_empty():
+  return
+ if not game_data.has("elixir_bonuses"):
+  game_data["elixir_bonuses"] = {}
+ for stat: String in bonuses:
+  game_data["elixir_bonuses"][stat] = int(game_data["elixir_bonuses"].get(stat, 0)) + int(bonuses[stat])
+ if bonuses.has("max_hp"):
+  _apply_party_stat("hp", int(bonuses["max_hp"]))
+ if bonuses.has("max_ether"):
+  _apply_party_stat("ether", int(bonuses["max_ether"]))
+ if bonuses.has("attack_percent"):
+  _recalc_party_atk()
+
+
+## Recalcula atk = base do membro x (1 + attack_percent_acumulado/100).
+## O base volta a valer via party_data["atk_base"], gravado na 1ª aplicação.
+func _recalc_party_atk() -> void:
+ var pct := float(int(game_data["elixir_bonuses"].get("attack_percent", 0))) / 100.0
+ for member in party_data:
+  if not member.has("atk_base"):
+   member["atk_base"] = int(member.get("atk", 0))
+  member["atk"] = int(round(float(member["atk_base"]) * (1.0 + pct)))
+
+
+## Soma um stat base a todos os membros da party (chaves do add_to_party).
+func _apply_party_stat(stat: String, amount: int) -> void:
+ for member in party_data:
+  member[stat] = int(member.get(stat, 0)) + amount
+
 func get_game_data() -> Dictionary:
  return game_data
 

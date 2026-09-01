@@ -1767,10 +1767,19 @@ func _on_cook_pressed() -> void:
   return
  _cook_used = true
 
- # Cozinhar a primeira receita craftável com o que foi coletado nas travessias
+ # Cozinhar a primeira receita craftável com o que foi coletado nas travessias.
+ # Elixires (§7.2) viram bônus PERMANENTES no GameManager (persistem no save);
+ # pratos ficam como buffs temporários existentes.
  for recipe_id: String in cooking_system.RECIPES:
   if cooking_system.can_craft(recipe_id):
    cooking_system.craft(recipe_id)
+   return
+ for elixir_id: String in cooking_system.ELIXIRS:
+  if cooking_system.can_craft(elixir_id):
+   var bonuses: Dictionary = cooking_system.craft(elixir_id)
+   if GameManager and not bonuses.is_empty():
+    GameManager.apply_elixir_bonuses(bonuses)
+    combat_feedback.show_status_effect(Vector2(640, 300), "ELIXIR: bônus permanente aplicado!")
    return
  combat_feedback.show_status_effect(Vector2(640, 300), "COZINHA: sem receita craftável")
 

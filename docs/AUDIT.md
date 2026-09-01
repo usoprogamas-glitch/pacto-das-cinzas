@@ -60,9 +60,10 @@
 ### 10. Locks não nascem do cast inimigo ✅ FEITO (2026-09-01)
 - Arena (commit ed0eca8, `enemy_spell` data-driven) + espelho no grid legado (commit 4e035b6, spells do MagicSystem com locks). Spellbreak = stun + CP.
 
-### 11. Taberna #12 / Travessia #13 / Culinária #14 🟡
-- **Taberna #12 ✅ FEITO (2026-09-01)**: apostas em ouro (entrada 10 ouro, vitória paga 2x) + recompensas exclusivas por sequência de vitórias (amuleto_runico → colar_de_ossos → coroa_da_guerra_de_runas, data-driven em `REWARD_TIERS`). Core puro (`TavernMinigame`) + integração no battle_scene. 8 testes (`test_tavern_bets.gd`). Commit d643e99.
-- Travessia #13 e Culinária #14: parciais (sistemas existem, wiring de conteúdo pendente).
+### 11. Taberna #12 / Travessia #13 / Culinária #14 ✅ FEITO (2026-09-01)
+- **Taberna #12**: apostas em ouro (entrada 10 ouro, vitória paga 2x) + recompensas exclusivas por sequência de vitórias (amuleto_runico → colar_de_ossos → coroa_da_guerra_de_runas, data-driven em `REWARD_TIERS`). Core puro (`TavernMinigame`) + integração no battle_scene. 8 testes (`test_tavern_bets.gd`). Commit d643e99.
+- **Travessia #13**: `traversal_nodes` data-driven no mapa (fenda de arpéu, penhasco, desfiladeiro), `TraversalSystem.attempt_traversal` valida asas/stamina/alcance, desfiladeiro de Zephyr concede Asas de Cinzas. 10 testes (`test_traversal_nodes.gd`). Commit 80015da.
+- **Culinária #14**: elixires ganham `max_uses` (gate de usos) + sinal `elixir_crafted` dedicado; bônus PERMANENTES aplicados via `GameManager.apply_elixir_bonuses` (max_hp/max_ether somam à party, attack_percent acumula no save e recalcula do atk base — idempotente no reload). 9 testes (`test_cooking_permanent.gd`).
 
 ### 12. Equipamentos sem wiring? (verificar)
 - `crafting/` (recipe/material/equipment databases + crafting_manager + crafting_ui) — wiring não auditado nesta passada. Confirmar se alcançável pelo jogador; senão, entra como órfão na lista.

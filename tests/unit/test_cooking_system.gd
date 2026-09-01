@@ -121,10 +121,11 @@ func test_permanent_elixir_no_expire():
 	var cs = CookingSystem.new()
 	cs.collect_ingredient("pedra_eterea", 2)
 	cs.collect_ingredient("lagrima_fada", 1)
-	cs.craft("elixir_etereo")  ## duration -1
+	cs.craft("elixir_etereo")  ## duration -1: não entra em buffs temporários
 	for i in range(10):
 		cs.tick_bonuses()
-	assert_eq(cs.get_active_bonuses().size(), 1, "Elixir permanente não expira")
+	assert_eq(cs.get_active_bonuses().size(), 0, "elixir não fica em buffs temporários")
+	assert_eq(cs.get_crafted_count("elixir_etereo"), 1, "elixir registrado como craft permanente")
 
 
 func test_get_total_bonuses():

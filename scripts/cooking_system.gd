@@ -7,6 +7,7 @@ extends RefCounted
 ## e elixires que concedem bônus táticos.
 
 signal recipe_crafted(recipe_name: String, bonuses: Dictionary)
+signal elixir_crafted(recipe_name: String, bonuses: Dictionary)
 signal ingredient_collected(ingredient_name: String, amount: int)
 
 ## --- Ingredientes disponíveis ---
@@ -51,7 +52,9 @@ const RECIPES: Dictionary = {
  },
 }
 
-## --- Receitas de elixires (buffs permanentes ou de longa duração) ---
+## --- Receitas de elixires (buffs PERMANENTES, §7.2) ---
+## max_uses = quantas vezes o elixir pode ser tomado (bônus permanente empilha
+## só até o limite; ausente = ilimitado, padrão dos pratos temporários).
 const ELIXIRS: Dictionary = {
  "elixir_etereo": {
   "name": "Elixir Etéreo",
@@ -59,6 +62,7 @@ const ELIXIRS: Dictionary = {
   "ingredients": {"pedra_eterea": 2, "lagrima_fada": 1},
   "bonuses": {"max_ether": 1},
   "duration": -1,  ## permanente
+  "max_uses": 1,
   "category": "elixir",
  },
  "pocao_furia": {
@@ -67,6 +71,7 @@ const ELIXIRS: Dictionary = {
   "ingredients": {"cinzas_ancestrais": 2, "raiz_profunda": 1},
   "bonuses": {"attack_percent": 10},
   "duration": -1,
+  "max_uses": 2,
   "category": "elixir",
  },
  "essencia_vida": {
@@ -75,6 +80,7 @@ const ELIXIRS: Dictionary = {
   "ingredients": {"lagrima_fada": 2, "fruta_eterna": 1},
   "bonuses": {"max_hp": 50},
   "duration": -1,
+  "max_uses": 2,
   "category": "elixir",
  },
 }
@@ -119,17 +125,20 @@ func _consume_ingredients(ingredients_needed: Dictionary) -> void:
 
 ## --- Culinária ---
 
-## Verificar se pode cozinhar uma receita.
+## Verificar se pode cozinhar uma receita (elixir respeita max_uses).
 func can_craft(recipe_id: String) -> bool:
  var recipe = RECIPES.get(recipe_id, {})
  if recipe.is_empty():
   recipe = ELIXIRS.get(recipe_id, {})
  if recipe.is_empty():
   return false
+ if recipe.has("max_uses") and get_crafted_count(recipe_id) >= int(recipe["max_uses"]):
+  return false
  return has_ingredients(recipe.ingredients)
 
 
-## Cozinhar uma receita.
+## Cozinhar uma receita. Elixir (duration -1) emite elixir_crafted e não entra
+## na lista de buffs temporários — o bônus é aplicado/permanente no chamador.
 func craft(recipe_id: String) -> Dictionary:
  var recipe = RECIPES.get(recipe_id, {})
  var is_elixir = false
@@ -141,10 +150,22 @@ func craft(recipe_id: String) -> Dictionary:
 
  if not has_ingredients(recipe.ingredients):
   return {}
+ if recipe.has("max_uses") and get_crafted_count(recipe_id) >= int(recipe["max_uses"]):
+  return {}
 
  _consume_ingredients(recipe.ingredients)
 
- ## Aplicar bônus
+ ## Registrar craft
+ if not _crafted_count.has(recipe_id):
+  _crafted_count[recipe_id] = 0
+ _crafted_count[recipe_id] += 1
+
+ if is_elixir:
+  recipe_crafted.emit(recipe.name, recipe.bonuses)
+  elixir_crafted.emit(recipe.name, recipe.bonuses)
+  return recipe.bonuses
+
+ ## Aplicar bônus temporário
  var bonus_entry = {
   "recipe_id": recipe_id,
   "name": recipe.name,
@@ -154,13 +175,16 @@ func craft(recipe_id: String) -> Dictionary:
  }
  _active_bonuses.append(bonus_entry)
 
- ## Registrar craft
- if not _crafted_count.has(recipe_id):
-  _crafted_count[recipe_id] = 0
- _crafted_count[recipe_id] += 1
-
  recipe_crafted.emit(recipe.name, recipe.bonuses)
  return recipe.bonuses
+
+
+## Usos restantes de um elixir (ilimitado = -1).
+func get_elixir_uses_left(elixir_id: String) -> int:
+ var recipe = ELIXIRS.get(elixir_id, {})
+ if recipe.is_empty() or not recipe.has("max_uses"):
+  return -1
+ return maxi(0, int(recipe["max_uses"]) - get_crafted_count(elixir_id))
 
 
 ## --- Bônus ativos ---
