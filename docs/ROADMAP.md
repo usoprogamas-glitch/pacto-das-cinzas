@@ -1,7 +1,7 @@
 # ROADMAP — O Pacto das Cinzas
 
 > Documento vivo de progresso (não especulação): estado verificado contra o código em 2026-08-30.
-> **Engine** Godot 4.3 | **Testes** GUT headless 541/541 ✅ | **Último commit** (continuidade de nome no save)
+> **Engine** Godot 4.3 | **Testes** GUT headless 611/611 ✅ | **Último commit** (ondas escaladas do Ato III)
 > Fonte de lore/spec: [GDD_Completo_v2.md](GDD_Completo_v2.md) | Tracking técnico anterior: memória do projeto
 
 **Legenda de estado**
@@ -31,7 +31,7 @@ Agente auditoria (per-aspect):
 | 4 | **Overworld + desbloqueio de mapa por ato** | map_select | ✅ feito | gating via `CampaignSystem.is_stage_playable` + persistência no save; UI agora data-driven (badge de ato de `act_for_map`, sem `unlocked` hardcoded) |
 | 5 | **Kaelen HUD** (análise bio/psi/tática, "nome sugerido") | KaelenSystem | ✅ feito | painel revela ao selecionar inimigo e oculta ao deselecionar; fraquezas casam por tipo de criatura (nome) via `match_weakness_type`; sep recorrente era `sep.color` inválido → theme override |
 | 6 | **Feedback de evolução de forma** | CharacterProgression | ✅ feito | `form_changed` → `_on_protagonist_form_changed`: FormLabel flash + status effect + stats aplicados na unit viva do Kael (via `_apply_protagonist_form_stats`); conectado no `connect_signals` |
-| 7 | **Decisão: turno individual vs 1.000+ unidades** | TurnOrderManager | ✅ decidido (a) | **manter turno por-fase individual**; Ato III = batalhas em ONDAS escaladas (reusa a mesma batalha); velocity-sort permanece como ferramenta p/ encontros selecionados |
+| 7 | **Decisão: turno individual vs 1.000+ unidades** | TurnOrderManager | ✅ feito (a) | **manter turno por-fase individual**; Ato III = batalhas em ONDAS escaladas — **executado 2026-09-01** (`waves` data-driven no mapa, reinjeção com stats escalados, battle_ended só na última onda); velocity-sort permanece como ferramenta p/ encontros selecionados |
 | 8 | **Conteúdo de chefes de verdade** | BossSystem | ✅ feito | Swap hardcoded `orc_chefe` removido: estágio pode declarar `boss_enemy` (Ato I, mapa compartilhado); Atos II-IV usam o pool data-driven do mapa (5 Cardeais + Aurius 3 fases, já no EnemyDatabase com classe Boss → runtime BossSystem/HP). Restante é polir labels do cardinal no BOSS_CARDINAL_BY_CLASS |
 | 9 | **Continuidade do nome no save** | unit nome | ✅ feito | `_spawn_named_souls` lê `NamingSystem.get_all_souls()` e spawna aliados com nome+stats persistidos; dedup com apóstolos canônicos (Kroug via starting_ally) |
 
@@ -100,7 +100,7 @@ Narrativa/mundo — ```scripts/narrative/```
 
 ## Como usar este roadmap
 
-- **A cada sessão**: comece pelo item de maior prioridade não-'✅' — a fila atual está em [AUDIT.md](AUDIT.md) (próximo: P1 #9 ondas do Ato III, depois locks do cast inimigo e taberna/travessia/culinária).
+- **A cada sessão**: comece pelo item de maior prioridade não-'✅' — a fila atual está em [AUDIT.md](AUDIT.md) (próximo: locks do cast inimigo, depois taberna/travessia/culinária).
 - **Regra do projeto**: 1 mecânica por prompt + teste GUT junto + commit por feature + conteúdo data-driven (nada hardcoded).
 - **Ao concluir um item**, atualize a tabela acima + a memória do projeto (commit e contagem GUT).
 

@@ -43,6 +43,8 @@ var _animators: Dictionary = {}  # instance_id -> UnitAnimator (P0-2: key por in
 var _home_positions: Dictionary = {}  # instance_id -> Vector2 (destino da entrada)
 var _entrance_tweens: Array = []
 var combat_frozen := false  # testes: congela o loop de turnos (IA não age)
+var _wave_specs: Array = []  # ondas data-driven (MapDatabase.waves)
+var _wave_index := 0
 
 
 func _ready() -> void:
@@ -61,6 +63,13 @@ func _setup_from_campaign() -> void:
 	var map: Dictionary = MapDatabase.get_map(map_id)
 	var stage: Dictionary = GameManager.campaign_system.get_current_stage() if GameManager and GameManager.campaign_system else {}
 
+	# Ondas escaladas (GDD §1 Ato III, decisão ROADMAP #7): mapa declara
+	# data-driven. Onda 1 = spawn inicial (abaixo); 2..N reinjetam no _check_end.
+	var wave_specs: Array = map.get("waves", [])
+	if wave_specs.size() > 0:
+		_wave_specs = wave_specs
+		_wave_index = 1
+
 	var kael := _make_combatant("Kael", true, 80, 12, 8, 11, 50)
 	combatants = [kael]
 	_arena_position(kael, Vector2(430, 430), Color(0.2, 0.8, 0.3), "kael")
@@ -71,17 +80,30 @@ func _setup_from_campaign() -> void:
 		_arena_position(kroug, Vector2(330, 500), Color(0.8, 0.3, 0.1), "kroug")
 
 	# Inimigos: boss_enemy do estágio sobrepõe o pool do mapa (ROADMAP #8).
-	var pool: Array = map.get("enemies", ["mercenario"])
-	var count: int = 1 if stage.get("boss", false) else int(map.get("enemy_count", 2))
-	if stage.get("boss_enemy", "") != "":
-		pool = [stage["boss_enemy"]]
+	# Com ondas declaradas, o spawn inicial segue a composição da onda 1.
+	var scale_spawn := 1.0
+	var pool: Array
+	var count: int
+	if _wave_specs.size() > 0:
+		var w1: Dictionary = _wave_specs[0]
+		pool = w1.get("enemies", ["mercenario"])
+		count = pool.size()
+		scale_spawn = float(w1.get("stat_scale", 1.0))
+	else:
+		pool = map.get("enemies", ["mercenario"])
+		count = 1 if stage.get("boss", false) else int(map.get("enemy_count", 2))
+		if stage.get("boss_enemy", "") != "":
+			pool = [stage["boss_enemy"]]
 	var pos_x := 860.0
 	for i in range(count):
-		var type: String = pool[randi() % pool.size()]
+		var type: String = String(pool[i % pool.size()])
 		var e: Dictionary = EnemyDatabase.get_enemy(type)
 		if e.is_empty():
 			continue
-		var foe := _make_combatant(e["name"], false, e["hp"], e["atk"], e["def"], e["spd"], 30)
+		var foe := _make_combatant(e["name"], false,
+			int(round(float(e["hp"]) * scale_spawn)), int(round(float(e["atk"]) * scale_spawn)),
+			int(round(float(e["def"]) * scale_spawn)), int(round(float(e["spd"]) * scale_spawn)),
+			int(e.get("mp", 30)))
 		combatants.append(foe)
 		_arena_position(foe, Vector2(pos_x, 400 + i * 130), Color(e["color"]), _sprite_key(e["name"]))
 		pos_x += 40
@@ -265,6 +287,11 @@ func _check_end() -> bool:
 	var result: String = combat.is_battle_over(combatants)
 	if result == "":
 		return false
+	# Ondas escaladas (Ato III): vitória com onda pendente reinjeta a próxima —
+	# false mantém o loop de turnos vivo (round seguinte traz os reforços).
+	if result == "victory" and _wave_index < _wave_specs.size():
+		_spawn_next_wave()
+		return false
 	_finish(result == "victory")
 	return true
 
@@ -350,6 +377,29 @@ func _on_result_continue_pressed() -> void:
 
 func result_visible() -> bool:
 	return result_panel != null and is_instance_valid(result_panel) and result_panel.visible
+
+
+## Reinjeta a próxima onda (2..N): inimigos com stats escalados por stat_scale,
+## entrando pela mesma porta do spawn normal (factory + posição de arena).
+## Contrato: _wave_index = próxima onda a reinjetar (1-based; 1 = spawn inicial).
+func _spawn_next_wave() -> void:
+	var wave: Dictionary = _wave_specs[_wave_index]
+	_wave_index += 1
+	var scale: float = float(wave.get("stat_scale", 1.0 + 0.25 * _wave_index))
+	var pos_x := 900.0
+	for type in wave.get("enemies", []):
+		var e: Dictionary = EnemyDatabase.get_enemy(String(type))
+		if e.is_empty():
+			continue
+		var foe := _make_combatant("%s (Onda %d)" % [e["name"], _wave_index], false,
+			int(round(float(e["hp"]) * scale)), int(round(float(e["atk"]) * scale)),
+			int(round(float(e["def"]) * scale)), int(round(float(e["spd"]) * scale)),
+			int(e.get("mp", 30)))
+		combatants.append(foe)
+		_arena_position(foe, Vector2(pos_x, 380 + (_wave_index % 2) * 90), Color(e["color"]), _sprite_key(e["name"]))
+		pos_x += 40
+		enemies_meta.append({"type": String(type), "soul_ether": int(e.get("soul_ether", 10))})
+	_log("ONDA %d/%d entra na arena!" % [_wave_index, _wave_specs.size()])
 
 
 # --- Ações do jogador ---

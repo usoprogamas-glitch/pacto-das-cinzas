@@ -13,6 +13,7 @@ signal battle_lost()
 signal soul_ether_gained(amount: int)
 signal ether_boost_applied(unit, charges: int)
 signal timed_block_window(attacker: Unit, target: Unit)
+signal wave_started(wave_index: int, total_waves: int)
 
 enum Phase { PLAYER_TURN, ENEMY_TURN, ANIMATING }
 
@@ -47,6 +48,13 @@ var timed_block_resolver: Callable = Callable()
 var use_individual_turns: bool = false
 var _turn_order: Array = []
 var _turn_index: int = 0
+
+# Ondas escaladas (GDD §1 Ato III, decisão ROADMAP #7): em vez de 1.000+ unidades,
+# batalhas longas reinjetam inimigos com stats escalados por onda. Config vazio =
+# batalha única (comportamento padrão). Cada onda: {"enemies": [spec...],
+# "stat_scale": float}; spec de unidade no formato de spawn do battle_scene.
+var wave_config: Array = []
+var current_wave: int = 0
 
 func _ready() -> void:
  initialize_grid()
@@ -92,7 +100,80 @@ func unregister_unit(unit: Unit) -> void:
 
 func start_battle() -> void:
  turn_count = 0
+ current_wave = 0
  start_player_turn()
+
+# --- Ondas escaladas (GDD §1 Ato III, ROADMAP #7) ---
+
+## Configura as ondas da batalha: [{enemies: [UnitData-spec...], stat_scale: float}].
+## Onda 1 já está em cena (spawn normal); ondas 2..N são reinjetadas ao limpar.
+func setup_waves(config: Array) -> void:
+ wave_config = config
+ current_wave = 0
+
+## Total de ondas (0 se batalha única).
+func get_total_waves() -> int:
+ return wave_config.size()
+
+func has_pending_waves() -> bool:
+ return current_wave < wave_config.size() - 1
+
+## Spawna a próxima onda: cria Units com stats escalados por stat_scale,
+## registra no grid (posições livres da base para cima) e emite wave_started.
+## Retorna as unidades criadas ([] se config não tem a onda).
+func spawn_next_wave(spawn_spec_factory: Callable = Callable()) -> Array:
+ if not has_pending_waves():
+  return []
+ current_wave += 1
+ var wave: Dictionary = wave_config[current_wave]
+ var scale: float = float(wave.get("stat_scale", 1.0 + 0.25 * current_wave))
+ var spawned: Array = []
+ for spec in wave.get("enemies", []):
+  var unit: Unit = _make_wave_unit(spec, scale, spawn_spec_factory)
+  if unit == null:
+   continue
+  var pos := _find_free_spawn_position()
+  unit.grid_position = pos
+  register_unit(unit)
+  spawned.append(unit)
+ if not spawned.is_empty():
+  wave_started.emit(current_wave, wave_config.size())
+ return spawned
+
+## Fábrica de Unit para onda: usa a factory do caller (battle_scene cria Units
+## com sprites/HP bars) ou cria Unit+UnitData crua (testes/headless).
+func _make_wave_unit(spec: Dictionary, scale: float, factory: Callable):
+ if factory.is_valid():
+  var unit = factory.call(spec, scale)
+  if unit != null:
+   return unit
+ var u: Unit = Unit.new()
+ var d := UnitData.new()
+ d.unit_name = String(spec.get("unit_name", spec.get("name", "Inimigo")))
+ d.is_player = false
+ d.max_hp = int(float(spec.get("hp", 50)) * scale)
+ d.attack = int(float(spec.get("atk", 10)) * scale)
+ d.defense = int(float(spec.get("def", 8)) * scale)
+ d.speed = int(float(spec.get("spd", 8)) * scale)
+ d.max_mp = int(spec.get("mp", 0))
+ u.data = d
+ u.current_hp = d.max_hp
+ u.current_mp = d.max_mp
+ return u
+
+## Primeira posição livre no lado inimigo (metade direita do grid), varrendo
+## colunas da direita para a esquerda e linhas do meio para fora.
+func _find_free_spawn_position() -> Vector2i:
+ var mid := grid_size.y / 2
+ for x in range(grid_size.x - 1, grid_size.x / 2 - 1, -1):
+  for offset in range(grid_size.y):
+   for dy: int in [0, -1, 1, -2, 2]:
+    var y: int = mid + dy + offset * (1 if offset % 2 == 0 else -1)
+    if y < 0 or y >= grid_size.y:
+     continue
+    if is_walkable(Vector2i(x, y)):
+     return Vector2i(x, y)
+ return Vector2i(grid_size.x - 1, mid)
 
 func start_player_turn() -> void:
  current_phase = Phase.PLAYER_TURN
@@ -294,8 +375,15 @@ func attack_unit(attacker: Unit, target: Unit, attacker_terrain: String = "", ta
 func check_battle_end() -> void:
  if player_units.size() == 0:
   battle_lost.emit()
- elif enemy_units.size() == 0:
-  battle_won.emit()
+  return
+ if enemy_units.size() > 0:
+  return
+ # Inimigos zerados: reinjeta a próxima onda antes de declarar vitória
+ # (GDD §1 Ato III — batalhas longas em ondas escaladas, decisão #7).
+ if has_pending_waves():
+  spawn_next_wave()
+  return
+ battle_won.emit()
 
 func end_player_turn() -> void:
  current_phase = Phase.ANIMATING

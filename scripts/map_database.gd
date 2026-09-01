@@ -45,16 +45,21 @@ static var maps: Dictionary = {
   "music": "exploration",
   "tiles": generate_cave_map()
  },
- 3: {
-  "name": "Castelo Solaris",
-  "size": Vector2i(14, 14),
-  "terrain": "castle",
-  "enemies": ["inquisidor", "paladino"],
-  "enemy_count": 6,
-  "description": "A fortaleza da Igreja.",
-  "music": "battle",
-  "tiles": generate_castle_map()
- },
+  3: {
+   "name": "Castelo Solaris",
+   "size": Vector2i(14, 14),
+   "terrain": "castle",
+   "enemies": ["inquisidor", "paladino"],
+   "enemy_count": 6,
+   "description": "A fortaleza da Igreja.",
+   "music": "battle",
+   "waves": [
+    {"enemies": ["paladino", "inquisidor"], "stat_scale": 1.0},
+    {"enemies": ["paladino", "inquisidor", "paladino"], "stat_scale": 1.25},
+    {"enemies": ["santo_cardeal"], "stat_scale": 1.5}
+   ],
+   "tiles": generate_castle_map()
+  },
  4: {
   "name": "Vulcão do Abismo",
   "size": Vector2i(12, 12),
