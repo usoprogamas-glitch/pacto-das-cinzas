@@ -202,6 +202,37 @@ func _apply_party_stat(stat: String, amount: int) -> void:
  for member in party_data:
   member[stat] = int(member.get(stat, 0)) + amount
 
+## Equipamentos da Forja (§7, AUDIT P1 #12): bônus permanentes por SLOT.
+## 1 item por slot — forjar outro do mesmo slot substitui (reverte o antigo da
+## party antes de aplicar o novo). O registro em game_data["equipment_bonuses"]
+## guarda os valores aplicados para a substituição/persistência.
+func apply_equipment_bonuses(bonuses: Dictionary, equipment_id: String, slot: String) -> void:
+ if bonuses.is_empty() or slot == "":
+  return
+ if not game_data.has("equipment_bonuses"):
+  game_data["equipment_bonuses"] = {}
+ if not game_data.has("equipped"):
+  game_data["equipped"] = {}
+ # Substituição de slot: reverte o item anterior antes de aplicar o novo.
+ for equipped_id: String in game_data["equipped"].keys():
+  if game_data["equipped"][equipped_id] == slot and equipped_id != equipment_id:
+   _revert_equipment(equipped_id)
+ game_data["equipment_bonuses"][equipment_id] = {"slot": slot, "bonuses": bonuses.duplicate()}
+ game_data["equipped"][equipment_id] = slot
+ for stat: String in bonuses:
+  _apply_party_stat(stat, int(bonuses[stat]))
+
+
+## Reverte da party os bônus do equipamento desequipado (piso em 0).
+func _revert_equipment(equipment_id: String) -> void:
+ var record: Dictionary = game_data.get("equipment_bonuses", {}).get(equipment_id, {})
+ for stat: String in record.get("bonuses", {}):
+  for member in party_data:
+   member[stat] = maxi(0, int(member.get(stat, 0)) - int(record["bonuses"][stat]))
+ game_data["equipment_bonuses"].erase(equipment_id)
+ if game_data.has("equipped"):
+  game_data["equipped"].erase(equipment_id)
+
 func get_game_data() -> Dictionary:
  return game_data
 

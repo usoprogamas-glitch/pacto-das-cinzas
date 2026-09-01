@@ -1,5 +1,7 @@
 extends Node2D
 
+const EquipmentSystemLib := preload("res://scripts/equipment_system.gd")
+
 @onready var grid: BattleGrid = $BattleGrid
 @onready var camera: Camera2D = $Camera2D
 @onready var ui_layer: CanvasLayer = $UILayer
@@ -1733,7 +1735,32 @@ func _create_actions_panel() -> void:
  _add_action_button(grid, "Cozinhar", _on_cook_pressed)
  _add_action_button(grid, "Taberna", _on_tavern_pressed)
  _add_action_button(grid, "Travessia", _on_traverse_pressed)
+ _add_action_button(grid, "Forja", _on_forge_pressed)
  _add_action_button(grid, "Combo", _on_combo_pressed)
+
+
+func _on_forge_pressed() -> void:
+ # Forja (§7, AUDIT P1 #12): consome as flags da vila (Fornalha/Forja do Rei
+ # Ogro) e os recursos do BuildingSystem; bônus permanentes vão para a party.
+ var equipment = EquipmentSystemLib.new()
+ equipment.set_unlocked_features(GameManager.building_system.unlocked_features if GameManager else {})
+ var res: Dictionary = GameManager.building_system.resources if GameManager else {}
+ equipment.set_resources({"materials": res.get("materials", 0), "gold": res.get("gold", 0), "soul_ether": res.get("soul_ether", 0)})
+ for equipment_id: String in equipment.EQUIPMENT:
+  var check: Dictionary = equipment.can_craft(equipment_id)
+  if not check.can:
+   continue
+  var item: Dictionary = equipment.get_equipment(equipment_id)
+  var spent: Dictionary = item["cost"]
+  for resource: String in spent:
+   GameManager.building_system.spend_resources({resource: spent[resource]})
+  equipment.set_resources({"materials": GameManager.building_system.resources.get("materials", 0), "gold": GameManager.building_system.resources.get("gold", 0), "soul_ether": GameManager.building_system.resources.get("soul_ether", 0)})
+  var result: Dictionary = equipment.craft(equipment_id)
+  if result.ok:
+   GameManager.apply_equipment_bonuses(result.bonuses, equipment_id, item["slot"])
+   combat_feedback.show_status_effect(Vector2(640, 300), "FORJA: %s equipado!" % item["name"])
+  return
+ combat_feedback.show_status_effect(Vector2(640, 300), "FORJA: nada craftável — construa a Fornalha Vulcânica e reúna materiais")
 
 
 func _add_action_button(parent: Node, label_text: String, handler: Callable) -> void:

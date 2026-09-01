@@ -65,8 +65,9 @@
 - **Travessia #13**: `traversal_nodes` data-driven no mapa (fenda de arpéu, penhasco, desfiladeiro), `TraversalSystem.attempt_traversal` valida asas/stamina/alcance, desfiladeiro de Zephyr concede Asas de Cinzas. 10 testes (`test_traversal_nodes.gd`). Commit 80015da.
 - **Culinária #14**: elixires ganham `max_uses` (gate de usos) + sinal `elixir_crafted` dedicado; bônus PERMANENTES aplicados via `GameManager.apply_elixir_bonuses` (max_hp/max_ether somam à party, attack_percent acumula no save e recalcula do atk base — idempotente no reload). 9 testes (`test_cooking_permanent.gd`).
 
-### 12. Equipamentos sem wiring? (verificar)
-- `crafting/` (recipe/material/equipment databases + crafting_manager + crafting_ui) — wiring não auditado nesta passada. Confirmar se alcançável pelo jogador; senão, entra como órfão na lista.
+### 12. Equipamentos sem wiring? (verificar) ✅ FEITO (2026-09-01)
+- **Achado da auditoria**: `scripts/crafting/` nunca existiu no repo — não era órfão, era feature ausente. O que existia: `BuildingSystem` com flags `craft_armas_básicas`/`craft_armas_avançadas` (Fornalha Vulcânica / Forja do Rei Ogro) e a API consumidora `is_craft_unlocked()`, sem consumidor.
+- **Implementado**: `EquipmentSystem` (puro, data-driven em `EQUIPMENT`: espada/bracelete/arco/manto com slots weapon/trinket/armor) consumindo as flags reais da vila (com acento: `craft_armas_básicas`), custo em materials/gold/éter, regra de 1 item por slot com substituição que reverte o antigo. Bridge: botão "Forja" no painel de ações + `GameManager.apply_equipment_bonuses` (bônus permanentes na party + registro em `game_data["equipped"]`/`equipment_bonuses` para persistência). 11 testes (`test_equipment_system.gd`). Suíte: 667/667.
 
 ---
 
