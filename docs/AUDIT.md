@@ -54,14 +54,15 @@
 - **SeamlessEncounter**: destravado no MVP SoS — `explore_scene` registra inimigos e abre encontros por proximidade (sem troca de cena).
 - **LightPuzzle**: wiring concluído (2026-08-31) — `explore_scene._spawn_puzzles` lê `MapDatabase.puzzles` (data-driven), spawna espelhos de obsidiana/pedestais/relógio cósmico; E gira o objeto próximo; solução paga as recompensas declaradas (soul_ether/gold/xp) e projeta o feixe luz→espelhos→alvo. Posicionados: mapa 0 `fronteira_espelhos` (mirror_alignment, Ato I) e mapa 5 `despojos_sombras` (shadow_reveal + eclipse, Ato II). 6 testes (`test_explore_puzzles.gd`). Restante é conteúdo: mais puzzles e persistência de "resolvido" no save (opcional).
 
-### 9. Ato III em ONDAS (decisão #7 pendente de execução) 🟡
-- Decisão tomada (turno por-fase + ondas escaladas), execução inexistente. `BattleManager` precisa de wave spawner (reinjetar inimigos com stats escalados por onda).
+### 9. Ato III em ONDAS (decisão #7 pendente de execução) ✅ FEITO (2026-09-01)
+- `waves` data-driven no mapa + reinjeção com stats escalados (commit 8653015). Arena (SoS) e grid legado.
 
-### 10. Locks não nascem do cast inimigo 🟡
-- LockSystem só no caminho do jogador. Cast inimigo deveria criar lock defensivo (GDD §3.2).
+### 10. Locks não nascem do cast inimigo ✅ FEITO (2026-09-01)
+- Arena (commit ed0eca8, `enemy_spell` data-driven) + espelho no grid legado (commit 4e035b6, spells do MagicSystem com locks). Spellbreak = stun + CP.
 
 ### 11. Taberna #12 / Travessia #13 / Culinária #14 🟡
-- Parciais: apostas, vertical/arpéu, bônus permanentes de cozinha. Conteúdo sobre sistemas vivos.
+- **Taberna #12 ✅ FEITO (2026-09-01)**: apostas em ouro (entrada 10 ouro, vitória paga 2x) + recompensas exclusivas por sequência de vitórias (amuleto_runico → colar_de_ossos → coroa_da_guerra_de_runas, data-driven em `REWARD_TIERS`). Core puro (`TavernMinigame`) + integração no battle_scene. 8 testes (`test_tavern_bets.gd`). Commit d643e99.
+- Travessia #13 e Culinária #14: parciais (sistemas existem, wiring de conteúdo pendente).
 
 ### 12. Equipamentos sem wiring? (verificar)
 - `crafting/` (recipe/material/equipment databases + crafting_manager + crafting_ui) — wiring não auditado nesta passada. Confirmar se alcançável pelo jogador; senão, entra como órfão na lista.
