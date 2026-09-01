@@ -233,6 +233,27 @@ func _revert_equipment(equipment_id: String) -> void:
  if game_data.has("equipped"):
   game_data["equipped"].erase(equipment_id)
 
+## Estado resolvido de puzzles/nós de travessia por mapa (§6.3/§6.1):
+## {"<map_id>": {"puzzles": {id: true}, "traversal": {id: true}}} — evita
+## re-pagar recompensas ao revisitar um estágio. Persistido no save.
+func is_puzzle_solved(map_id: int, puzzle_id: String) -> bool:
+ return game_data.get("world_state", {}).get(str(map_id), {}).get("puzzles", {}).get(puzzle_id, false)
+
+func mark_puzzle_solved(map_id: int, puzzle_id: String) -> void:
+ if not game_data.has("world_state"):
+  game_data["world_state"] = {}
+ var entry: Dictionary = game_data["world_state"].get_or_add(str(map_id), {})
+ entry.get_or_add("puzzles", {})[puzzle_id] = true
+
+func is_traversal_done(map_id: int, node_id: String) -> bool:
+ return game_data.get("world_state", {}).get(str(map_id), {}).get("traversal", {}).get(node_id, false)
+
+func mark_traversal_done(map_id: int, node_id: String) -> void:
+ if not game_data.has("world_state"):
+  game_data["world_state"] = {}
+ var entry: Dictionary = game_data["world_state"].get_or_add(str(map_id), {})
+ entry.get_or_add("traversal", {})[node_id] = true
+
 func get_game_data() -> Dictionary:
  return game_data
 

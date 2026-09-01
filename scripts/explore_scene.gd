@@ -331,10 +331,13 @@ func _advance_story() -> void:
 func _spawn_puzzles() -> void:
 	var map: Dictionary = MapDatabase.get_map(map_id)
 	for cfg in map.get("puzzles", []):
+		# Persistência §6.3: puzzle já resolvido num save anterior reaparece
+		# resolvido (visual) e sem recompensa dupla.
+		var already: bool = GameManager.is_puzzle_solved(map_id, String(cfg["id"])) if GameManager else false
 		var sys := LightPuzzleSystem.new()
 		if not sys.start_puzzle(String(cfg["id"]), String(cfg["type"]), cfg.get("light", Vector2i.ZERO), cfg.get("target", Vector2i.ZERO)):
 			continue  # tipo inválido nos dados: pula sem quebrar a cena
-		var entry := {"id": String(cfg["id"]), "data": cfg, "system": sys, "nodes": {}, "solved": false}
+		var entry := {"id": String(cfg["id"]), "data": cfg, "system": sys, "nodes": {}, "solved": already}
 		for m in cfg.get("mirrors", []):
 			sys.add_mirror(String(m["id"]), m.get("pos", Vector2i.ZERO), int(m.get("angle", 0)))
 			var node := _make_mirror_node(m)
@@ -344,6 +347,9 @@ func _spawn_puzzles() -> void:
 		entry["target_node"] = _make_pedestal(cfg.get("target", Vector2i.ZERO), Color(0.75, 0.3, 0.8))
 		if LightPuzzleSystem.PUZZLE_TYPES.get(String(cfg["type"]), {}).get("has_clock", false):
 			entry["clock_node"] = _make_clock_node(cfg.get("clock", Vector2i(4, 1)))
+		if already:
+			entry["light_node"].modulate = Color(0.5, 1.0, 0.5)
+			entry["target_node"].modulate = Color(0.5, 1.0, 0.5)
 		sys.puzzle_solved.connect(_on_puzzle_solved.bind(entry))
 		puzzles.append(entry)
 
@@ -423,7 +429,11 @@ func _spawn_traversal_nodes() -> void:
 	var map: Dictionary = MapDatabase.get_map(map_id)
 	for cfg in map.get("traversal_nodes", []):
 		var node := _make_traversal_node(cfg)
-		traversal_nodes.append({"id": String(cfg["id"]), "data": cfg, "node": node, "solved": false})
+		# Persistência §6.1: nó já feito num save anterior nasce resolvido.
+		var already: bool = GameManager.is_traversal_done(map_id, String(cfg["id"])) if GameManager else false
+		if already:
+			node.modulate = Color(0.5, 1.0, 0.5)
+		traversal_nodes.append({"id": String(cfg["id"]), "data": cfg, "node": node, "solved": already})
 
 
 func _make_traversal_node(cfg: Dictionary) -> Node2D:
@@ -470,6 +480,8 @@ func _interact_traversal() -> void:
 	traversal.end_traversal()
 	entry["solved"] = true
 	entry["node"].modulate = Color(0.5, 1.0, 0.5)
+	if GameManager:
+		GameManager.mark_traversal_done(map_id, String(entry["id"]))
 	var rewards: Dictionary = entry["data"].get("rewards", {})
 	if int(rewards.get("soul_ether", 0)) > 0 and GameManager:
 		GameManager.add_soul_ether(int(rewards["soul_ether"]))
@@ -529,6 +541,7 @@ func _interact_puzzles() -> void:
 func _on_puzzle_solved(puzzle_id: String, rewards: Dictionary, entry: Dictionary) -> void:
 	entry["solved"] = true
 	if GameManager:
+		GameManager.mark_puzzle_solved(map_id, puzzle_id)
 		if int(rewards.get("soul_ether", 0)) > 0:
 			GameManager.add_soul_ether(int(rewards["soul_ether"]))
 		if int(rewards.get("gold", 0)) > 0:

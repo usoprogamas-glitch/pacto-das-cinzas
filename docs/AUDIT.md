@@ -69,6 +69,9 @@
 - **Achado da auditoria**: `scripts/crafting/` nunca existiu no repo — não era órfão, era feature ausente. O que existia: `BuildingSystem` com flags `craft_armas_básicas`/`craft_armas_avançadas` (Fornalha Vulcânica / Forja do Rei Ogro) e a API consumidora `is_craft_unlocked()`, sem consumidor.
 - **Implementado**: `EquipmentSystem` (puro, data-driven em `EQUIPMENT`: espada/bracelete/arco/manto com slots weapon/trinket/armor) consumindo as flags reais da vila (com acento: `craft_armas_básicas`), custo em materials/gold/éter, regra de 1 item por slot com substituição que reverte o antigo. Bridge: botão "Forja" no painel de ações + `GameManager.apply_equipment_bonuses` (bônus permanentes na party + registro em `game_data["equipped"]`/`equipment_bonuses` para persistência). 11 testes (`test_equipment_system.gd`). Suíte: 667/667.
 
+### 12b. Persistência de puzzles/traversal no save ✅ FEITO (2026-09-01)
+- `game_data["world_state"]` por mapa (`is_puzzle_solved`/`mark_puzzle_solved`/`is_traversal_done`/`mark_traversal_done`): revisitar um estágio restaura puzzles e nós como resolvidos (visual verde) e **sem recompensa dupla**. Exploração marca ao resolver. 7 testes (`test_world_state.gd`). Suíte: 674/674.
+
 ---
 
 ## P1.5 — Mudanças de design (pedidos do usuário)
