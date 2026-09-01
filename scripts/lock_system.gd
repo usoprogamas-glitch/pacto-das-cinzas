@@ -13,6 +13,10 @@ signal lock_broken(enemy, lock: Dictionary)
 signal all_locks_broken(enemy)
 signal spell_cast(enemy, spell_name: String)
 
+## Cast inimigo com lock defensivo (GDD §3.2): spell anunciado pelo inimigo,
+## com locks que o jogador deve quebrar e turnos restantes até o cast resolver.
+signal enemy_cast_started(enemy, spell_name: String, locks: Array, turns: int)
+
 ## --- Tipos de dano aceitos pelos locks (GDD §4) ---
 enum DamageType { CORTE, PERFURACAO, CONTUSAO, ETER, FOGO, VENENO, SAGRADO }
 
@@ -29,6 +33,28 @@ const TYPE_NAMES: Dictionary = {
 
 ## Dados de uma magia inimiga: quais locks ela gera
 ## Exemplo: { "spell_name": "Bola de Fogo", "locks": [{"type": "Corte", "hits": 2}], "turns": 3 }
+
+## Estado vivo por inimigo: locks atuais + contador da magia anunciada
+var _enemy_locks: Dictionary = {}  # enemy -> Array[Dictionary]
+var _enemy_spells: Dictionary = {}  # enemy -> {spell_name, turns_remaining}
+
+
+func get_locks(enemy) -> Array:
+	return _enemy_locks.get(enemy, [])
+
+
+func get_pending_spell(enemy) -> Dictionary:
+	return _enemy_spells.get(enemy, {})
+
+
+func clear_enemy(enemy) -> void:
+	_enemy_locks.erase(enemy)
+	_enemy_spells.erase(enemy)
+
+
+func clear_all() -> void:
+	_enemy_locks.clear()
+	_enemy_spells.clear()
 
 
 ## Cria um lock em um inimigo.
@@ -80,6 +106,53 @@ func decrement_spell_counter(enemy, current_turns: int, spell_name: String) -> i
 	if new_val == 0:
 		spell_cast.emit(enemy, spell_name)
 	return new_val
+
+
+## --- Cast inimigo com lock defensivo (GDD §3.2, simetria) ---
+
+## Inimigo anuncia uma magia: locks nascem nele (mesma mecânica dos chefes,
+## espelhada pro jogador quebrar) e o contador de cast começa a girar.
+## locks_data = spell.get("locks", []); turns = spell.get("cast_turns", 1).
+func begin_enemy_cast(enemy, spell_id: String, locks_data: Array, turns: int) -> Array:
+	var locks: Array = []
+	for lock_data in locks_data:
+		locks.append(create_lock(enemy, lock_data))
+	_enemy_locks[enemy] = locks
+	_enemy_spells[enemy] = {"spell_id": spell_id, "spell_name": spell_id, "turns_remaining": maxi(1, turns)}
+	enemy_cast_started.emit(enemy, spell_id, locks, turns)
+	return locks
+
+
+## Jogador acerta o inimigo com um tipo de dano: processa os locks dele.
+## Retorna true se algum lock foi quebrado neste golpe.
+func player_hits_enemy(enemy, attack_type: String) -> bool:
+	var broke_any := false
+	var locks: Array = get_locks(enemy)
+	for lock in locks:
+		if lock.remaining > 0 and hit_lock(enemy, lock, attack_type):
+			broke_any = true
+	if broke_any and all_broken(locks):
+		all_locks_broken.emit(enemy)
+	return broke_any
+
+
+## Avança o contador do cast anunciado do inimigo (1 por turno dele).
+## Retorna: -1 sem cast pendente | n > 0 ainda carregando | 0 cast resolvido.
+func tick_enemy_cast(enemy) -> int:
+	var pending: Dictionary = _enemy_spells.get(enemy, {})
+	if pending.is_empty():
+		return -1
+	var turns := decrement_spell_counter(enemy, int(pending.get("turns_remaining", 1)), String(pending.get("spell_name", "")))
+	pending["turns_remaining"] = turns
+	if turns <= 0:
+		_enemy_spells.erase(enemy)
+		return 0
+	return turns
+
+
+## Cast resolvido ou inimigo morto: locks somem.
+func end_enemy_cast(enemy) -> void:
+	clear_enemy(enemy)
 
 
 ## Retorna a penalidade de stun (em turnos) por quebrar todos os locks.

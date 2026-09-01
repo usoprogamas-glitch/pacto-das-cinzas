@@ -75,20 +75,25 @@ func test_caster_ai_attacks_when_mp_insufficient():
 
 
 func test_cast_magic_reduces_mp_and_damages_target():
-	var enemy := _make_unit(false, {"magic": 25, "mp": 40, "spell": "fire_bolt"})
+	# water_splash: spell SEM locks → caminho imediato (GDD §3.2 só afeta
+	# spells que declaram locks, como fire_bolt/shadow_bolt).
+	var enemy := _make_unit(false, {"magic": 25, "mp": 40, "spell": "water_splash"})
 	var player := _make_unit(true, {"hp": 80})
 	player.grid_position = Vector2i(2, 4)
 	bm.register_unit(enemy)
 	bm.register_unit(player)
 
 	var before_hp = player.current_hp
-	bm.cast_magic(enemy, "fire_bolt", player)
-	assert_eq(enemy.current_mp, 30, "cast desconta mp_cost (10)")
+	bm.cast_magic(enemy, "water_splash", player)
+	assert_eq(enemy.current_mp, 32, "cast imediato desconta mp_cost (8)")
 	assert_lt(player.current_hp, before_hp, "alvo toma dano")
 
 
 func test_execute_enemy_ai_emits_unit_attacked_on_cast():
-	var enemy := _make_unit(false, {"magic": 25, "mp": 40, "spell": "shadow_bolt"})
+	# fire_bolt agora é spell ANUNCIADO (locks, GDD §3.2): o turno é gasto
+	# conjurando — sem dano, sem MP ainda. Cast resolve no contador zero.
+	var enemy := _make_unit(false, {"magic": 25, "mp": 40, "spell": "fire_bolt"})
+	enemy.data.unit_name = "Inquisidor"  # IA caster (get_ai_type pelo nome)
 	var player := _make_unit(true, {"hp": 80})
 	player.grid_position = Vector2i(2, 4)
 	bm.register_unit(enemy)
@@ -96,8 +101,31 @@ func test_execute_enemy_ai_emits_unit_attacked_on_cast():
 
 	watch_signals(bm)
 	await bm.execute_enemy_ai(enemy)
-	assert_eq(enemy.current_mp, 28, "shadow_bolt (cust 12) -> 40-12=28")
-	assert_signal_emitted(bm, "unit_attacked", "cast emite unit_attacked p/ feedback")
+	assert_eq(enemy.current_mp, 40, "MP intacto durante o canal do cast")
+	assert_signal_not_emitted(bm, "unit_attacked", "anúncio não causa dano")
+	var locks: Array = bm.lock_system.get_locks(enemy)
+	assert_eq(locks.size(), 1, "locks nascem do cast da IA (GDD §3.2)")
+	assert_eq(bm.lock_system.get_pending_spell(enemy)["turns_remaining"], 2, "fire_bolt carrega 2 turnos")
+
+
+func test_execute_enemy_ai_cast_resolves_after_channel():
+	# Canal completo: turno 1 anuncia (IA decide cast), turnos 2-3 consomem os
+	# cast_turns ticks → cast resolve com dano + MP (GDD §3.2).
+	var enemy := _make_unit(false, {"magic": 25, "mp": 40, "spell": "fire_bolt"})
+	enemy.data.unit_name = "Inquisidor"  # IA caster (get_ai_type pelo nome)
+	var player := _make_unit(true, {"hp": 80})
+	player.grid_position = Vector2i(2, 4)
+	bm.register_unit(enemy)
+	bm.register_unit(player)
+
+	await bm.execute_enemy_ai(enemy)  # anuncia (locks nascem)
+	assert_eq(bm.lock_system.get_pending_spell(enemy)["turns_remaining"], 2, "fire_bolt carrega 2 turnos")
+	watch_signals(bm)
+	await bm.execute_enemy_ai(enemy)  # tick 1 (canal)
+	await bm.execute_enemy_ai(enemy)  # tick 2 → cast resolve
+	assert_eq(enemy.current_mp, 30, "MP gasto só quando o cast resolve (10)")
+	assert_signal_emitted(bm, "unit_attacked", "cast resolvido emite unit_attacked")
+	assert_eq(bm.lock_system.get_pending_spell(enemy), {}, "cast consumido")
 
 
 func test_execute_enemy_ai_no_cast_when_mp_low():
@@ -127,7 +155,7 @@ func test_cast_magic_silent_when_not_enough_mp():
 
 
 func test_cast_magic_kill_resolves_death_and_battle():
-	var enemy := _make_unit(false, {"magic": 25, "mp": 40, "spell": "fire_bolt"})
+	var enemy := _make_unit(false, {"magic": 25, "mp": 40, "spell": "water_splash"})
 	var player := _make_unit(true, {"hp": 1})
 	player.grid_position = Vector2i(2, 4)
 	bm.register_unit(enemy)
@@ -135,7 +163,7 @@ func test_cast_magic_kill_resolves_death_and_battle():
 	bm.soul_ether = 0
 
 	watch_signals(bm)
-	bm.cast_magic(enemy, "fire_bolt", player)
+	bm.cast_magic(enemy, "water_splash", player)
 	assert_eq(player.current_hp, 0, "spell mata o jogador (hp 1)")
 	assert_signal_emitted(bm, "unit_died", "morte por magia emite unit_died")
 	assert_eq(bm.player_units.size(), 0, "morto sai das listas de combate")
@@ -145,7 +173,7 @@ func test_cast_magic_kill_resolves_death_and_battle():
 
 
 func test_cast_magic_kill_of_enemy_emits_soul_ether_and_victory():
-	var enemy := _make_unit(false, {"magic": 25, "mp": 40, "spell": "fire_bolt"})
+	var enemy := _make_unit(false, {"magic": 25, "mp": 40, "spell": "water_splash"})
 	var last_player := _make_unit(true, {"hp": 1})
 	var target := _make_unit(false, {"hp": 1})
 	target.data.soul_ether_value = 30
@@ -157,7 +185,7 @@ func test_cast_magic_kill_of_enemy_emits_soul_ether_and_victory():
 	bm.soul_ether = 0
 
 	watch_signals(bm)
-	bm.cast_magic(enemy, "fire_bolt", target)
+	bm.cast_magic(enemy, "water_splash", target)
 	assert_eq(target.current_hp, 0, "inimigo morto pelo cast")
 	assert_signal_emitted(bm, "unit_died", "morte por magia de inimigo emite unit_died")
 	assert_eq(bm.enemy_units.size(), 1, "somente o caster continua inimigo")

@@ -14,6 +14,7 @@ signal soul_ether_gained(amount: int)
 signal ether_boost_applied(unit, charges: int)
 signal timed_block_window(attacker: Unit, target: Unit)
 signal wave_started(wave_index: int, total_waves: int)
+signal enemy_stunned(enemy: Unit)
 
 enum Phase { PLAYER_TURN, ENEMY_TURN, ANIMATING }
 
@@ -35,6 +36,7 @@ var _flanking_system: FlankingSystem = FlankingSystem.new()
 var _adjacency_system: AdjacencySystem = AdjacencySystem.new()
 var _timed_combat_system: TimedCombatSystem = TimedCombatSystem.new()
 var _magic_system: MagicSystem = MagicSystem.new()
+var lock_system: LockSystem = LockSystem.new()
 
 # Timed Block (GDD v2 §3.1): callable opcional que resolve a janela defensiva
 # reativa (0.2s) antes do dano de um ataque inimigo em alvo jogador. Recebe
@@ -55,6 +57,9 @@ var _turn_index: int = 0
 # "stat_scale": float}; spec de unidade no formato de spawn do battle_scene.
 var wave_config: Array = []
 var current_wave: int = 0
+
+# Stun por spellbreak (GDD v2 §3.2): inimigo com locks quebrados perde turnos.
+var _stunned: Dictionary = {}  # Unit -> turnos restantes
 
 func _ready() -> void:
  initialize_grid()
@@ -97,10 +102,15 @@ func unregister_unit(unit: Unit) -> void:
  player_units.erase(unit)
  enemy_units.erase(unit)
  set_tile_at(unit.grid_position, null)
+ # Cast anunciado morre com o conjurador (GDD v2 §3.2)
+ lock_system.clear_enemy(unit)
+ _stunned.erase(unit)
 
 func start_battle() -> void:
  turn_count = 0
  current_wave = 0
+ lock_system.clear_all()
+ _stunned.clear()
  start_player_turn()
 
 # --- Ondas escaladas (GDD §1 Ato III, ROADMAP #7) ---
@@ -195,6 +205,15 @@ func start_enemy_turn() -> void:
  check_battle_end()
 
 func execute_enemy_ai(enemy: Unit) -> void:
+ # Stun (GDD §3.2): spellbreak atordoa — inimigo perde o turno.
+ if int(_stunned.get(enemy, 0)) > 0:
+  _stunned[enemy] = int(_stunned[enemy]) - 1
+  if int(_stunned[enemy]) <= 0:
+   _stunned.erase(enemy)
+  return
+ # Cast anunciado (GDD §3.2): tick do contador; canal/resolução gasta o turno.
+ if tick_enemy_spell(enemy):
+  return
  var action = EnemyAI.decide_action(enemy, all_units, null)
 
  match action.action:
@@ -224,10 +243,24 @@ func execute_enemy_ai(enemy: Unit) -> void:
 ## dano aparecer; se matar o alvo, resolve a morte igual ao ataque físico
 ## (unit_died + unregister + soul_ether) pra batalha poder acabar. Se falhar
 ## (sem MP / spell desconhecido), nada acontece.
+##
+## GDD v2 §3.2 (simetria): spell com "locks" declarados no MagicSystem é
+## ANUNCIADO — locks nascem no inimigo e o cast carrega por cast_turns turnos.
+## O MP é gasto só quando o cast resolve. Quebrar todos os locks interrompe o
+## cast e atordoa o inimigo (stun_turns + CP via battle_scene).
 func cast_magic(enemy: Unit, spell_id: String, target: Unit) -> void:
  var spell = _magic_system.get_spell(spell_id)
  if spell.is_empty() or enemy.current_mp < spell.mp_cost:
   return
+
+ var locks_data: Array = spell.get("locks", [])
+ if not locks_data.is_empty():
+  lock_system.begin_enemy_cast(enemy, spell_id, locks_data, int(spell.get("cast_turns", 1)))
+  return
+ _cast_now(enemy, spell_id, target)
+
+## Resolve um cast imediato (sem locks): dano + morte + fim de batalha.
+func _cast_now(enemy: Unit, spell_id: String, target: Unit) -> void:
  var result = _magic_system.cast_spell(enemy, spell_id, [target])
  if result.success:
   for r in result.results:
@@ -239,6 +272,44 @@ func cast_magic(enemy: Unit, spell_id: String, target: Unit) -> void:
    soul_ether_gained.emit(target.data.soul_ether_value)
    soul_ether += target.data.soul_ether_value
    check_battle_end()
+
+## Tick do cast anunciado, no início do turno do inimigo (execute_enemy_ai).
+## Retorna true se o turno foi gasto no canal/resolução do cast.
+## Contador zera com locks vivos → cast dispara no jogador mais próximo.
+## Contador zera com locks quebrados → spellbreak: stun (GDD §3.2).
+func tick_enemy_spell(enemy: Unit) -> bool:
+ var state: Dictionary = lock_system.get_pending_spell(enemy)
+ if state.is_empty():
+  return false
+ var remaining := lock_system.tick_enemy_cast(enemy)
+ if remaining > 0:
+  return true  # carregando: turno gasto conjurando
+ if remaining == 0:
+  var locks: Array = lock_system.get_locks(enemy)
+  var broken: bool = not locks.is_empty() and lock_system.all_broken(locks)
+  lock_system.end_enemy_cast(enemy)
+  if broken:
+   _stunned[enemy] = lock_system.resolve_spellbreak()["stun_turns"]
+   enemy_stunned.emit(enemy)
+  else:
+   var spell_id := String(state.get("spell_id", ""))
+   var target := _nearest_player_for(enemy)
+   if not spell_id.is_empty() and target != null:
+    _cast_now(enemy, spell_id, target)
+  return true
+ return false
+
+func _nearest_player_for(enemy: Unit) -> Unit:
+ var nearest: Unit = null
+ var min_dist: float = INF
+ for unit in player_units:
+  if unit.current_hp <= 0:
+   continue
+  var dist = enemy.grid_position.distance_to(unit.grid_position)
+  if dist < min_dist:
+   min_dist = dist
+   nearest = unit
+ return nearest
 
 func get_closer_position(enemy: Unit, target: Unit) -> Vector2i:
  var best_pos = enemy.grid_position
@@ -370,7 +441,22 @@ func attack_unit(attacker: Unit, target: Unit, attacker_terrain: String = "", ta
   soul_ether_gained.emit(target.data.soul_ether_value)
   soul_ether += target.data.soul_ether_value
 
+ _process_lock_breaks(attacker, target)
  check_battle_end()
+
+## Locks do cast inimigo (GDD §3.2): golpe do jogador com o tipo certo reduz o
+## lock; quebrar TODOS interrompe o cast anunciado e atordoa o conjurador.
+func _process_lock_breaks(attacker: Unit, target: Unit) -> void:
+ if attacker == null or attacker.data == null or not attacker.data.is_player:
+  return
+ var locks: Array = lock_system.get_locks(target)
+ if locks.is_empty():
+  return
+ lock_system.player_hits_enemy(target, String(attacker.data.attack_type))
+ if lock_system.all_broken(locks):
+  lock_system.end_enemy_cast(target)
+  _stunned[target] = lock_system.resolve_spellbreak()["stun_turns"]
+  enemy_stunned.emit(target)
 
 func check_battle_end() -> void:
  if player_units.size() == 0:

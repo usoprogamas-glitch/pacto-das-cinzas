@@ -21,6 +21,7 @@ extends Resource
 @export var soul_ether_value: int = 10
 @export var start_ether: int = 0  ## Cargas de Éter iniciais (GDD v2 §3.3, máx. 3)
 @export var spell: String = "fire_bolt"  ## Feitiço padrão do caster (GDD v2 §3.3; lido pela EnemyAI.caster_ai)
+@export var attack_type: String = "Corte"  ## Tipo de dano físico (GDD v2 §3.2): usado p/ acertar locks (Corte/Perfuração/Contusão/Éter...)
 @export var soul_type: String = ""  ## Nome da alma capturável (goblin_lama, etc.) — vazio = não nameável
 
 @export_group("Visual")

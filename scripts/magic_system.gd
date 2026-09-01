@@ -65,6 +65,8 @@ var spells: Dictionary = {
   "power": 25,
   "range": 3,
   "aoe": false,
+  "locks": [{"type": "Corte", "hits": 2}],
+  "cast_turns": 2,
   "description": "Dispara uma bola de fogo"
  },
  "fire_blast": {
@@ -75,6 +77,8 @@ var spells: Dictionary = {
   "range": 2,
   "aoe": true,
   "aoe_size": 2,
+  "locks": [{"type": "Contusão", "hits": 3}],
+  "cast_turns": 3,
   "description": "Explosão em área"
  },
  "water_splash": {
@@ -142,6 +146,8 @@ var spells: Dictionary = {
   "power": 28,
   "range": 3,
   "aoe": false,
+  "locks": [{"type": "Perfuração", "hits": 2}],
+  "cast_turns": 2,
   "description": "Bola de energia sombria"
  },
  "darkness_cloud": {
@@ -163,6 +169,8 @@ var spells: Dictionary = {
   "range": 2,
   "aoe": false,
   "extra_damage_undead": 1.5,
+  "locks": [{"type": "Éter", "hits": 3}],
+  "cast_turns": 3,
   "description": "Dano extra contra mortos-vivos"
  },
  "purify": {

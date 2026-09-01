@@ -75,6 +75,7 @@ var _camp_used: bool = false
 var _cook_used: bool = false
 var _tavern_running: bool = false
 var _tavern_turn_limit: int = 20
+const TAVERN_BET: int = 10  ## aposta fixa da Guerra de Runas (ROADMAP #12)
 
 # Estado de timed hit
 var _timed_hit_active: bool = false
@@ -134,7 +135,9 @@ func setup_systems() -> void:
 
  # Sistemas de combate avançado
  timed_combat = TimedCombatSystem.new()
- lock_system = LockSystem.new()
+ # LockSystem é do BattleManager (donos dos casts anunciados GDD §3.2):
+ # battle_scene consome os sinais p/ feedback e CP.
+ lock_system = BattleManager.lock_system
  combo_system = ComboSystem.new()
  balance_system = BalanceSystem.new()
  kaelen_system = KaelenSystem.new()
@@ -166,6 +169,8 @@ func setup_systems() -> void:
  boss_system.boss_spell_charging.connect(_on_boss_spell_charging)
  boss_system.boss_hp_changed.connect(show_boss_hp)
  lock_system.lock_broken.connect(_on_lock_broken)
+ lock_system.enemy_cast_started.connect(_on_enemy_cast_started)
+ BattleManager.enemy_stunned.connect(_on_enemy_spellbreak)
 
  # §6-7 Sinais
  traversal_system.traversal_completed.connect(_on_traversal_completed)
@@ -1314,6 +1319,19 @@ func _on_lock_broken(_enemy, _lock: Dictionary) -> void:
  update_combo_ui()
  combat_feedback.show_status_effect(Vector2(640, 300), "LOCK QUEBRADO (+2 CP)")
 
+## §3.2 Cast inimigo anunciado: locks visíveis + aviso de conjuração.
+func _on_enemy_cast_started(enemy, spell_name: String, _locks: Array, _turns: int) -> void:
+ if enemy is Node2D and enemy.is_inside_tree():
+  combat_feedback.show_status_effect(enemy.global_position + Vector2(0, -40), "CONJURANDO: " + spell_name)
+ else:
+  combat_feedback.show_status_effect(Vector2(640, 200), "PERIGO: " + spell_name + " se preparando!")
+ combat_feedback.shake_light()
+
+## §3.2 Spellbreak: todos os locks quebrados → inimigo atordoado.
+func _on_enemy_spellbreak(_enemy) -> void:
+ combat_feedback.show_status_effect(Vector2(640, 200), "SPELLBREAK! INIMIGO ATORDOADO!")
+ combat_feedback.shake_medium()
+
 ## §3.4 Kaelen System — handlers de sinais
 func _on_kaelen_target_analyzed(target_name: String, data: Dictionary) -> void:
  if not kaelen_hud_panel:
@@ -1759,9 +1777,33 @@ func _on_cook_pressed() -> void:
 func _on_tavern_pressed() -> void:
  if _tavern_running:
   return
+ # Aposta (ROADMAP #12): 10 ouro de entrada, pago no início; vitória paga 2x.
+ # Sem ouro suficiente, a mesa joga casual (aposta 0).
+ var bet := TAVERN_BET if GameManager.game_data.gold >= TAVERN_BET else 0
+ if bet > 0:
+  GameManager.add_gold(-bet)
+ tavern_minigame.start_game("Jogador", "IA", bet)
+ tavern_minigame.bet_resolved.connect(_on_tavern_bet_resolved)
+ tavern_minigame.exclusive_reward_earned.connect(_on_tavern_exclusive_reward)
  _tavern_running = true
- tavern_minigame.start_game("Jogador", "IA")
  _run_tavern_until_end()
+
+
+func _on_tavern_bet_resolved(won: bool, payout: int) -> void:
+ if payout > 0:
+  GameManager.add_gold(payout)
+ var msg := "TABERNA: você venceu! +%d ouro" % payout if won else "TABERNA: derrota... aposta perdida."
+ combat_feedback.show_status_effect(Vector2(640, 300), msg)
+
+
+func _on_tavern_exclusive_reward(reward_id: String) -> void:
+ var tiers: Dictionary = tavern_minigame.get_reward_tiers()
+ for tier in tiers.values():
+  if tier["id"] == reward_id:
+   combat_feedback.show_status_effect(Vector2(640, 200), "RECOMPENSA: " + tier["name"])
+   if progression_system:
+    progression_system.add_named_soul()
+   return
 
 
 func _run_tavern_until_end() -> void:
