@@ -135,6 +135,7 @@
 - **Núcleo**: `start_charge` cria locks via LockSystem; `hit_charge` dentes locks do tipo do golpe e faz spellbreak (charge limpo + stun 1 turno) ao quebrar todos; `tick_charge` no turno do canalizador — contador zerado = feitiço sai; `tick_stun` consome o spellbreak.
 - **Cena**: IA com `enemy_spell` + MP inicia o canal em vez de atacar; alvo do jogador prioriza canalizador (locks atraem o golpe); físico = Corte, magia = Éter; stun faz o inimigo perder o turno.
 - **Testes**: `test_enemy_spell_locks.gd` (8). Suíte: 619/619.
+- **Grid legado (espelho, commit 4e035b6)**: spells com `locks`/`cast_turns` no MagicSystem (fire_bolt/fire_blast/shadow_bolt/holy_smite) viram preparação no `BattleManager.cast_magic` inimigo — locks nascem no caster (`LockSystem.begin_enemy_cast`), golpe do jogador com `UnitData.attack_type` reduz o lock, quebrar todos = spellbreak (stun 1 turno em `execute_enemy_ai` + sinal `enemy_stunned`), contador zerado = cast dispara no jogador mais próximo; MP gasto só na resolução; morte do caster cancela cast/locks. `battle_scene` aponta para o LockSystem do BattleManager (feedback CONJURANDO/SPELLBREAK). 9 testes (`test_enemy_cast_locks.gd`). Suíte: 637/637.
 
 ---
 
