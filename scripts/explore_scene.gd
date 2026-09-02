@@ -521,6 +521,8 @@ func _interact_traversal() -> void:
 		GameManager.game_data["has_wings"] = true
 		traversal.setup(true)
 	_show_traversal_hint("TRAVESSIA CONCLUÍDA! +%d éter, +%d ouro" % [int(rewards.get("soul_ether", 0)), int(rewards.get("gold", 0))])
+	if SoundManager:
+		SoundManager.play_traversal()
 
 
 func _show_traversal_hint(text: String) -> void:
@@ -579,6 +581,8 @@ func _on_puzzle_solved(puzzle_id: String, rewards: Dictionary, entry: Dictionary
 		if GameManager.has_method("save_game"):
 			GameManager.save_game()  # progressão permanente: recompensas + world_state
 	_show_beam(entry)
+	if SoundManager:
+		SoundManager.play_puzzle()
 	if _hint_label:
 		_hint_label.text = "Puzzle resolvido: %s (+recompensa)" % puzzle_id
 

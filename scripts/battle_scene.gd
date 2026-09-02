@@ -1818,12 +1818,14 @@ func _on_forge_item_pressed(equipment_id: String) -> void:
  var item: Dictionary = equipment.get_equipment(equipment_id)
  for resource: String in item["cost"]:
   GameManager.building_system.spend_resources({resource: item["cost"][resource]})
- var result: Dictionary = equipment.craft(equipment_id)
- if result.ok:
-  GameManager.apply_equipment_bonuses(result.bonuses, equipment_id, item["slot"])
-  combat_feedback.show_status_effect(Vector2(640, 300), "FORJA: %s equipado!" % item["name"])
-  if GameManager.has_method("save_game"):
-   GameManager.save_game()  # bônus permanente + inventário da vila no save
+  var result: Dictionary = equipment.craft(equipment_id)
+  if result.ok:
+   GameManager.apply_equipment_bonuses(result.bonuses, equipment_id, item["slot"])
+   combat_feedback.show_status_effect(Vector2(640, 300), "FORJA: %s equipado!" % item["name"])
+   if SoundManager:
+    SoundManager.play_forge()
+   if GameManager.has_method("save_game"):
+    GameManager.save_game()  # bônus permanente + inventário da vila no save
  # Atualiza a painel (custos/estado mudaram).
  _forge_panel.queue_free()
  _forge_panel = null
@@ -1899,6 +1901,8 @@ func _on_tavern_pressed() -> void:
 func _on_tavern_bet_resolved(won: bool, payout: int) -> void:
  if payout > 0:
   GameManager.add_gold(payout)
+ if SoundManager:
+  SoundManager.play_bet_win() if won else SoundManager.play_bet_lose()
  var msg := "TABERNA: você venceu! +%d ouro" % payout if won else "TABERNA: derrota... aposta perdida."
  combat_feedback.show_status_effect(Vector2(640, 300), msg)
 

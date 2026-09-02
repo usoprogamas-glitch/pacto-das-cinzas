@@ -25,7 +25,14 @@ func generate_placeholder_sounds() -> void:
   "victory": create_victory_sound(),
   "defeat": create_defeat_sound(),
   "step": create_step_sound(),
-  "death": create_death_sound()
+  "death": create_death_sound(),
+  "forge": create_forge_sound(),
+  "lock_hit": create_lock_hit_sound(),
+  "lock_break": create_lock_break_sound(),
+  "puzzle": create_puzzle_sound(),
+  "traversal": create_traversal_sound(),
+  "bet_win": create_bet_win_sound(),
+  "bet_lose": create_bet_lose_sound(),
  }
 
 # ... rest of the file
@@ -110,7 +117,7 @@ static func create_exploration_music() -> AudioStreamWAV:
   var step := int(fmod(t, 4.0) / 0.5)
   var note_freq: float = root_freq * 2.0 * pow(2.0, scale_steps[step % scale_steps.size()] / 12.0)
   var note_t := fmod(t, 0.5)
-  var envelope := 1.0 - (note_t / 0.5)
+  var envelope: float = 1.0 - (note_t / 0.5)
   sample += sin(2.0 * PI * note_freq * t) * envelope * 0.12
   var byte = int(clamp(sample, -1.0, 1.0) * 127) + 128
   frames.append(byte)
@@ -177,6 +184,27 @@ func play_step() -> void:
 
 func play_death() -> void:
  play_sfx("death")
+
+func play_forge() -> void:
+ play_sfx("forge")
+
+func play_lock_hit() -> void:
+ play_sfx("lock_hit")
+
+func play_lock_break() -> void:
+ play_sfx("lock_break")
+
+func play_puzzle() -> void:
+ play_sfx("puzzle")
+
+func play_traversal() -> void:
+ play_sfx("traversal")
+
+func play_bet_win() -> void:
+ play_sfx("bet_win")
+
+func play_bet_lose() -> void:
+ play_sfx("bet_lose")
 
 # === SOUND GENERATION METHODS (moved from SoundGenerator for reliability) ===
 
@@ -363,6 +391,166 @@ static func create_death_sound() -> AudioStreamWAV:
   var envelope = 1.0 - (t / duration)
   var freq = 500.0 - t * 400.0
   var sample = sin(2.0 * PI * freq * t) * envelope * 0.5
+  var byte = int(sample * 127) + 128
+  frames.append(byte)
+
+ stream.data = frames
+ return stream
+
+## Martelada da forja: impacto metálico com ressonância (2 parciais dissonantes).
+static func create_forge_sound() -> AudioStreamWAV:
+ var stream = AudioStreamWAV.new()
+ stream.format = AudioStreamWAV.FORMAT_16_BITS
+ stream.mix_rate = 22050
+ stream.stereo = false
+
+ var frames = PackedByteArray()
+ var duration = 0.35
+ var samples = int(22050 * duration)
+
+ for i in range(samples):
+  var t = float(i) / 22050.0
+  var envelope = 1.0 - (t / duration)
+  var sample = sin(2.0 * PI * 320.0 * t) * 0.3 + sin(2.0 * PI * 971.0 * t) * 0.2
+  sample *= envelope
+  var byte = int(sample * 127) + 128
+  frames.append(byte)
+
+ stream.data = frames
+ return stream
+
+## Golpe no lock: "clink" curto e agudo (metal leve).
+static func create_lock_hit_sound() -> AudioStreamWAV:
+ var stream = AudioStreamWAV.new()
+ stream.format = AudioStreamWAV.FORMAT_16_BITS
+ stream.mix_rate = 22050
+ stream.stereo = false
+
+ var frames = PackedByteArray()
+ var duration = 0.08
+ var samples = int(22050 * duration)
+
+ for i in range(samples):
+  var t = float(i) / 22050.0
+  var envelope = 1.0 - (t / duration)
+  var sample = sin(2.0 * PI * 1450.0 * t) * envelope * 0.35
+  var byte = int(sample * 127) + 128
+  frames.append(byte)
+
+ stream.data = frames
+ return stream
+
+## Lock quebrando: "crash" descendente com ruído (vidro/metal estilhaçando).
+static func create_lock_break_sound() -> AudioStreamWAV:
+ var stream = AudioStreamWAV.new()
+ stream.format = AudioStreamWAV.FORMAT_16_BITS
+ stream.mix_rate = 22050
+ stream.stereo = false
+
+ var frames = PackedByteArray()
+ var duration = 0.45
+ var samples = int(22050 * duration)
+
+ for i in range(samples):
+  var t = float(i) / 22050.0
+  var envelope = 1.0 - (t / duration)
+  var noise = (randf() * 2.0 - 1.0) * envelope * 0.3
+  var tone = sin(2.0 * PI * (1200.0 - t * 800.0) * t) * envelope * 0.25
+  var sample = noise + tone
+  var byte = int(sample * 127) + 128
+  frames.append(byte)
+
+ stream.data = frames
+ return stream
+
+## Puzzle resolvido: arpejo ascendente curto (recompensa cognitiva).
+static func create_puzzle_sound() -> AudioStreamWAV:
+ var stream = AudioStreamWAV.new()
+ stream.format = AudioStreamWAV.FORMAT_16_BITS
+ stream.mix_rate = 22050
+ stream.stereo = false
+
+ var frames = PackedByteArray()
+ var duration = 0.5
+ var samples = int(22050 * duration)
+ var steps = [0, 4, 7, 12]  # tríade maior + oitava (resolução feliz)
+
+ for i in range(samples):
+  var t = float(i) / 22050.0
+  var note := int(t / (duration / steps.size()))
+  var note_t := fmod(t, duration / steps.size())
+  var envelope: float = 1.0 - (note_t / (duration / steps.size()))
+  var freq: float = 440.0 * pow(2.0, steps[note % steps.size()] / 12.0)
+  var sample = sin(2.0 * PI * freq * t) * envelope * 0.3
+  var byte = int(sample * 127) + 128
+  frames.append(byte)
+
+ stream.data = frames
+ return stream
+
+## Travessia: "whoosh" de impulso (ruído filtrado descendente).
+static func create_traversal_sound() -> AudioStreamWAV:
+ var stream = AudioStreamWAV.new()
+ stream.format = AudioStreamWAV.FORMAT_16_BITS
+ stream.mix_rate = 22050
+ stream.stereo = false
+
+ var frames = PackedByteArray()
+ var duration = 0.3
+ var samples = int(22050 * duration)
+ var last := 0.0
+
+ for i in range(samples):
+  var t = float(i) / 22050.0
+  var envelope = sin(t / duration * PI)  # sobe e desce (arco do voo)
+  # ruído com low-pass caseiro (suaviza o whoosh)
+  var noise = (randf() * 2.0 - 1.0)
+  last = last * 0.85 + noise * 0.15
+  var sample = last * envelope * 0.5
+  var byte = int(sample * 127) + 128
+  frames.append(byte)
+
+ stream.data = frames
+ return stream
+
+## Vitória na aposta: acorde maior longo (payout).
+static func create_bet_win_sound() -> AudioStreamWAV:
+ var stream = AudioStreamWAV.new()
+ stream.format = AudioStreamWAV.FORMAT_16_BITS
+ stream.mix_rate = 22050
+ stream.stereo = false
+
+ var frames = PackedByteArray()
+ var duration = 0.6
+ var samples = int(22050 * duration)
+
+ for i in range(samples):
+  var t = float(i) / 22050.0
+  var envelope = 1.0 - (t / duration)
+  var sample = sin(2.0 * PI * 440.0 * t) * 0.2 + sin(2.0 * PI * 554.0 * t) * 0.15 + sin(2.0 * PI * 659.0 * t) * 0.15
+  sample *= envelope
+  var byte = int(sample * 127) + 128
+  frames.append(byte)
+
+ stream.data = frames
+ return stream
+
+## Derrota na aposta: duas notas descendentes sombrias (ficha perdida).
+static func create_bet_lose_sound() -> AudioStreamWAV:
+ var stream = AudioStreamWAV.new()
+ stream.format = AudioStreamWAV.FORMAT_16_BITS
+ stream.mix_rate = 22050
+ stream.stereo = false
+
+ var frames = PackedByteArray()
+ var duration = 0.5
+ var samples = int(22050 * duration)
+
+ for i in range(samples):
+  var t = float(i) / 22050.0
+  var envelope = 1.0 - (t / duration)
+  var freq: float = 330.0 if t < 0.25 else 247.0
+  var sample = sin(2.0 * PI * freq * t) * envelope * 0.35
   var byte = int(sample * 127) + 128
   frames.append(byte)
 

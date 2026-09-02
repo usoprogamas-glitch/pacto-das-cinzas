@@ -517,6 +517,8 @@ func _resolve_action(multiplier: float, grade: String) -> void:
 		damage = combat.calculate_damage(current_actor, _pending_target, multiplier)
 	combat.apply_hit(current_actor, _pending_target, damage)
 	_pending_target.hp_changed.emit(_pending_target.current_hp)
+	if SoundManager:
+		SoundManager.play_magic() if _pending_is_magic else SoundManager.play_hit()
 	# Cast com locks (GDD §3.2): golpe no canalizador dentes o lock do canal
 	# (físico = Corte, magia = Éter). Quebrar todos = spellbreak (stun + CP).
 	if combat.is_charging(_pending_target):
@@ -524,8 +526,12 @@ func _resolve_action(multiplier: float, grade: String) -> void:
 		var lock_result: Dictionary = combat.hit_charge(_pending_target, atk_type)
 		if lock_result["interrupted"]:
 			_log("SPELLBREAK! Feitiço de %s interrompido — stun!" % _pending_target.data.unit_name)
+			if SoundManager:
+				SoundManager.play_lock_break()
 		elif lock_result["hit"]:
 			_log("Lock de %s atingido!" % _pending_target.data.unit_name)
+			if SoundManager:
+				SoundManager.play_lock_hit()
 	_log("%s → %s: %d de dano (%s)" % [current_actor.data.unit_name, _pending_target.data.unit_name, damage, grade])
 	await _play_aftermath(_pending_target)
 	_pending_target = null
