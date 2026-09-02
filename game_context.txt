@@ -1,6 +1,6 @@
 # O Pacto das Cinzas - Contexto do Projeto
 # Fonte da verdade de lore/design: docs/GDD_Completo_v2.md ("O Deus Despedaçado")
-# Última atualização: 2026-08-25
+# Última atualização: 2026-09-02
 
 ## Engine
 Godot 4.3 (GL Compatibility) + GDScript
@@ -86,7 +86,16 @@ Janela: 1280x720, stretch canvas_items
 ## Próximos passos sugeridos
 - ~~Integrar novos sistemas (Traversal, SeamlessEncounters, LightPuzzles, Campfire, Cooking, Tavern) no battle_scene.gd~~ ✅ (2026-08-25)
 - UI para Combo Points, Éter/Fúria, Boss HP bars
-- Conectar sinais dos sistemas §6-7 (traversal_complete, camp_restored, dish_cooked, tavern_result) ao HUD/ProgressionSystem
+
+## Estado 2026-09-02 (fim de sessão — retomar daqui)
+- Suíte: **695/695 ✅** (76 scripts), `main` sincronizado até `0ede89d`, working tree limpo
+- **Fila do AUDIT zerada** (docs/AUDIT.md): P1 #1-14 todos ✅; economia fechada (0df455a); balance TTK calibrado (c2ed23e); save automático na progressão permanente (ce40aea); 7 SFX procedurais wired (5bb9f86); mapas 2 e 4 com conteúdo (0ede89d); UI da Forja com seleção (05b9902)
+- **Assets ComfyUI**: 8 props em assets/props/ (taverna/fornalha/estátua/árvore/barris/fogueira/cálice/portal), pipeline replicável em tools/comfy_props_batch*.py e comfy_single.py; SDXL puro (sem LoRA), 448-512px → downscale 96px + paleta 24 cores
+- **TODO amanhã (próxima sessão)**:
+  1. QA jogável ponta a ponta (usuário joga intro → Aurius e reporta; bugs de runtime/game feel são os únicos riscos não cobertos pela suíte)
+  2. LoRA pixel-art no ComfyUI (teto de qualidade dos assets; usuário precisa instalar o LoRA)
+  3. Candidatos se sobrar tempo: menu de seleção de elixir na cozinha (hoje pega o 1º craftável), batch 3 de props (estátuas dos Cardeais, decoração Solaria), revisão de parse de tabs→espaços nos .gd (já quebrou 3x esta sessão; padronizar com editorconfig)
+- **Gotchas desta sessão**: arquivos .gd do projeto usam INDENTAÇÃO DE 1 ESPAÇO — edits com tab quebram parse (já corrigiu 3x; sempre conferir); GDScript 4 não tem list comprehension; variáveis locais com inferência `:=` exigem tipo certo do lado direito (float/int com int no denominador falha)
 
 ## Convenções do Projeto
 - class_name para tipos reutilizados; signals para comunicação entre sistemas

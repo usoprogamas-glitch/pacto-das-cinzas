@@ -70,6 +70,20 @@
 ### 12b. Persistência de puzzles/traversal no save ✅ FEITO (2026-09-01)
 - `game_data["world_state"]` por mapa (`is_puzzle_solved`/`mark_puzzle_solved`/`is_traversal_done`/`mark_traversal_done`): revisitar um estágio restaura puzzles e nós como resolvidos (visual verde) e **sem recompensa dupla**. Exploração marca ao resolver. 7 testes (`test_world_state.gd`). Suíte: 674/674.
 
+### 12c. Sessão 2026-09-01/02 — polish completo ✅ FEITO
+- **Economia (0df455a)**: batalhas pagavam 0 ouro/0 XP e nada concedia materials (forja inutilizável) — `_finish` deriva gold 50%/XP 40% do soul_ether + 40% chance de material por inimigo; explore paga tudo. Simulação valida Portão do Abismo (500) alcançável.
+- **Balance TTK (c2ed23e)**: simulador determinístico expôs Terra=215 turnos (!), Ignis=53, Aqua=44. Def de bosses derrubada, HP de cardeais -40%, orc_chefe +50% atk. Resultado na janela 8-40 (Aurius 15/12/9, pânico crescente). Ferramentas em `tools/balance_stats.py` + `dump_enemies.py`.
+- **Save automático (ce40aea)**: travessia/puzzle/elixir/forja gravam save no ato (não só fim de batalha).
+- **SFX (5bb9f86)**: 7 sons procedurais (forja/lock hit/break/puzzle/traversal/bet win/lose) wired nos handlers.
+- **Forja UI (05b9902)**: painel de seleção por item (nome/slot/custo/estado) com toggle e refresh pós-forja.
+- **Side content (0ede89d)**: mapas 2 e 4 com traversal+puzzle+props. Todo mapa explorável (0-10) tem conteúdo completo.
+
+## FILA PARA A PRÓXIMA SESSÃO (2026-09-02)
+1. **QA jogável ponta a ponta** — usuário joga intro → Aurius Fase 1 e reporta bugs de runtime/game feel (único risco não coberto pelos 695 testes).
+2. **LoRA pixel-art no ComfyUI** — elevar precisão dos assets (usuário instala o LoRA; pipeline em tools/ já pronto).
+3. Se sobrar tempo: menu de seleção de elixir na cozinha (hoje pega o 1º craftável), batch 3 de props (estátuas dos Cardeais, decoração Solaria), padronizar indentação tabs→espaços com .editorconfig (quebrou 3x na sessão).
+- Suíte: **695/695 ✅** | `main` @ `0ede89d` | working tree limpo.
+
 ---
 
 ## P1.5 — Mudanças de design (pedidos do usuário)
