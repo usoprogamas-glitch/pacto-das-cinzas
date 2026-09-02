@@ -92,14 +92,24 @@ func test_props_data_driven_reference_existing_assets():
 
 
 func test_puzzles_content_covers_every_boss_map():
-	# Conteúdo (AUDIT fila): todo mapa de boss (Ato I-IV) tem 1 puzzle válido.
+	# Conteúdo (AUDIT fila): todo mapa de boss (Ato I-IV) tem 1 puzzle válido
+	# e os mapas laterais (2, 4) também têm conteúdo.
 	var valid_types: Array = LightPuzzleSystemLib.PUZZLE_TYPES.keys()
-	for map_id in [0, 3, 5, 6, 7, 8, 9, 10]:
+	for map_id in [0, 2, 3, 4, 5, 6, 7, 8, 9, 10]:
 		var map: Dictionary = MapDatabase.get_map(map_id)
 		var puzzle_list: Array = map.get("puzzles", [])
 		assert_gt(puzzle_list.size(), 0, "mapa %d tem puzzle" % map_id)
 		for puzzle in puzzle_list:
 			assert_true(puzzle["type"] in valid_types, "puzzle do mapa %d tem tipo válido" % map_id)
+
+
+func test_side_maps_have_traversal_and_props():
+	# Conteúdo lateral (mapas não-estágio): Caverna (2) e Vulcão (4) ganham
+	# traversal + props para valerem a visita.
+	for map_id in [2, 4]:
+		var map: Dictionary = MapDatabase.get_map(map_id)
+		assert_gt(map.get("traversal_nodes", []).size(), 0, "mapa lateral %d tem travessia" % map_id)
+		assert_gt(map.get("props", []).size(), 0, "mapa lateral %d tem props" % map_id)
 
 
 # --- Cena: spawn + payout ---

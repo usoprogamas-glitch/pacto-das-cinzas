@@ -48,16 +48,42 @@ static var maps: Dictionary = {
   ],
   "tiles": generate_forest_map()
  },
- 2: {
-  "name": "Caverna Profunda",
-  "size": Vector2i(10, 10),
-  "terrain": "cave",
-  "enemies": ["esqueleto", "troll"],
-  "enemy_count": 4,
-  "description": "Sistema de cavernas com cristais brilhantes.",
-  "music": "exploration",
-  "tiles": generate_cave_map()
- },
+  2: {
+   "name": "Caverna Profunda",
+   "size": Vector2i(10, 10),
+   "terrain": "cave",
+   "enemies": ["esqueleto", "troll"],
+   "enemy_count": 4,
+   "description": "Sistema de cavernas com cristais brilhantes.",
+   "music": "exploration",
+   "props": [
+    {"id": "estatua", "texture": "estatua_templo", "pos": Vector2i(5, 1), "scale": 1.0},
+    {"id": "barris", "texture": "barris_cinzas", "pos": Vector2i(1, 8), "scale": 0.9}
+   ],
+   "traversal_nodes": [
+    {
+     "id": "precipicio_caverna",
+     "ability": "ether_harpoon",
+     "pos": Vector2i(8, 3),
+     "label": "PRECIPÍCIO — E para arpéu",
+     "rewards": {"soul_ether": 8, "gold": 14, "xp": 85}
+    }
+   ],
+   "puzzles": [
+    {
+     "id": "caverna_sombra",
+     "type": "shadow_reveal",
+     "light": Vector2i(1, 5),
+     "target": Vector2i(8, 5),
+     "clock": Vector2i(4, 2),
+     "mirrors": [
+      {"id": "m1", "pos": Vector2i(4, 5), "angle": 2}
+     ],
+     "rewards": {"soul_ether": 10, "gold": 15, "xp": 95}
+    }
+   ],
+   "tiles": generate_cave_map()
+  },
   3: {
    "name": "Castelo Solaris",
    "size": Vector2i(14, 14),
@@ -94,6 +120,29 @@ static var maps: Dictionary = {
   "enemy_count": 4,
   "description": "Terra de ninguém. Feras elementais e lava.",
   "music": "battle",
+  "props": [
+   {"id": "fornalha", "texture": "fornalha_vulcanica", "pos": Vector2i(2, 2), "scale": 1.1},
+   {"id": "arvore1", "texture": "arvore_queimada", "pos": Vector2i(9, 9), "scale": 1.0}
+  ],
+  "traversal_nodes": [
+   {
+    "id": "garganta_vulcao",
+    "ability": "climb",
+    "pos": Vector2i(10, 6),
+    "label": "GARGANTA DO VULCÃO — E para escalar",
+    "rewards": {"soul_ether": 12, "gold": 20, "xp": 130}
+   }
+  ],
+  "puzzles": [
+   {
+    "id": "vulcao_eclipse",
+    "type": "eclipse_timing",
+    "light": Vector2i(1, 10),
+    "target": Vector2i(10, 1),
+    "clock": Vector2i(2, 10),
+    "rewards": {"soul_ether": 12, "gold": 18, "xp": 125}
+   }
+  ],
   "tiles": generate_volcanic_map()
  },
 	 # ===== ATO II — CARDEAIS =====
