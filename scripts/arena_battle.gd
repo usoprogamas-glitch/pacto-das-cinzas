@@ -7,6 +7,7 @@ extends Node2D
 
 const ArenaCombatLib := preload("res://scripts/arena_combat.gd")
 const MotionLib := preload("res://scripts/sprite_motion_library.gd")
+const EnemyDatabaseLib := preload("res://scripts/enemy_database.gd")
 
 signal battle_ended(victory: bool, rewards: Dictionary)
 signal battle_fled()
@@ -41,6 +42,12 @@ var _pending_rewards := {}
 var _hp_labels: Dictionary = {}  # unit -> Label
 var _animators: Dictionary = {}  # instance_id -> UnitAnimator (P0-2: key por instância)
 var _home_positions: Dictionary = {}  # instance_id -> Vector2 (destino da entrada)
+var combo_system  # ComboSystem (GDD §3.3): CP no HUD da arena
+var balance_system  # BalanceSystem (GDD §3.3): barra Éter/Fúria no HUD
+var _combo_label: Label
+var _balance_bar: ProgressBar
+var _boss_bar: ProgressBar
+var _boss_bar_label: Label
 var _entrance_tweens: Array = []
 var combat_frozen := false  # testes: congela o loop de turnos (IA não age)
 var _wave_specs: Array = []  # ondas data-driven (MapDatabase.waves)
@@ -526,12 +533,19 @@ func _resolve_action(multiplier: float, grade: String) -> void:
 		var lock_result: Dictionary = combat.hit_charge(_pending_target, atk_type)
 		if lock_result["interrupted"]:
 			_log("SPELLBREAK! Feitiço de %s interrompido — stun!" % _pending_target.data.unit_name)
+			if combo_system:
+				combo_system.add_cp(2)  # spellbreak paga CP como no grid (GDD §3.3)
 			if SoundManager:
 				SoundManager.play_lock_break()
 		elif lock_result["hit"]:
 			_log("Lock de %s atingido!" % _pending_target.data.unit_name)
 			if SoundManager:
 				SoundManager.play_lock_hit()
+	# HUD: feedback de CP/Éter-Fúria e barra do boss.
+	if current_actor.is_player_side():
+		_award_hit_feedback(grade)
+	else:
+		_update_boss_bar()
 	_log("%s → %s: %d de dano (%s)" % [current_actor.data.unit_name, _pending_target.data.unit_name, damage, grade])
 	await _play_aftermath(_pending_target)
 	_pending_target = null
@@ -546,6 +560,11 @@ func _play_aftermath(target) -> void:
 		await target_anim.play_hit()
 	else:
 		await target_anim.play_death()
+	# Fúria (GDD §3.3): morte de inimigo pela mão do jogador = execução.
+	if not target.is_alive() and target.is_player_side() == false:
+		if current_actor != null and current_actor.is_player_side() and balance_system:
+			balance_system.perform_fury_action("execute")
+	_update_boss_bar()
 
 
 # --- IA inimiga ---
@@ -656,6 +675,113 @@ func _build_arena() -> void:
 	action_menu.add_child(flee_btn)
 
 	action_menu.visible = false
+
+	_build_combat_hud()
+
+
+# --- HUD de combate (Combo Points + Éter/Fúria + Boss HP) ---
+
+func _build_combat_hud() -> void:
+	combo_system = load("res://scripts/combo_system.gd").new()
+	balance_system = load("res://scripts/balance_system.gd").new()
+	combo_system.cp_changed.connect(func(_c, _m): _update_cp_pips())
+	balance_system.ether_changed.connect(func(_v): _update_balance_bar())
+	balance_system.fury_changed.connect(func(_v): _update_balance_bar())
+
+	_combo_label = Label.new()
+	_combo_label.position = Vector2(20, 40)
+	_combo_label.add_theme_font_size_override("font_size", 16)
+	add_child(_combo_label)
+	_update_cp_pips()
+
+	_balance_bar = ProgressBar.new()
+	_balance_bar.position = Vector2(20, 62)
+	_balance_bar.size = Vector2(160, 14)
+	_balance_bar.max_value = 100
+	_balance_bar.show_percentage = false
+	# Fúria atrás (vermelho), Éter preenche da esquerda (azul): leitura bipolar.
+	var bg := StyleBoxFlat.new()
+	bg.bg_color = Color(0.5, 0.15, 0.15)
+	_balance_bar.add_theme_stylebox_override("background", bg)
+	var fill := StyleBoxFlat.new()
+	fill.bg_color = Color(0.25, 0.45, 0.85)
+	_balance_bar.add_theme_stylebox_override("fill", fill)
+	add_child(_balance_bar)
+
+	_boss_bar = ProgressBar.new()
+	_boss_bar.position = Vector2(420, 14)
+	_boss_bar.size = Vector2(440, 16)
+	_boss_bar.max_value = 1
+	_boss_bar.value = 1
+	_boss_bar.show_percentage = false
+	_boss_bar.visible = false
+	var boss_fill := StyleBoxFlat.new()
+	boss_fill.bg_color = Color(0.85, 0.2, 0.2)
+	_boss_bar.add_theme_stylebox_override("fill", boss_fill)
+	add_child(_boss_bar)
+	_boss_bar_label = Label.new()
+	_boss_bar_label.position = Vector2(420, 32)
+	_boss_bar_label.add_theme_font_size_override("font_size", 13)
+	_boss_bar_label.visible = false
+	add_child(_boss_bar_label)
+
+
+func _update_cp_pips() -> void:
+	if combo_system == null or _combo_label == null:
+		return
+	var current: int = combo_system.get_cp()
+	var pips := ""
+	for i in range(3):
+		pips += "◆" if i < current else "◇"
+	_combo_label.text = "CP %s" % pips
+	_combo_label.add_theme_color_override("font_color", Color(1.0, 0.8, 0.2) if current > 0 else Color(0.6, 0.6, 0.6))
+
+
+func _update_balance_bar() -> void:
+	if balance_system == null or _balance_bar == null:
+		return
+	# Barra bipolar: Éter empurra para a direita sobre a Fúria de fundo.
+	_balance_bar.value = balance_system.get_ether()
+	_balance_bar.tooltip_text = "Éter %d / Fúria %d" % [balance_system.get_ether(), balance_system.get_fury()]
+
+
+func _update_boss_bar() -> void:
+	var boss = null
+	for u in combatants:
+		if u.is_alive() and not u.is_player_side() and _is_boss_unit(u):
+			boss = u
+			break
+	if boss == null:
+		_boss_bar.visible = false
+		_boss_bar_label.visible = false
+		return
+	_boss_bar.max_value = boss.data.max_hp
+	_boss_bar.value = boss.current_hp
+	_boss_bar.visible = true
+	_boss_bar_label.visible = true
+	_boss_bar_label.text = "%s — HP %d/%d" % [boss.data.unit_name, boss.current_hp, boss.data.max_hp]
+
+
+func _is_boss_unit(u) -> bool:
+	for meta in enemies_meta:
+		var foe: Dictionary = EnemyDatabaseLib.get_enemy(String(meta["type"]))
+		if not foe.is_empty() and foe.get("ai_type", "") == "boss" and u.data.unit_name == foe["name"]:
+			return true
+	return false
+
+
+## Feedback de combate (GDD §3.3): PERFECT ganha CP + buff_ally (Éter);
+## demais graus, buff_ally leve. Mortes de inimigo por mão do jogador
+## alimentam a Fúria (execute). Boss na mira atualiza a barra.
+func _award_hit_feedback(grade: String) -> void:
+	if combo_system == null or balance_system == null:
+		return
+	if grade == "PERFECT":
+		combo_system.add_cp(1)
+		balance_system.perform_ether_action("buff_ally")
+	elif grade != "MISS":
+		balance_system.perform_ether_action("buff_ally")
+	_update_boss_bar()
 
 
 func _update_turn_label() -> void:
