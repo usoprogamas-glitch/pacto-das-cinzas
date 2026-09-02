@@ -81,6 +81,15 @@ func test_traversal_content_covers_act_3_and_4():
 		assert_gt(map.get("traversal_nodes", []).size(), 0, "mapa %d tem nó de travessia" % map_id)
 
 
+func test_props_data_driven_reference_existing_assets():
+	# Props ComfyUI: todo texture declarado precisa existir em assets/props/.
+	for map_id in [0, 1, 5, 10]:
+		var map: Dictionary = MapDatabase.get_map(map_id)
+		for prop in map.get("props", []):
+			var path: String = "res://assets/props/%s.png" % String(prop["texture"])
+			assert_true(ResourceLoader.exists(path), "prop %s existe (%s)" % [prop["texture"], path])
+
+
 # --- Cena: spawn + payout ---
 
 func _open_explore() -> Node:

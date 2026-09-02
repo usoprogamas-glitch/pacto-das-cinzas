@@ -290,10 +290,15 @@ func sync_current_map_from_campaign() -> void:
   if not stage.is_empty():
    game_data["current_map"] = stage.get("map_id", game_data.get("current_map", 0))
 
+const SAVE_PATH := "user://save_game.json"
+const BACKUP_PATH := "user://save_game_backup.json"
+const SAVE_VERSION := 2  # 1 = sem version; 2 = version + backup rotativo
+
 func save_game() -> void:
  if progression_system:
   game_data["progression"] = progression_system.serialize()
  var save_data = {
+  "version": SAVE_VERSION,
   "game_data": game_data,
   "faith_data": faith_system.faith_data,
   "buildings": building_system.buildings,
@@ -304,39 +309,63 @@ func save_game() -> void:
   "campaign_system": campaign_system.serialize() if campaign_system else {},
   "party_data": party_data
   }
- var file = FileAccess.open("user://save_game.json", FileAccess.WRITE)
+ # backup rotativo: o save anterior vira o backup antes de sobrescrever
+ if FileAccess.file_exists(SAVE_PATH):
+  DirAccess.copy_absolute(SAVE_PATH, BACKUP_PATH)
+ var file = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
  if file:
   file.store_string(JSON.stringify(save_data))
   file.close()
 
 func load_game() -> bool:
- if not FileAccess.file_exists("user://save_game.json"):
+ if not FileAccess.file_exists(SAVE_PATH):
   return false
 
- var file = FileAccess.open("user://save_game.json", FileAccess.READ)
+ var file = FileAccess.open(SAVE_PATH, FileAccess.READ)
  if file:
   var json = JSON.new()
   var result = json.parse(file.get_as_text())
   file.close()
 
-  if result == OK:
-   var save_data = json.data
-   game_data = save_data.game_data
-   faith_system.faith_data = save_data.faith_data
-   building_system.buildings = save_data.buildings
-   building_system.resources = save_data.resources
-   if progression_system and save_data.game_data.has("progression"):
-    progression_system.deserialize(save_data.game_data.progression)
-   if character_progression and save_data.has("character_progression"):
-    character_progression.deserialize(save_data.character_progression)
-   if lineage_system and save_data.has("lineage_system"):
-    lineage_system.deserialize(save_data.lineage_system)
-   if naming_system and save_data.has("naming_system"):
-    naming_system.load_data(save_data.naming_system)
-   if campaign_system and save_data.has("campaign_system"):
-    campaign_system.deserialize(save_data.campaign_system)
-   if save_data.has("party_data"):
-    party_data = save_data.party_data
-   return true
-  return false
+  if result == OK and json.data is Dictionary:
+   return _restore_save(json.data)
+  # save corrompido/ilegível → tentar o backup
+  push_warning("save_game.json ilegível; tentando backup")
+  return _load_backup()
  return false
+
+func _load_backup() -> bool:
+ if not FileAccess.file_exists(BACKUP_PATH):
+  return false
+ var file = FileAccess.open(BACKUP_PATH, FileAccess.READ)
+ if not file:
+  return false
+ var json = JSON.new()
+ var result = json.parse(file.get_as_text())
+ file.close()
+ if result == OK and json.data is Dictionary:
+  return _restore_save(json.data)
+ return false
+
+func _restore_save(save_data: Dictionary) -> bool:
+ game_data = save_data.game_data
+ faith_system.faith_data = save_data.faith_data
+ building_system.buildings = save_data.buildings
+ building_system.resources = save_data.resources
+ if progression_system and save_data.game_data.has("progression"):
+  progression_system.deserialize(save_data.game_data.progression)
+ if character_progression and save_data.has("character_progression"):
+  character_progression.deserialize(save_data.character_progression)
+ if lineage_system and save_data.has("lineage_system"):
+  lineage_system.deserialize(save_data.lineage_system)
+ if naming_system and save_data.has("naming_system"):
+  naming_system.load_data(save_data.naming_system)
+ if campaign_system and save_data.has("campaign_system"):
+  campaign_system.deserialize(save_data.campaign_system)
+ if save_data.has("party_data"):
+  # JSON devolve Array genérico: converte para Array[Dictionary] tipado da party.
+  party_data.clear()
+  for member in save_data.party_data:
+   if member is Dictionary:
+    party_data.append(member)
+ return true

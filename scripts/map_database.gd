@@ -10,6 +10,12 @@ static var maps: Dictionary = {
    "enemy_count": 3,
    "description": "Onde tudo começou. Terreno baldio com vegetação morta.",
    "music": "exploration",
+   "props": [
+    {"id": "arvore1", "texture": "arvore_queimada", "pos": Vector2i(2, 2), "scale": 1.0},
+    {"id": "arvore2", "texture": "arvore_queimada", "pos": Vector2i(8, 6), "scale": 0.8},
+    {"id": "barris", "texture": "barris_cinzas", "pos": Vector2i(7, 3), "scale": 0.9},
+    {"id": "fogueira", "texture": "fogueira_acamp", "pos": Vector2i(5, 5), "scale": 0.9}
+   ],
    "puzzles": [
     {
      "id": "fronteira_espelhos",
@@ -33,6 +39,13 @@ static var maps: Dictionary = {
   "enemy_count": 5,
   "description": "Floresta densa e perigosa.",
   "music": "exploration",
+  "props": [
+   {"id": "arvore1", "texture": "arvore_queimada", "pos": Vector2i(3, 3), "scale": 1.0},
+   {"id": "arvore2", "texture": "arvore_queimada", "pos": Vector2i(9, 8), "scale": 1.1},
+   {"id": "taverna", "texture": "taverna_fachada", "pos": Vector2i(6, 1), "scale": 1.3},
+   {"id": "barris", "texture": "barris_cinzas", "pos": Vector2i(5, 6), "scale": 0.9},
+   {"id": "fogueira", "texture": "fogueira_acamp", "pos": Vector2i(7, 5), "scale": 0.9}
+  ],
   "tiles": generate_forest_map()
  },
  2: {
@@ -71,14 +84,19 @@ static var maps: Dictionary = {
   "tiles": generate_volcanic_map()
  },
 	 # ===== ATO II — CARDEAIS =====
- 	 5: {
- 	  "name": "Vale dos Despojos — Ignis",
- 	  "size": Vector2i(12, 12),
- 	  "terrain": "volcanic",
- 	  "enemies": ["cardeal_ignis"],
- 	  "enemy_count": 1,
- 	  "description": "Plataformas sobre lava branca. Ignis aguarda no vulcão.",
- 	  "music": "battle",
+ 5: {
+  "name": "Vale dos Despojos — Ignis",
+  "size": Vector2i(12, 12),
+  "terrain": "volcanic",
+  "enemies": ["cardeal_ignis"],
+  "enemy_count": 1,
+  "description": "Plataformas sobre lava branca. Ignis aguarda no vulcão.",
+  "music": "battle",
+  "props": [
+   {"id": "fornalha", "texture": "fornalha_vulcanica", "pos": Vector2i(9, 2), "scale": 1.0},
+   {"id": "estatua", "texture": "estatua_templo", "pos": Vector2i(1, 9), "scale": 1.0},
+   {"id": "calice", "texture": "calice_corrosivo", "pos": Vector2i(4, 8), "scale": 1.0}
+  ],
  	  "puzzles": [
  	   {
  	    "id": "despojos_sombras",
@@ -198,6 +216,11 @@ static var maps: Dictionary = {
   "enemy_count": 1,
   "description": "Trono monumental. O Falso Demiurgo aguarda.",
   "music": "battle",
+  "props": [
+   {"id": "portal", "texture": "portal_solaria", "pos": Vector2i(8, 2), "scale": 1.2},
+   {"id": "estatua1", "texture": "estatua_templo", "pos": Vector2i(3, 5), "scale": 1.0},
+   {"id": "estatua2", "texture": "estatua_templo", "pos": Vector2i(12, 5), "scale": 1.0}
+  ],
   "traversal_nodes": [
    {
     "id": "escada_trono",
