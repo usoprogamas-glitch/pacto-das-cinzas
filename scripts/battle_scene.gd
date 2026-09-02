@@ -78,6 +78,7 @@ var _cook_used: bool = false
 var _tavern_running: bool = false
 var _tavern_turn_limit: int = 20
 const TAVERN_BET: int = 10  ## aposta fixa da Guerra de Runas (ROADMAP #12)
+var _forge_panel: PanelContainer = null  ## UI de seleção da Forja (§7)
 
 # Estado de timed hit
 var _timed_hit_active: bool = false
@@ -1740,27 +1741,92 @@ func _create_actions_panel() -> void:
 
 
 func _on_forge_pressed() -> void:
- # Forja (§7, AUDIT P1 #12): consome as flags da vila (Fornalha/Forja do Rei
- # Ogro) e os recursos do BuildingSystem; bônus permanentes vão para a party.
+ # Forja (§7, AUDIT P1 #12): painel de seleção — jogador escolhe o item;
+ # disponibilidade vem das flags da vila (Fornalha/Forja do Rei Ogro).
+ if _forge_panel != null and is_instance_valid(_forge_panel):
+  _forge_panel.visible = not _forge_panel.visible
+  return
+ _build_forge_panel()
+ _forge_panel.visible = true
+
+
+func _sync_equipment() -> EquipmentSystemLib:
  var equipment = EquipmentSystemLib.new()
  equipment.set_unlocked_features(GameManager.building_system.unlocked_features if GameManager else {})
  var res: Dictionary = GameManager.building_system.resources if GameManager else {}
  equipment.set_resources({"materials": res.get("materials", 0), "gold": res.get("gold", 0), "soul_ether": res.get("soul_ether", 0)})
+ return equipment
+
+
+func _build_forge_panel() -> void:
+ _forge_panel = PanelContainer.new()
+ var style := StyleBoxFlat.new()
+ style.bg_color = Color(0.08, 0.1, 0.14, 0.95)
+ style.border_color = Color(0.5, 0.45, 0.3)
+ style.set_border_width_all(2)
+ style.set_corner_radius_all(6)
+ _forge_panel.add_theme_stylebox_override("panel", style)
+ _forge_panel.position = Vector2(400, 200)
+ _forge_panel.custom_minimum_size = Vector2(480, 0)
+ var vbox := VBoxContainer.new()
+ vbox.add_theme_constant_override("separation", 6)
+ _forge_panel.add_child(vbox)
+ var title := Label.new()
+ title.text = "FORJA — escolha o equipamento"
+ title.add_theme_font_size_override("font_size", 18)
+ title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.5))
+ vbox.add_child(title)
+ var equipment := _sync_equipment()
  for equipment_id: String in equipment.EQUIPMENT:
-  var check: Dictionary = equipment.can_craft(equipment_id)
-  if not check.can:
-   continue
   var item: Dictionary = equipment.get_equipment(equipment_id)
-  var spent: Dictionary = item["cost"]
-  for resource: String in spent:
-   GameManager.building_system.spend_resources({resource: spent[resource]})
-  equipment.set_resources({"materials": GameManager.building_system.resources.get("materials", 0), "gold": GameManager.building_system.resources.get("gold", 0), "soul_ether": GameManager.building_system.resources.get("soul_ether", 0)})
-  var result: Dictionary = equipment.craft(equipment_id)
-  if result.ok:
-   GameManager.apply_equipment_bonuses(result.bonuses, equipment_id, item["slot"])
-   combat_feedback.show_status_effect(Vector2(640, 300), "FORJA: %s equipado!" % item["name"])
+  var check: Dictionary = equipment.can_craft(equipment_id)
+  var row := HBoxContainer.new()
+  row.add_theme_constant_override("separation", 8)
+  var info := Label.new()
+  var cost_parts := PackedStringArray()
+  for cost_key: String in item["cost"]:
+   cost_parts.append("%d %s" % [int(item["cost"][cost_key]), cost_key])
+  var cost_text := ", ".join(cost_parts)
+  info.text = "%s  [%s]\nCusto: %s" % [item["name"], item["slot"], cost_text]
+  info.add_theme_font_size_override("font_size", 13)
+  info.custom_minimum_size = Vector2(300, 0)
+  row.add_child(info)
+  var btn := Button.new()
+  if check.can:
+   btn.text = "Forjar"
+  else:
+   btn.text = check.reason
+   btn.disabled = true
+  btn.custom_minimum_size = Vector2(150, 28)
+  btn.pressed.connect(_on_forge_item_pressed.bind(equipment_id))
+  row.add_child(btn)
+  vbox.add_child(row)
+ var close := Button.new()
+ close.text = "Fechar"
+ close.custom_minimum_size = Vector2(140, 26)
+ close.pressed.connect(func() -> void: _forge_panel.visible = false)
+ vbox.add_child(close)
+ ui_layer.add_child(_forge_panel)
+
+
+func _on_forge_item_pressed(equipment_id: String) -> void:
+ var equipment := _sync_equipment()
+ var check: Dictionary = equipment.can_craft(equipment_id)
+ if not check.can:
+  combat_feedback.show_status_effect(Vector2(640, 300), "FORJA: " + check.reason)
   return
- combat_feedback.show_status_effect(Vector2(640, 300), "FORJA: nada craftável — construa a Fornalha Vulcânica e reúna materiais")
+ var item: Dictionary = equipment.get_equipment(equipment_id)
+ for resource: String in item["cost"]:
+  GameManager.building_system.spend_resources({resource: item["cost"][resource]})
+ var result: Dictionary = equipment.craft(equipment_id)
+ if result.ok:
+  GameManager.apply_equipment_bonuses(result.bonuses, equipment_id, item["slot"])
+  combat_feedback.show_status_effect(Vector2(640, 300), "FORJA: %s equipado!" % item["name"])
+ # Atualiza a painel (custos/estado mudaram).
+ _forge_panel.queue_free()
+ _forge_panel = null
+ _build_forge_panel()
+ _forge_panel.visible = true
 
 
 func _add_action_button(parent: Node, label_text: String, handler: Callable) -> void:

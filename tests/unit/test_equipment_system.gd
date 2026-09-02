@@ -109,23 +109,41 @@ func test_slot_replacement_reverts_old_item():
 	assert_true(GameManager.game_data["equipped"].has("arco_de_eter"), "arco equipado no save")
 
 
-# --- Ponte battle_scene: botão Forja usa BuildingSystem de verdade ---
+# --- Ponte battle_scene: painel de seleção da Forja ---
 
-func test_forge_button_consumes_building_flags_and_resources():
+func test_forge_panel_lists_items_and_forges_selected():
 	GameManager.building_system.buildings["fornalha_vulcanica"]["level"] = 1
 	GameManager.building_system.apply_building_effects("fornalha_vulcanica")
 	GameManager.building_system.resources["materials"] = 10
-	GameManager.game_data["materials"] = 10
 	var bs = BattleSceneScript.new()
 	bs.combat_feedback = _make_stub()
-	var def_before: int = int(GameManager.party_data[0]["def"])
+	bs.ui_layer = CanvasLayer.new()
+	bs.add_child(bs.ui_layer)
+	bs._on_forge_pressed()  # abre o painel
+	assert_true(bs._forge_panel.visible, "painel da Forja abre")
+	var labels: Array = []
+	for label in bs._forge_panel.find_children("*", "Label", true, false):
+		labels.append(label)
+	assert_gt(labels.size(), 4, "painel lista os 4 equipamentos + título")
+	# Escolhe a espada explicitamente (em vez do automático).
+	bs._on_forge_item_pressed("espada_de_cinzas")
+	assert_eq(int(GameManager.party_data[0]["atk"]), 20, "item escolhido: atk +5")
+	assert_eq(int(GameManager.building_system.resources["materials"]), 7, "materiais debitados")
+	assert_true(GameManager.game_data["equipped"].has("espada_de_cinzas"), "espada equipada")
+	bs.free()
+
+
+func test_forge_panel_toggles_visibility():
+	GameManager.building_system.buildings["fornalha_vulcanica"]["level"] = 1
+	GameManager.building_system.apply_building_effects("fornalha_vulcanica")
+	var bs = BattleSceneScript.new()
+	bs.combat_feedback = _make_stub()
+	bs.ui_layer = CanvasLayer.new()
+	bs.add_child(bs.ui_layer)
 	bs._on_forge_pressed()
-	assert_gt(GameManager.party_data.size(), 0, "party intacta")
-	# Espada forjada: +5 atk na party e recursos do BuildingSystem debitados.
-	assert_eq(int(GameManager.party_data[0]["atk"]), 20, "atk +5 do equipamento forjado")
-	assert_eq(int(GameManager.building_system.resources["materials"]), 7, "3 materiais debitados")
-	assert_true(GameManager.game_data["equipped"].has("espada_de_cinzas"), "espada equipada no save")
-	assert_gt(int(GameManager.party_data[0]["def"]), def_before - 1000, "party íntegra")
+	assert_true(bs._forge_panel.visible, "1º pressiona: abre")
+	bs._on_forge_pressed()
+	assert_false(bs._forge_panel.visible, "2º pressiona: fecha (toggle)")
 	bs.free()
 
 
