@@ -6,6 +6,7 @@ extends "res://addons/gut/test.gd"
 
 const TraversalLib := preload("res://scripts/traversal_system.gd")
 const ExploreScript := preload("res://scripts/explore_scene.gd")
+const LightPuzzleSystemLib := preload("res://scripts/light_puzzle_system.gd")
 
 var _sys
 
@@ -88,6 +89,17 @@ func test_props_data_driven_reference_existing_assets():
 		for prop in map.get("props", []):
 			var path: String = "res://assets/props/%s.png" % String(prop["texture"])
 			assert_true(ResourceLoader.exists(path), "prop %s existe (%s)" % [prop["texture"], path])
+
+
+func test_puzzles_content_covers_every_boss_map():
+	# Conteúdo (AUDIT fila): todo mapa de boss (Ato I-IV) tem 1 puzzle válido.
+	var valid_types: Array = LightPuzzleSystemLib.PUZZLE_TYPES.keys()
+	for map_id in [0, 3, 5, 6, 7, 8, 9, 10]:
+		var map: Dictionary = MapDatabase.get_map(map_id)
+		var puzzle_list: Array = map.get("puzzles", [])
+		assert_gt(puzzle_list.size(), 0, "mapa %d tem puzzle" % map_id)
+		for puzzle in puzzle_list:
+			assert_true(puzzle["type"] in valid_types, "puzzle do mapa %d tem tipo válido" % map_id)
 
 
 # --- Cena: spawn + payout ---

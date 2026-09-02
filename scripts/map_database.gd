@@ -71,6 +71,19 @@ static var maps: Dictionary = {
     {"enemies": ["paladino", "inquisidor", "paladino"], "stat_scale": 1.25},
     {"enemies": ["santo_cardeal"], "stat_scale": 1.5}
    ],
+   "puzzles": [
+    {
+     "id": "castelo_espelhos",
+     "type": "mirror_alignment",
+     "light": Vector2i(1, 12),
+     "target": Vector2i(12, 1),
+     "mirrors": [
+      {"id": "m1", "pos": Vector2i(5, 9), "angle": 1},
+      {"id": "m2", "pos": Vector2i(8, 5), "angle": 4}
+     ],
+     "rewards": {"soul_ether": 12, "gold": 20, "xp": 140}
+    }
+   ],
    "tiles": generate_castle_map()
   },
  4: {
@@ -148,6 +161,19 @@ static var maps: Dictionary = {
     "grants_wings": true
    }
   ],
+  "puzzles": [
+   {
+    "id": "ventos_espelhos",
+    "type": "mirror_alignment",
+    "light": Vector2i(2, 11),
+    "target": Vector2i(11, 2),
+    "mirrors": [
+     {"id": "m1", "pos": Vector2i(6, 9), "angle": 1},
+     {"id": "m2", "pos": Vector2i(9, 6), "angle": 4}
+    ],
+    "rewards": {"soul_ether": 10, "gold": 18, "xp": 110}
+   }
+  ],
   "tiles": generate_forest_map()
  },
  7: {
@@ -165,6 +191,16 @@ static var maps: Dictionary = {
     "pos": Vector2i(3, 8),
     "label": "CORRENTE DE ÉTER — E para arpéu",
     "rewards": {"soul_ether": 10, "gold": 18, "xp": 110}
+   }
+  ],
+  "puzzles": [
+   {
+    "id": "lago_eclipse",
+    "type": "eclipse_timing",
+    "light": Vector2i(1, 1),
+    "target": Vector2i(10, 10),
+    "clock": Vector2i(6, 1),
+    "rewards": {"soul_ether": 12, "gold": 20, "xp": 130}
    }
   ],
   "tiles": generate_cave_map()
@@ -186,6 +222,20 @@ static var maps: Dictionary = {
     "rewards": {"soul_ether": 10, "gold": 16, "xp": 120}
    }
   ],
+  "puzzles": [
+   {
+    "id": "marmore_ponte",
+    "type": "light_bridge",
+    "light": Vector2i(1, 12),
+    "target": Vector2i(12, 1),
+    "mirrors": [
+     {"id": "m1", "pos": Vector2i(4, 10), "angle": 1},
+     {"id": "m2", "pos": Vector2i(7, 7), "angle": 1},
+     {"id": "m3", "pos": Vector2i(10, 4), "angle": 1}
+    ],
+    "rewards": {"soul_ether": 14, "gold": 22, "xp": 150}
+   }
+  ],
   "tiles": generate_castle_map()
  },
  9: {
@@ -205,6 +255,19 @@ static var maps: Dictionary = {
     "rewards": {"soul_ether": 12, "gold": 20, "xp": 140}
    }
   ],
+  "puzzles": [
+   {
+    "id": "sombra_umbra",
+    "type": "shadow_reveal",
+    "light": Vector2i(2, 7),
+    "target": Vector2i(11, 7),
+    "clock": Vector2i(8, 3),
+    "mirrors": [
+     {"id": "m1", "pos": Vector2i(6, 7), "angle": 2}
+    ],
+    "rewards": {"soul_ether": 14, "gold": 24, "xp": 160}
+   }
+  ],
   "tiles": generate_castle_map()
  },
 	 # ===== ATO IV — AURIUS =====
@@ -220,6 +283,16 @@ static var maps: Dictionary = {
    {"id": "portal", "texture": "portal_solaria", "pos": Vector2i(8, 2), "scale": 1.2},
    {"id": "estatua1", "texture": "estatua_templo", "pos": Vector2i(3, 5), "scale": 1.0},
    {"id": "estatua2", "texture": "estatua_templo", "pos": Vector2i(12, 5), "scale": 1.0}
+  ],
+  "puzzles": [
+   {
+    "id": "trono_eclipse",
+    "type": "eclipse_timing",
+    "light": Vector2i(1, 14),
+    "target": Vector2i(14, 1),
+    "clock": Vector2i(13, 3),
+    "rewards": {"soul_ether": 20, "gold": 30, "xp": 200}
+   }
   ],
   "traversal_nodes": [
    {
