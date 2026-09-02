@@ -67,6 +67,7 @@ func _spawn_props() -> void:
 		# Ordem de adição (depois de bg/tiles, antes de units) garante props
 		# acima do chão e abaixo das unidades — z_index -1 ficava ATRÁS do bg.
 		add_child(sprite)
+		sprite.add_child(_make_ground_shadow(Vector2(0, sprite.texture.get_height() * 0.42)))
 
 
 func _build_map() -> void:
@@ -89,6 +90,10 @@ func _build_map() -> void:
 			var want_shader := rng.randf()
 			var tile: Sprite2D = pixel_renderer.create_detailed_terrain(kind, TERRAIN_TILE_PX)
 			tile.position = Vector2(tx * TERRAIN_TILE_PX + TERRAIN_TILE_PX / 2.0, ty * TERRAIN_TILE_PX + TERRAIN_TILE_PX / 2.0)
+			# Variação orgânica: brightness e flip aleatórios quebram o xadrez.
+			tile.flip_h = rng.randf() < 0.5
+			tile.flip_v = rng.randf() < 0.3
+			tile.modulate = Color(1, 1, 1).lightened(rng.randf_range(-0.06, 0.06))
 			if kind == "water" and want_shader < 0.5:
 				pixel_renderer.apply_water_shader(tile)
 			elif kind == "grass" and want_shader < 0.4:
@@ -143,6 +148,7 @@ func _terrain_color(terrain: String) -> Color:
 func _spawn_party() -> void:
 	player = Node2D.new()
 	player.position = Vector2(160, 360)
+	player.add_child(_make_ground_shadow())
 	var kael_sprite := _animated_sprite("res://assets/sprites/kael.png", 0.06, Color(0.2, 0.8, 0.3))
 	player.add_child(kael_sprite)
 	player_animator = kael_sprite.get_meta("animator", null)
@@ -152,6 +158,7 @@ func _spawn_party() -> void:
 	if GameManager and GameManager.game_data.get("starting_ally") == "kroug":
 		var buddy := Node2D.new()
 		buddy.position = Vector2(-44, 26)
+		buddy.add_child(_make_ground_shadow())
 		var kroug_sprite := _animated_sprite("res://assets/sprites/kroug.png", 0.05, Color(0.8, 0.3, 0.1))
 		buddy.add_child(kroug_sprite)
 		_buddy_animator = kroug_sprite.get_meta("animator", null)
@@ -189,6 +196,25 @@ func _set_move_anim(anim, moving: bool, dir_x: float = 0.0) -> void:
 		anim.face_direction(dir_x)
 
 
+func _make_ground_shadow(offset: Vector2 = Vector2.ZERO) -> Sprite2D:
+	## Sombra elíptica suave sob unidades/props (ancora no chão do sprite).
+	var shadow := Sprite2D.new()
+	var grad := Gradient.new()
+	grad.set_color(0, Color(0, 0, 0, 0.4))
+	grad.set_color(1, Color(0, 0, 0, 0))
+	var gtex := GradientTexture2D.new()
+	gtex.gradient = grad
+	gtex.fill = GradientTexture2D.FILL_RADIAL
+	gtex.fill_from = Vector2(0.5, 0.5)
+	gtex.fill_to = Vector2(0.5, 0.0)
+	gtex.width = 64
+	gtex.height = 32
+	shadow.texture = gtex
+	shadow.position = offset
+	shadow.scale = Vector2(0.55, 0.35)
+	return shadow
+
+
 func _hd_sprite(path: String, scale_f: float, fallback_color: Color) -> Sprite2D:
 	var s := Sprite2D.new()
 	if FileAccess.file_exists(path):
@@ -220,6 +246,7 @@ func _spawn_enemies() -> void:
 			continue
 		var node := Node2D.new()
 		node.position = Vector2(rng.randf_range(760, 1180), rng.randf_range(120, 620))
+		node.add_child(_make_ground_shadow())
 		node.add_child(_animated_sprite("res://assets/sprites/%s.png" % type, 0.05, Color(e["color"])))
 		add_child(node)
 		enemy_nodes.append(node)
@@ -248,9 +275,67 @@ func _build_ui() -> void:
 	_traversal_hint.add_theme_font_size_override("font_size", 14)
 	_traversal_hint.text = "TRAVESSIA: aproxime-se de um nó e pressione E"
 	_ui.add_child(_traversal_hint)
+	_build_atmosphere()
+
+
+# === ATMOSFERA (molde SoS): vinheta + cinzas caindo ===
+
+func _build_atmosphere() -> void:
+	# Vinheta: GradientTexture2D radial invertido sobre a tela (elege o centro).
+	var vignette := TextureRect.new()
+	var grad := Gradient.new()
+	grad.set_color(0, Color(0, 0, 0, 0))
+	grad.set_color(1, Color(0, 0, 0, 0.45))
+	var gtex := GradientTexture2D.new()
+	gtex.gradient = grad
+	gtex.fill = GradientTexture2D.FILL_RADIAL
+	gtex.fill_from = Vector2(0.5, 0.5)
+	gtex.fill_to = Vector2(0.5, 0.0)
+	gtex.width = 640
+	gtex.height = 360
+	vignette.texture = gtex
+	vignette.set_anchors_preset(Control.PRESET_FULL_RECT)
+	vignette.stretch_mode = TextureRect.STRETCH_SCALE
+	vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_ui.add_child(vignette)
+
+	# Cinzas: 36 partículas caindo devagar com deriva (lore do mundo).
+	_ash_particles.clear()
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash("ash_%d" % map_id)
+	for i in range(36):
+		var dot := ColorRect.new()
+		var size := rng.randf_range(1.5, 3.5)
+		dot.size = Vector2(size, size)
+		dot.color = Color(0.75, 0.72, 0.68, rng.randf_range(0.25, 0.55))
+		dot.position = Vector2(rng.randf_range(0, 1280), rng.randf_range(-40, 720))
+		dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_ui.add_child(dot)
+		_ash_particles.append({
+			"node": dot,
+			"fall": rng.randf_range(18.0, 42.0),
+			"drift": rng.randf_range(-10.0, 10.0),
+			"phase": rng.randf_range(0.0, TAU),
+		})
+
+var _ash_particles: Array = []
+var _ash_time: float = 0.0
+
+func _process_atmosphere(delta: float) -> void:
+	_ash_time += delta
+	for ash in _ash_particles:
+		var dot: ColorRect = ash["node"]
+		var pos := dot.position
+		pos.y += ash["fall"] * delta
+		pos.x += sin(_ash_time * 0.8 + ash["phase"]) * ash["drift"] * delta
+		if pos.y > 730:
+			pos.y = -10
+			pos.x = fmod(pos.x + 311.0, 1280.0)
+		dot.position = pos
 
 
 func _process(delta: float) -> void:
+	_process_atmosphere(delta)
 	if in_encounter() or player == null:
 		return
 	var dir := Vector2.ZERO
