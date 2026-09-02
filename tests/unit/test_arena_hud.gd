@@ -63,7 +63,7 @@ func test_execution_on_kill_fills_fury():
 func test_boss_bar_hidden_without_boss():
 	arena.enemies_meta = [{"type": "mercenario", "soul_ether": 10}]
 	arena._update_boss_bar()
-	assert_false(arena._boss_bar.visible, "sem boss no campo, barra oculta")
+	assert_false(arena._boss_panel.visible, "sem boss no campo, painel oculto")
 
 
 func test_boss_bar_shows_for_boss_type():
@@ -71,7 +71,7 @@ func test_boss_bar_shows_for_boss_type():
 	# Combatante stub (duck typing do contrato da arena) com o nome do Ignis.
 	arena.combatants = [_make_unit_stub("Ignis", false)]
 	arena._update_boss_bar()
-	assert_true(arena._boss_bar.visible, "boss presente: barra visível")
+	assert_true(arena._boss_panel.visible, "boss presente: painel visível")
 	assert_true(arena._boss_bar_label.visible, "label do boss visível")
 	assert_true(arena._boss_bar_label.text.contains("Ignis"), "label mostra o nome do boss")
 

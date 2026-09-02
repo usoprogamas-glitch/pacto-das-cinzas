@@ -49,6 +49,8 @@ var _balance_bar: ProgressBar
 var _balance_legend: Label
 var _boss_bar: ProgressBar
 var _boss_bar_label: Label
+var _boss_panel: PanelContainer
+var turn_panel: PanelContainer
 var _entrance_tweens: Array = []
 var combat_frozen := false  # testes: congela o loop de turnos (IA não age)
 var _wave_specs: Array = []  # ondas data-driven (MapDatabase.waves)
@@ -698,13 +700,28 @@ func _build_arena() -> void:
 	add_child(embers)
 
 	turn_label = Label.new()
-	turn_label.position = Vector2(20, 12)
+	turn_label.position = Vector2(24, 16)
 	turn_label.add_theme_font_size_override("font_size", 22)
-	add_child(turn_label)
+	# Painel de fundo: legibilidade sobre qualquer cenário.
+	turn_panel = PanelContainer.new()
+	var turn_style := StyleBoxFlat.new()
+	turn_style.bg_color = Color(0.06, 0.06, 0.1, 0.72)
+	turn_style.set_corner_radius_all(6)
+	turn_style.set_content_margin_all(8)
+	turn_style.border_color = Color(0.5, 0.45, 0.3, 0.6)
+	turn_style.set_border_width_all(1)
+	turn_panel.add_theme_stylebox_override("panel", turn_style)
+	turn_panel.add_child(turn_label)
+	turn_panel.position = Vector2(16, 10)
+	add_child(turn_panel)
 
 	log_label = Label.new()
 	log_label.position = Vector2(20, 668)
 	log_label.add_theme_font_size_override("font_size", 18)
+	# Sombra de texto no log (contraste sobre sprites claros).
+	log_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+	log_label.add_theme_constant_override("shadow_offset_x", 1)
+	log_label.add_theme_constant_override("shadow_offset_y", 1)
 	add_child(log_label)
 
 	action_menu = VBoxContainer.new()
@@ -741,15 +758,28 @@ func _build_combat_hud() -> void:
 	balance_system.ether_changed.connect(func(_v): _update_balance_bar())
 	balance_system.fury_changed.connect(func(_v): _update_balance_bar())
 
+	# Painel esquerdo (CP + Éter/Fúria) num único quadro estilizado.
+	var hud_panel := PanelContainer.new()
+	var hud_style := StyleBoxFlat.new()
+	hud_style.bg_color = Color(0.06, 0.06, 0.1, 0.72)
+	hud_style.set_corner_radius_all(6)
+	hud_style.set_content_margin_all(10)
+	hud_style.border_color = Color(0.5, 0.45, 0.3, 0.6)
+	hud_style.set_border_width_all(1)
+	hud_panel.add_theme_stylebox_override("panel", hud_style)
+	hud_panel.position = Vector2(16, 66)
+	var hud_vbox := VBoxContainer.new()
+	hud_vbox.add_theme_constant_override("separation", 4)
+	hud_panel.add_child(hud_vbox)
+	add_child(hud_panel)
+
 	_combo_label = Label.new()
-	_combo_label.position = Vector2(20, 40)
 	_combo_label.add_theme_font_size_override("font_size", 16)
-	add_child(_combo_label)
+	hud_vbox.add_child(_combo_label)
 	_update_cp_pips()
 
 	_balance_bar = ProgressBar.new()
-	_balance_bar.position = Vector2(20, 62)
-	_balance_bar.size = Vector2(160, 14)
+	_balance_bar.custom_minimum_size = Vector2(160, 14)
 	_balance_bar.max_value = 100
 	_balance_bar.show_percentage = false
 	# Fúria atrás (vermelho), Éter preenche da esquerda (azul): leitura bipolar.
@@ -759,30 +789,42 @@ func _build_combat_hud() -> void:
 	var fill := StyleBoxFlat.new()
 	fill.bg_color = Color(0.25, 0.45, 0.85)
 	_balance_bar.add_theme_stylebox_override("fill", fill)
-	add_child(_balance_bar)
+	hud_vbox.add_child(_balance_bar)
 	_balance_legend = Label.new()
-	_balance_legend.position = Vector2(20, 76)
 	_balance_legend.add_theme_font_size_override("font_size", 12)
 	_balance_legend.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))
 	_balance_legend.text = "ÉTER / FÚRIA"
-	add_child(_balance_legend)
+	hud_vbox.add_child(_balance_legend)
+
+	# Painel do boss (barra + nome) no topo centro.
+	_boss_panel = PanelContainer.new()
+	var boss_style := StyleBoxFlat.new()
+	boss_style.bg_color = Color(0.06, 0.06, 0.1, 0.72)
+	boss_style.set_corner_radius_all(6)
+	boss_style.set_content_margin_all(8)
+	boss_style.border_color = Color(0.8, 0.3, 0.3, 0.7)
+	boss_style.set_border_width_all(1)
+	_boss_panel.add_theme_stylebox_override("panel", boss_style)
+	var boss_vbox := VBoxContainer.new()
+	boss_vbox.add_theme_constant_override("separation", 3)
+	_boss_panel.add_child(boss_vbox)
+	_boss_panel.position = Vector2(420, 12)
+	_boss_panel.visible = false
+	add_child(_boss_panel)
 
 	_boss_bar = ProgressBar.new()
-	_boss_bar.position = Vector2(420, 14)
-	_boss_bar.size = Vector2(440, 16)
+	_boss_bar.custom_minimum_size = Vector2(440, 16)
 	_boss_bar.max_value = 1
 	_boss_bar.value = 1
 	_boss_bar.show_percentage = false
-	_boss_bar.visible = false
 	var boss_fill := StyleBoxFlat.new()
 	boss_fill.bg_color = Color(0.85, 0.2, 0.2)
 	_boss_bar.add_theme_stylebox_override("fill", boss_fill)
-	add_child(_boss_bar)
+	boss_vbox.add_child(_boss_bar)
 	_boss_bar_label = Label.new()
-	_boss_bar_label.position = Vector2(420, 32)
 	_boss_bar_label.add_theme_font_size_override("font_size", 13)
 	_boss_bar_label.visible = false
-	add_child(_boss_bar_label)
+	boss_vbox.add_child(_boss_bar_label)
 
 
 func _update_cp_pips() -> void:
@@ -811,12 +853,12 @@ func _update_boss_bar() -> void:
 			boss = u
 			break
 	if boss == null:
-		_boss_bar.visible = false
+		_boss_panel.visible = false
 		_boss_bar_label.visible = false
 		return
 	_boss_bar.max_value = boss.data.max_hp
 	_boss_bar.value = boss.current_hp
-	_boss_bar.visible = true
+	_boss_panel.visible = true
 	_boss_bar_label.visible = true
 	_boss_bar_label.text = "%s — HP %d/%d" % [boss.data.unit_name, boss.current_hp, boss.data.max_hp]
 
