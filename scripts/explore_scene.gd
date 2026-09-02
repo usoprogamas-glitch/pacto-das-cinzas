@@ -317,8 +317,9 @@ func _on_battle_ended(victory: bool, rewards: Dictionary, enemy_index: int) -> v
 				GameManager.progression_system.add_experience(int(rewards["experience"]))
 			if int(rewards.get("materials", 0)) > 0:
 				GameManager.building_system.add_resource("materials", int(rewards["materials"]))
-		# Vitória encerra o estágio da campanha (mesma porta do fluxo linear).
-		if GameManager and GameManager.campaign_system:
+		# Vitória encerra o estágio da campanha (mesma porta do fluxo linear)
+		# apenas quando o mapa foi LIMPO — 1 estágio por mapa, não por inimigo.
+		if enemy_nodes.is_empty() and GameManager and GameManager.campaign_system:
 			if GameManager.campaign_system.is_act_boss_stage():
 				GameManager.campaign_system.complete_act()
 				if GameManager.has_method("save_game"):
@@ -337,6 +338,15 @@ func _on_battle_ended(victory: bool, rewards: Dictionary, enemy_index: int) -> v
 func _on_battle_fled() -> void:
 	arena.queue_free()
 	arena = null
+	# Fuga empurra o inimigo para longe (SoS): sem isso o contato <44px
+	# reabre o encontro no frame seguinte (loop fugir→reencontrar).
+	for i in range(enemy_nodes.size()):
+		var node = enemy_nodes[i]
+		if is_instance_valid(node) and player != null:
+			var away: Vector2 = (node.position - player.position).normalized()
+			if away == Vector2.ZERO:
+				away = Vector2.RIGHT
+			node.position += away * 260.0
 
 
 func _advance_story() -> void:
