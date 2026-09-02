@@ -13,12 +13,10 @@
 - **Problema**: o mapeamento runtime usa a *classe* da unidade. Todo chefe tem `class: "Boss"`, então lutar contra Zephyr/Aqua/Aurius mostra painel, partes e spells de **Ignis**.
 - **Fix aplicado**: `_resolve_cardinal_name(unit_name)` — Cardeais casam com a chave de CARDINALS; nomes "Aurius — *" → "Aurius"; "Santo Cardeal" (legado) → Ignis; demais → "". Bônus: `spawn_runtime_boss("Aurius")` agora roteia para `init_aurius()` (antes retornava cedo e o boss ficava sem binding). 8 testes (`test_boss_name_resolve.gd`).
 
-### 2. `unit_animators` colide com nomes duplicados 🐛
+### 2. `unit_animators` colide com nomes duplicados 🐛 ✅ JÁ RESOLVIDO (verificado 2026-09-01)
 - **Onde**: `battle_scene.gd` — `unit_animators[unit_name] = animator`
 - **Problema**: dois inimigos "Mercenário" na mesma batalha → o segundo **sobrescreve** o animator do primeiro; animações (walk/attack/death) tocam na unidade errada ou em nenhuma.
-- **Impacto**: visível em todo encontro com inimigos repetidos (que é a regra, não a exceção).
-- **Fix**: key por instância (`unit.get_instance_id()`) ou guardar o animator como filho nomeado da Unit e buscar nele; lookup em `_on_unit_attacked`/`_on_unit_died` muda junto.
-- **Teste**: spawnar 2 units de mesmo nome → 2 animators independentes.
+- **Estado**: código já usa chave por instância (`unit_animators[unit.get_instance_id()]`, `battle_scene.gd:26/679/1141`). Cobertura em `test_animators_by_instance.gd` (2 units de mesmo nome → 2 entradas).
 
 ### 3. Evolução de forma NÃO troca o sprite 🐛 ✅ CORRIGIDO (2026-08-31)
 - **Onde**: `battle_scene.gd::_on_protagonist_form_changed` — só pisca o FormLabel.
@@ -100,18 +98,19 @@
 ### 13. `battle_scene.gd` = 1431 linhas (god file)
 - Concentra spawn, UI, HUD, combate, campanha, progression. Extrair em módulos coesos: `battle_spawner.gd`, `battle_hud.gd`, `battle_flow.gd`. **Regra: só refatorar com a suíte verde e um item por commit.**
 
-### 14. Save sem versionamento nem backup
-- 1 slot (`user://save_game.json`), sem campo `version` (migração futura impossível), sem backup rotativo, sem save-on-quit.
-- Fix mínimo: `"version": 1` no save_data + backup `.bak` + autosave no `NOTIFICATION_WM_CLOSE_REQUEST`.
+### 14. Save sem versionamento nem backup ✅ FEITO (2026-09-01)
+- **Era**: 1 slot (`user://save_game.json`), sem campo `version`, sem backup.
+- **Fix aplicado**: `SAVE_VERSION = 2` em `game_manager.gd`; `save_game()` grava `"version"` no JSON e rotaciona o save anterior para `user://save_game_backup.json` (copy_absolute) antes de sobrescrever; `load_game()` valida parse/Dictionary e cai no backup quando o save principal está corrompido (`_load_backup`/`_restore_save` extraído). Saves antigos (sem version) carregam normalmente. 4 testes (`test_save_versioning.gd`: version no save, rotação, fallback de carga, carga limpa sem save). Suíte: 679/679.
+- **Não feito** (YAGNI por ora): autosave no `NOTIFICATION_WM_CLOSE_REQUEST` e migração automática — o campo `version` já destrava a migração quando houver necessidade real.
 
 ### 15. Higiene de recursos (RID leaks no exit)
-- Fontes/texturas alocadas e não liberadas no shutdown dos testes. Baixa prioridade; revisar `free()` nos autoloads.
+- Fontes/texturas alocadas e não liberadas no shutdown dos testes. **Nota (2026-09-01)**: os leaks aparecem só no exit da suíte GUT headless (RIDs de Canvas/CanvasItem/TextServer + 917 orphans) — cosmético, não afeta o jogo em runtime. Baixa prioridade; revisar `free()` nos autoloads.
 
 ### 16. Curva de balanceamento não auditada
 - Stats dos inimigos fixos; Ato IV (Aurius 800 HP) vs progressão de Kael — verificar se os gates de XP/memória produzem power curve compatível. Criar spreadsheet/data-driven de balanço por ato.
 
-### 17. Menu sem "Continuar" (verificar)
-- `GameManager.load_game()` existe; confirmar se o `main_menu` expõe "Continuar". Se não, o save só é usado indiretamente.
+### 17. Menu sem "Continuar" (verificar) ✅ JÁ RESOLVIDO (verificado 2026-09-01)
+- `main_menu.gd` já tem `ContinueButton` conectado a `_on_continue()` e desabilitado quando não há `user://save_game.json` (`main_menu.gd:4/12/17/34`). Sem ação necessária.
 
 ---
 
