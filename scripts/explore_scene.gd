@@ -64,8 +64,8 @@ func _spawn_props() -> void:
 		sprite.texture = load(path)
 		sprite.position = _tile_center(cfg.get("pos", Vector2i.ZERO))
 		sprite.scale = Vector2.ONE * float(cfg.get("scale", 1.0))
-		# Props decorativos ficam atrás de unidades e da party.
-		sprite.z_index = -1
+		# Ordem de adição (depois de bg/tiles, antes de units) garante props
+		# acima do chão e abaixo das unidades — z_index -1 ficava ATRÁS do bg.
 		add_child(sprite)
 
 
@@ -99,11 +99,20 @@ func _build_map() -> void:
 	var rng2 := RandomNumberGenerator.new()
 	rng2.seed = hash(map_id)
 	for i in range(24):
-		var deco := ColorRect.new()
-		var s := rng2.randf_range(10, 26)
-		deco.size = Vector2(s, s)
+		# Decoração orgânica (pedras/cinzas/arbustos): polígono irregular escuro
+		# em vez de quadrados chapados (pareciam artefatos no screenshot QA).
+		var deco := Polygon2D.new()
+		var s := rng2.randf_range(6, 14)
+		var points := PackedVector2Array()
+		var sides := rng2.randi_range(5, 8)
+		for side in range(sides):
+			var angle := TAU * side / sides
+			var radius := s * rng2.randf_range(0.6, 1.0)
+			points.append(Vector2(cos(angle), sin(angle)) * radius)
+		deco.polygon = points
 		deco.position = Vector2(rng2.randf_range(20, 1240), rng2.randf_range(20, 660))
-		deco.color = _terrain_color(terrain_name).darkened(0.5)
+		deco.color = _terrain_color(terrain_name).darkened(0.55)
+		deco.z_index = -1
 		add_child(deco)
 
 
@@ -295,11 +304,21 @@ func _start_arena(enemy_index: int) -> void:
 	arena.battle_ended.connect(_on_battle_ended.bind(enemy_index))
 	arena.battle_fled.connect(_on_battle_fled)
 	add_child(arena)
+	# Labels da exploração somem durante a arena (evita sobreposição com os
+	# da batalha: "Agindo", turn_label e hints na mesma região da tela).
+	if _ui:
+		_ui.visible = false
+
+
+func _set_explore_ui_visible(visible: bool) -> void:
+	if _ui and is_instance_valid(_ui):
+		_ui.visible = visible
 
 
 func _on_battle_ended(victory: bool, rewards: Dictionary, enemy_index: int) -> void:
 	arena.queue_free()
 	arena = null
+	_set_explore_ui_visible(true)
 	if victory:
 		if enemy_index < enemy_nodes.size() and is_instance_valid(enemy_nodes[enemy_index]):
 			enemy_nodes[enemy_index].queue_free()
@@ -338,6 +357,7 @@ func _on_battle_ended(victory: bool, rewards: Dictionary, enemy_index: int) -> v
 func _on_battle_fled() -> void:
 	arena.queue_free()
 	arena = null
+	_set_explore_ui_visible(true)
 	# Fuga empurra o inimigo para longe (SoS): sem isso o contato <44px
 	# reabre o encontro no frame seguinte (loop fugir→reencontrar).
 	for i in range(enemy_nodes.size()):

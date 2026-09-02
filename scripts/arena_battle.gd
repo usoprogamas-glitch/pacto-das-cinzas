@@ -46,6 +46,7 @@ var combo_system  # ComboSystem (GDD §3.3): CP no HUD da arena
 var balance_system  # BalanceSystem (GDD §3.3): barra Éter/Fúria no HUD
 var _combo_label: Label
 var _balance_bar: ProgressBar
+var _balance_legend: Label
 var _boss_bar: ProgressBar
 var _boss_bar_label: Label
 var _entrance_tweens: Array = []
@@ -119,6 +120,9 @@ func _setup_from_campaign() -> void:
 		pos_x += 40
 		enemies_meta.append({"type": type, "soul_ether": e.get("soul_ether", 10)})
 
+	# Barra do boss visível desde a entrada (não só após o 1º golpe).
+	_update_boss_bar()
+
 
 func _make_combatant(unit_name: String, is_player: bool, hp: int, atk: int, def: int, spd: int, mp: int) -> Unit:
 	var u := Unit.new()
@@ -183,6 +187,15 @@ func _arena_position(u: Unit, pos: Vector2, color: Color, sprite_key: String) ->
 	bar.position = Vector2(-30, -62)
 	bar.size = Vector2(60, 8)
 	bar.show_percentage = false
+	# Borda escura: legibilidade sobre sprites claros (screenshot QA).
+	var bar_bg := StyleBoxFlat.new()
+	bar_bg.bg_color = Color(0.1, 0.1, 0.12, 0.85)
+	bar_bg.set_border_width_all(1)
+	bar_bg.border_color = Color(0, 0, 0, 0.9)
+	bar.add_theme_stylebox_override("background", bar_bg)
+	var bar_fill := StyleBoxFlat.new()
+	bar_fill.bg_color = Color(0.3, 0.85, 0.35) if u.is_player_side() else Color(0.85, 0.3, 0.3)
+	bar.add_theme_stylebox_override("fill", bar_fill)
 	u.add_child(bar)
 	u.hp_changed.connect(func(hp): bar.value = hp)
 
@@ -707,6 +720,12 @@ func _build_combat_hud() -> void:
 	fill.bg_color = Color(0.25, 0.45, 0.85)
 	_balance_bar.add_theme_stylebox_override("fill", fill)
 	add_child(_balance_bar)
+	_balance_legend = Label.new()
+	_balance_legend.position = Vector2(20, 76)
+	_balance_legend.add_theme_font_size_override("font_size", 12)
+	_balance_legend.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))
+	_balance_legend.text = "ÉTER / FÚRIA"
+	add_child(_balance_legend)
 
 	_boss_bar = ProgressBar.new()
 	_boss_bar.position = Vector2(420, 14)
