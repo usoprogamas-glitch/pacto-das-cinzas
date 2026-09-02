@@ -1,0 +1,24 @@
+# EditorConfig — O Pacto das Cinzas
+# GDScript do projeto usa INDENTAÇÃO DE 1 ESPAÇO (convenção histórica dos
+# scripts/). Usar tab quebra o parse do Godot — já quebrou 3x em 2026-09-01.
+# Este arquivo aplica a regra em qualquer editor (VS Code, Godot 4.3+).
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{gd,tscn,tres,godot}]
+indent_style = space
+indent_size = 1
+
+[*.py]
+indent_style = space
+indent_size = 4
+
+[*.{json,md}]
+indent_style = space
+indent_size = 2

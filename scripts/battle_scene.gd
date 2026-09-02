@@ -79,6 +79,7 @@ var _tavern_running: bool = false
 var _tavern_turn_limit: int = 20
 const TAVERN_BET: int = 10  ## aposta fixa da Guerra de Runas (ROADMAP #12)
 var _forge_panel: PanelContainer = null  ## UI de seleção da Forja (§7)
+var _cook_panel: PanelContainer = null  ## UI de seleção da Cozinha (§7.2)
 
 # Estado de timed hit
 var _timed_hit_active: bool = false
@@ -1818,14 +1819,14 @@ func _on_forge_item_pressed(equipment_id: String) -> void:
  var item: Dictionary = equipment.get_equipment(equipment_id)
  for resource: String in item["cost"]:
   GameManager.building_system.spend_resources({resource: item["cost"][resource]})
-  var result: Dictionary = equipment.craft(equipment_id)
-  if result.ok:
-   GameManager.apply_equipment_bonuses(result.bonuses, equipment_id, item["slot"])
-   combat_feedback.show_status_effect(Vector2(640, 300), "FORJA: %s equipado!" % item["name"])
-   if SoundManager:
-    SoundManager.play_forge()
-   if GameManager.has_method("save_game"):
-    GameManager.save_game()  # bônus permanente + inventário da vila no save
+ var result: Dictionary = equipment.craft(equipment_id)
+ if result.ok:
+  GameManager.apply_equipment_bonuses(result.bonuses, equipment_id, item["slot"])
+  combat_feedback.show_status_effect(Vector2(640, 300), "FORJA: %s equipado!" % item["name"])
+  if SoundManager:
+   SoundManager.play_forge()
+  if GameManager.has_method("save_game"):
+   GameManager.save_game()  # bônus permanente + inventário da vila no save
  # Atualiza a painel (custos/estado mudaram).
  _forge_panel.queue_free()
  _forge_panel = null
@@ -1863,24 +1864,91 @@ func _on_cook_pressed() -> void:
   combat_feedback.show_status_effect(Vector2(640, 300), "COZINHA: já usado nesta batalha")
   return
  _cook_used = true
+ # Painel de seleção (mesmo padrão da Forja): jogador escolhe prato ou
+ # elixir. Elixires (§7.2) viram bônus PERMANENTES no GameManager.
+ if _cook_panel != null and is_instance_valid(_cook_panel):
+  _cook_panel.visible = not _cook_panel.visible
+  return
+ _build_cook_panel()
+ _cook_panel.visible = true
 
- # Cozinhar a primeira receita craftável com o que foi coletado nas travessias.
- # Elixires (§7.2) viram bônus PERMANENTES no GameManager (persistem no save);
- # pratos ficam como buffs temporários existentes.
+
+func _build_cook_panel() -> void:
+ _cook_panel = PanelContainer.new()
+ var style := StyleBoxFlat.new()
+ style.bg_color = Color(0.08, 0.1, 0.14, 0.95)
+ style.border_color = Color(0.5, 0.45, 0.3)
+ style.set_border_width_all(2)
+ style.set_corner_radius_all(6)
+ _cook_panel.add_theme_stylebox_override("panel", style)
+ _cook_panel.position = Vector2(400, 200)
+ _cook_panel.custom_minimum_size = Vector2(480, 0)
+ var vbox := VBoxContainer.new()
+ vbox.add_theme_constant_override("separation", 6)
+ _cook_panel.add_child(vbox)
+ var title := Label.new()
+ title.text = "COZINHA — escolha a receita"
+ title.add_theme_font_size_override("font_size", 18)
+ title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.5))
+ vbox.add_child(title)
  for recipe_id: String in cooking_system.RECIPES:
-  if cooking_system.can_craft(recipe_id):
-   cooking_system.craft(recipe_id)
-   return
+  _add_cook_row(vbox, recipe_id, cooking_system.RECIPES[recipe_id], true)
  for elixir_id: String in cooking_system.ELIXIRS:
-  if cooking_system.can_craft(elixir_id):
-   var bonuses: Dictionary = cooking_system.craft(elixir_id)
-   if GameManager and not bonuses.is_empty():
-    GameManager.apply_elixir_bonuses(bonuses)
-    combat_feedback.show_status_effect(Vector2(640, 300), "ELIXIR: bônus permanente aplicado!")
-    if GameManager.has_method("save_game"):
-     GameManager.save_game()  # bônus permanente no save
-   return
- combat_feedback.show_status_effect(Vector2(640, 300), "COZINHA: sem receita craftável")
+  _add_cook_row(vbox, elixir_id, cooking_system.ELIXIRS[elixir_id], false)
+ var close := Button.new()
+ close.text = "Fechar"
+ close.custom_minimum_size = Vector2(140, 26)
+ close.pressed.connect(func() -> void: _cook_panel.visible = false)
+ vbox.add_child(close)
+ ui_layer.add_child(_cook_panel)
+
+
+func _add_cook_row(vbox: VBoxContainer, recipe_id: String, recipe: Dictionary, is_food: bool) -> void:
+ var row := HBoxContainer.new()
+ row.add_theme_constant_override("separation", 8)
+ var info := Label.new()
+ var cost_parts := PackedStringArray()
+ for ing_id: String in recipe["ingredients"]:
+  cost_parts.append("%dx %s" % [int(recipe["ingredients"][ing_id]), cooking_system.get_all_ingredients().get(ing_id, {}).get("name", ing_id)])
+ var cost_text := ", ".join(cost_parts)
+ var suffix := "" if is_food else "  [PERMANENTE]"
+ info.text = "%s%s\nCusto: %s" % [recipe["name"], suffix, cost_text]
+ info.add_theme_font_size_override("font_size", 13)
+ info.custom_minimum_size = Vector2(320, 0)
+ row.add_child(info)
+ var btn := Button.new()
+ if cooking_system.can_craft(recipe_id):
+  btn.text = "Cozinhar"
+ else:
+  btn.text = "Sem ingredientes"
+  btn.disabled = true
+ btn.custom_minimum_size = Vector2(140, 28)
+ btn.pressed.connect(_on_cook_item_pressed.bind(recipe_id, is_food))
+ row.add_child(btn)
+ vbox.add_child(row)
+
+
+func _on_cook_item_pressed(recipe_id: String, is_food: bool) -> void:
+ if not cooking_system.can_craft(recipe_id):
+  combat_feedback.show_status_effect(Vector2(640, 300), "COZINHA: sem ingredientes")
+  return
+ var bonuses: Dictionary = cooking_system.craft(recipe_id)
+ if bonuses.is_empty():
+  return
+ if is_food:
+  combat_feedback.show_status_effect(Vector2(640, 300), "COZINHA: %s preparado!" % cooking_system.get_all_recipes()[recipe_id]["name"])
+ else:
+  GameManager.apply_elixir_bonuses(bonuses)
+  combat_feedback.show_status_effect(Vector2(640, 300), "ELIXIR: bônus permanente aplicado!")
+  if SoundManager:
+   SoundManager.play_heal()
+  if GameManager.has_method("save_game"):
+   GameManager.save_game()  # bônus permanente no save
+ # Atualiza o painel (ingredientes mudaram).
+ _cook_panel.queue_free()
+ _cook_panel = null
+ _build_cook_panel()
+ _cook_panel.visible = true
 
 
 func _on_tavern_pressed() -> void:

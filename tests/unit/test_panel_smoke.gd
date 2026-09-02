@@ -108,7 +108,8 @@ func test_cook_updates_hud_and_gates() -> void:
 	# Coleta direto (o gather em si é testado à parte) para isolar a cadeia cozinhar→HUD.
 	bs.cooking_system.collect_ingredient("carne_troll", 2)
 	bs.cooking_system.collect_ingredient("ervas_silvestres", 1)
-	bs._on_cook_pressed()
+	bs._on_cook_pressed()  # abre o painel (gating 1/batalha)
+	bs._on_cook_item_pressed("guisado_goblin", true)  # jogador escolhe o prato
 	assert_eq(int(_xp().text.trim_prefix("XP ")), 20, "XP subiu 20 (recipe_crafted)")
 	assert_eq(_mem().text, "MEM 10%", "MEM subiu 10%")
 	bs._on_cook_pressed()  # 2ª: sem receita extra, mas _cook_used já true
@@ -125,10 +126,11 @@ func test_tavern_game_over_adds_soul_to_hud() -> void:
 # --- Buffs de cozinha §7.2 decaem por turno e expiram com toast ---
 
 func test_cook_buff_ticks_and_expires_on_turn() -> void:
-	# _on_cook_pressed crafts guisado_goblin (duration 3)
+	# painel: jogador escolhe guisado_goblin (duration 3)
 	bs.cooking_system.collect_ingredient("carne_troll", 2)
 	bs.cooking_system.collect_ingredient("ervas_silvestres", 1)
 	bs._on_cook_pressed()
+	bs._on_cook_item_pressed("guisado_goblin", true)
 	assert_eq(bs.cooking_system.get_active_bonuses().size(), 1, "buff ativo pós-craft")
 	for i in range(3):
 		bs._on_turn_started(null)  # 3 ticks → remaining 0 → expire
@@ -157,6 +159,7 @@ func test_cooking_defense_bonus() -> void:
 	bs.cooking_system.collect_ingredient("carne_troll", 2)
 	bs.cooking_system.collect_ingredient("ervas_silvestres", 1)
 	bs._on_cook_pressed()
+	bs._on_cook_item_pressed("guisado_goblin", true)
 	assert_eq(bs._cooking_defense_bonus(), 5, "guisado_goblin dá +5 defesa")
 
 
@@ -198,11 +201,12 @@ func test_cooked_heal_noop_without_bonuses() -> void:
 func test_toast_emitted_per_action() -> void:
 	bs._on_traverse_pressed()
 	bs._on_camp_pressed()
-	bs._on_cook_pressed()
+	bs._on_cook_pressed()  # abre o painel
+	bs._on_cook_item_pressed("guisado_goblin", true)  # sem ingredientes: toast de recusa
 	bs._on_tavern_game_over("IA", "Jogador")
 	assert_gt(_toasts.size(), 0, "pelo menos um toast por ação")
-	# travessia(1, sem drop determinístico → até +1 ENCONTROU) + camp(1) + cook(RECEITA+RECUPEROU) + taverna(1)
-	assert_gte(_toasts.size(), 4, "mínimo 4 toasts: travessia, camp, cook(RECEITA+RECUPEROU), taverna")
+	# travessia(1, sem drop determinístico → até +1 ENCONTROU) + camp(1) + cook(recusa) + taverna(1)
+	assert_gte(_toasts.size(), 4, "mínimo 4 toasts: travessia, camp, cook(sem ingredientes), taverna")
 	assert_true(_toasts[0].begins_with("TRAVESSIA"), "toast de travessia")
 
 

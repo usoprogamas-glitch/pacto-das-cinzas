@@ -75,10 +75,12 @@ func test_cook_handler_crafts_default() -> void:
 	cooking.collect_ingredient("ervas_silvestres", 1)
 	cooking.recipe_crafted.connect(func(_name, _b): _signal_emitted = true)
 
-	bs._on_cook_pressed()
+	bs._on_cook_pressed()  # abre o painel (gating de 1 cook por batalha)
+	assert_true(bs._cook_used, "gating de 1 cook por batalha")
+	# Jogador escolhe o prato no painel (fluxo novo de seleção).
+	bs._on_cook_item_pressed("guisado_goblin", true)
 
 	assert_true(_signal_emitted, "recipe_crafted deve emitir")
-	assert_true(bs._cook_used, "gating de 1 cook por batalha")
 
 
 func test_tavern_handler_starts_game() -> void:
