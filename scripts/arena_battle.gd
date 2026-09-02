@@ -308,6 +308,18 @@ func _finish(victory: bool) -> void:
 	if victory:
 		for m in enemies_meta:
 			rewards["soul_ether"] += m["soul_ether"]
+		# Economia (balance campanha): ouro e XP somam do soul_ether da luta
+		# (ouro = 50%, XP = 40%). Batalha é a fonte primária de progresso;
+		# puzzles/traversal pagam por cima como bônus de exploração.
+		rewards["gold"] = int(rewards["soul_ether"] * 0.5)
+		rewards["experience"] = int(rewards["soul_ether"] * 0.4)
+		# Materiais de forja: chance por inimigo derrotado (comum 40%).
+		var materials := 0
+		for m in enemies_meta:
+			if randf() < 0.4:
+				materials += 1
+		if materials > 0:
+			rewards["materials"] = materials
 		# Vitória: sobreviventes celebram. (Derrota não anima: is_battle_over
 		# só encerra com a party inteira morta — o luto é da result screen.)
 		for u in combatants:

@@ -44,11 +44,29 @@ func _ready() -> void:
 	encounter = SeamlessEncounterSystem.new()
 	map_id = GameManager.game_data.get("current_map", 0) if GameManager else 0
 	_build_map()
+	_spawn_props()
 	_spawn_party()
 	_spawn_enemies()
 	_spawn_puzzles()
 	_spawn_traversal_nodes()
 	_build_ui()
+
+
+# === PROPS VISUAIS (assets ComfyUI, data-driven via MapDatabase.props) ===
+
+func _spawn_props() -> void:
+	var map: Dictionary = MapDatabase.get_map(map_id)
+	for cfg in map.get("props", []):
+		var path: String = "res://assets/props/%s.png" % String(cfg.get("texture", ""))
+		if not ResourceLoader.exists(path):
+			continue  # asset ausente: pula sem quebrar a cena
+		var sprite := Sprite2D.new()
+		sprite.texture = load(path)
+		sprite.position = _tile_center(cfg.get("pos", Vector2i.ZERO))
+		sprite.scale = Vector2.ONE * float(cfg.get("scale", 1.0))
+		# Props decorativos ficam atrás de unidades e da party.
+		sprite.z_index = -1
+		add_child(sprite)
 
 
 func _build_map() -> void:
@@ -291,6 +309,14 @@ func _on_battle_ended(victory: bool, rewards: Dictionary, enemy_index: int) -> v
 				_enemy_animators.remove_at(enemy_index)
 		if GameManager:
 			GameManager.add_soul_ether(int(rewards.get("soul_ether", 0)))
+			# Economia (balance campanha): ouro/XP/materiais da batalha chegam
+			# pela mesma porta do soul_ether.
+			if int(rewards.get("gold", 0)) > 0:
+				GameManager.add_gold(int(rewards["gold"]))
+			if int(rewards.get("experience", 0)) > 0 and GameManager.progression_system:
+				GameManager.progression_system.add_experience(int(rewards["experience"]))
+			if int(rewards.get("materials", 0)) > 0:
+				GameManager.building_system.add_resource("materials", int(rewards["materials"]))
 		# Vitória encerra o estágio da campanha (mesma porta do fluxo linear).
 		if GameManager and GameManager.campaign_system:
 			if GameManager.campaign_system.is_act_boss_stage():
