@@ -73,33 +73,14 @@ func _spawn_props() -> void:
 func _build_map() -> void:
 	var map: Dictionary = MapDatabase.get_map(map_id)
 	var terrain_name: String = String(map.get("terrain", "mixed"))
-	var bg := ColorRect.new()
-	bg.color = _terrain_color(terrain_name).darkened(0.25)
-	bg.size = Vector2(1280, 720)
-	add_child(bg)
 
-	# Fundo decorado (molde SoS): grade de tiles procedurais do PixelArtRenderer,
-	# escolhidos pelo terreno do mapa; água/grama elegíveis ganham shader.
+	# Fundo (molde SoS v2): um único canvas low-res escalado com nearest —
+	# paleta coesa por terreno, sem emendas de grade. O pixel_renderer fica
+	# para os tiles animados de água usados na arena legada.
 	pixel_renderer = PixelArtRenderer.new()
 	add_child(pixel_renderer)
-	var rng := RandomNumberGenerator.new()
-	rng.seed = hash("terrain_%d" % map_id)
-	for ty in range(TERRAIN_GRID.y):
-		for tx in range(TERRAIN_GRID.x):
-			var kind := _terrain_tile_kind(terrain_name, rng)
-			var want_shader := rng.randf()
-			var tile: Sprite2D = pixel_renderer.create_detailed_terrain(kind, TERRAIN_TILE_PX)
-			tile.position = Vector2(tx * TERRAIN_TILE_PX + TERRAIN_TILE_PX / 2.0, ty * TERRAIN_TILE_PX + TERRAIN_TILE_PX / 2.0)
-			# Variação orgânica: brightness e flip aleatórios quebram o xadrez.
-			tile.flip_h = rng.randf() < 0.5
-			tile.flip_v = rng.randf() < 0.3
-			tile.modulate = Color(1, 1, 1).lightened(rng.randf_range(-0.06, 0.06))
-			if kind == "water" and want_shader < 0.5:
-				pixel_renderer.apply_water_shader(tile)
-			elif kind == "grass" and want_shader < 0.4:
-				pixel_renderer.apply_grass_shader(tile)
-			add_child(tile)
-			terrain_tiles.append({"node": tile, "kind": kind})
+	var terrain_sprite: Sprite2D = pixel_renderer.build_terrain_canvas(terrain_name, hash("terrain_%d" % map_id))
+	add_child(terrain_sprite)
 
 	var rng2 := RandomNumberGenerator.new()
 	rng2.seed = hash(map_id)

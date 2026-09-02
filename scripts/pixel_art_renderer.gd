@@ -903,6 +903,130 @@ func create_enemy(enemy_type: String) -> Sprite2D:
  var palette = PALETTES.get("enemy_" + enemy_type, PALETTES.enemy_mercenary)
  return create_detailed_character("enemy_" + enemy_type, 64)
 
+## Canvas de terreno low-res (320x180) escalado com nearest: um único sprite
+## coeso em vez de mosaico de tiles — paleta da mesma família, manchas
+## orgânicas e variação sutil por célula. Substitui a grade 10x6 (QA visual).
+static func build_terrain_canvas(terrain_type: String, seed: int = 0) -> Sprite2D:
+ # "volcanic" não existe em TERRAINS (só "lava") — fundo de lava saturado
+ # briga com as unidades; deriva para cinza-brasa escuro da mesma família.
+ if terrain_type == "volcanic":
+  return _build_ash_canvas(seed if seed != 0 else hash(terrain_type))
+ var terrain: Dictionary = TERRAINS.get(terrain_type, TERRAINS.grass)
+ var colors: Array = terrain.get("colors", ["#3D5A2A"])
+ var rng := RandomNumberGenerator.new()
+ rng.seed = seed if seed != 0 else hash(terrain_type)
+
+ var w := 320
+ var h := 180
+ var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
+
+ # Paleta da família: o primeiro tom de base + variantes claras/escuras.
+ var base := Color(colors[0])
+ var dark := base.darkened(0.28)
+ var light := base.lightened(0.18)
+ var lightest := base.lightened(0.32)
+
+ # 1) Base: preenchimento com leve ruído entre base e dark.
+ for y in range(h):
+  for x in range(w):
+   var c := base if rng.randf() < 0.72 else dark
+   if rng.randf() < 0.08:
+    c = light
+   img.set_pixel(x, y, c)
+
+ # 2) Manchas orgânicas (blobs) em tons mais claros: sobe a variedade sem
+ #    virar tile gritante. 14 manchas de raio 14-30.
+ for i in range(14):
+  var cx := rng.randf_range(0, w)
+  var cy := rng.randf_range(0, h)
+  var radius := rng.randf_range(14, 30)
+  var tone := light if rng.randf() < 0.6 else lightest
+  var opacity := rng.randf_range(0.35, 0.6)
+  var steps := int(radius * 2.4)
+  for s in range(steps):
+   var angle := TAU * s / steps
+   var r := radius * rng.randf_range(0.7, 1.15)
+   var blob := Vector2(cx + cos(angle) * r, cy + sin(angle) * r)
+   _paint_blob(img, blob, radius * 0.8, tone, opacity)
+
+ # 3) Detalhes por terreno (pontos soltos, discretos).
+ var detail := Color(1, 1, 1, 0.12)
+ if terrain_type == "volcanic":
+  detail = Color(1.0, 0.4, 0.1, 0.16)
+ elif terrain_type == "water":
+  detail = Color(0.8, 0.9, 1.0, 0.14)
+ for i in range(60):
+  var p := Vector2(rng.randf_range(0, w), rng.randf_range(0, h))
+  _paint_blob(img, p, 1.5, detail, detail.a)
+
+ # 4) Sprite escalado para 1280x720 com filtro nearest (pixel-art coeso).
+ var tex := ImageTexture.create_from_image(img)
+ var sprite := Sprite2D.new()
+ sprite.texture = tex
+ sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+ sprite.centered = false
+ sprite.scale = Vector2(1280.0 / w, 720.0 / h)
+ return sprite
+
+
+## Cinza-brasa (vulcânico): base escura da família da lava, sem saturação
+## que brigue com unidades; manchas de brasa e fissuras discretas.
+static func _build_ash_canvas(seed: int) -> Sprite2D:
+ var rng := RandomNumberGenerator.new()
+ rng.seed = seed
+ var w := 320
+ var h := 180
+ var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
+ var base := Color(0.16, 0.09, 0.07)
+ var dark := Color(0.10, 0.06, 0.05)
+ var warm := Color(0.24, 0.13, 0.09)
+ for y in range(h):
+  for x in range(w):
+   var c := base if rng.randf() < 0.7 else dark
+   if rng.randf() < 0.1:
+    c = warm
+   img.set_pixel(x, y, c)
+ for i in range(12):
+  var cx := rng.randf_range(0, w)
+  var cy := rng.randf_range(0, h)
+  var radius := rng.randf_range(12, 26)
+  var tone := warm if rng.randf() < 0.6 else base.lightened(0.2)
+  _paint_blob(img, Vector2(cx, cy), radius, tone, rng.randf_range(0.3, 0.55))
+ # Fissuras de brasa: pontos laranja discretos.
+ for i in range(40):
+  _paint_blob(img, Vector2(rng.randf_range(0, w), rng.randf_range(0, h)), 1.5, Color(1.0, 0.45, 0.1, 0.14), 0.14)
+ var tex := ImageTexture.create_from_image(img)
+ var sprite := Sprite2D.new()
+ sprite.texture = tex
+ sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+ sprite.centered = false
+ sprite.scale = Vector2(1280.0 / w, 720.0 / h)
+ return sprite
+
+
+## Pinta um disco suave (usado pelos blobs do canvas).
+static func _paint_blob(img: Image, center: Vector2, radius: float, color: Color, opacity: float) -> void:
+ var w := img.get_width()
+ var h := img.get_height()
+ var r := int(ceil(radius))
+ for dy in range(-r, r + 1):
+  for dx in range(-r, r + 1):
+   var px := int(center.x) + dx
+   var py := int(center.y) + dy
+   if px < 0 or py < 0 or px >= w or py >= h:
+    continue
+   var dist := Vector2(dx, dy).length()
+   if dist > radius:
+    continue
+   var falloff := 1.0 - (dist / radius)
+   var c := img.get_pixel(px, py)
+   var a := opacity * falloff
+   img.set_pixel(px, py, Color(
+    lerpf(c.r, color.r, a),
+    lerpf(c.g, color.g, a),
+    lerpf(c.b, color.b, a),
+    255.0))
+
 # === EXEMPLO DE USO ===
 # var kael = PixelArtRenderer.create_kael("imp")
 # var kroug = PixelArtRenderer.create_kroug()
