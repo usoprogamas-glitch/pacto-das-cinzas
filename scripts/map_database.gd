@@ -157,7 +157,8 @@ static var maps: Dictionary = {
   "props": [
    {"id": "fornalha", "texture": "fornalha_vulcanica", "pos": Vector2i(9, 2), "scale": 1.0},
    {"id": "estatua", "texture": "estatua_templo", "pos": Vector2i(1, 9), "scale": 1.0},
-   {"id": "calice", "texture": "calice_corrosivo", "pos": Vector2i(4, 8), "scale": 1.0}
+   {"id": "calice", "texture": "calice_corrosivo", "pos": Vector2i(4, 8), "scale": 1.0},
+   {"id": "estatua_ignis", "texture": "estatua_ignis", "pos": Vector2i(7, 6), "scale": 1.1}
   ],
  	  "puzzles": [
  	   {
@@ -200,6 +201,10 @@ static var maps: Dictionary = {
   "enemy_count": 1,
   "description": "Tempestades de vento. Zephyr comanda as alturas.",
   "music": "battle",
+  "props": [
+   {"id": "estatua_zephyr", "texture": "estatua_zephyr", "pos": Vector2i(7, 2), "scale": 1.2},
+   {"id": "arvore1", "texture": "arvore_queimada", "pos": Vector2i(2, 8), "scale": 1.0}
+  ],
   "traversal_nodes": [
    {
     "id": "desfiladeiro_zephyr",
@@ -331,7 +336,10 @@ static var maps: Dictionary = {
   "props": [
    {"id": "portal", "texture": "portal_solaria", "pos": Vector2i(8, 2), "scale": 1.2},
    {"id": "estatua1", "texture": "estatua_templo", "pos": Vector2i(3, 5), "scale": 1.0},
-   {"id": "estatua2", "texture": "estatua_templo", "pos": Vector2i(12, 5), "scale": 1.0}
+   {"id": "estatua2", "texture": "estatua_templo", "pos": Vector2i(12, 5), "scale": 1.0},
+   {"id": "braseiro1", "texture": "braseiro_solaris", "pos": Vector2i(5, 3), "scale": 1.0},
+   {"id": "braseiro2", "texture": "braseiro_solaris", "pos": Vector2i(10, 3), "scale": 1.0},
+   {"id": "coluna", "texture": "coluna_solaris", "pos": Vector2i(13, 8), "scale": 1.2}
   ],
   "puzzles": [
    {
