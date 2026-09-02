@@ -1822,6 +1822,8 @@ func _on_forge_item_pressed(equipment_id: String) -> void:
  if result.ok:
   GameManager.apply_equipment_bonuses(result.bonuses, equipment_id, item["slot"])
   combat_feedback.show_status_effect(Vector2(640, 300), "FORJA: %s equipado!" % item["name"])
+  if GameManager.has_method("save_game"):
+   GameManager.save_game()  # bônus permanente + inventário da vila no save
  # Atualiza a painel (custos/estado mudaram).
  _forge_panel.queue_free()
  _forge_panel = null
@@ -1873,6 +1875,8 @@ func _on_cook_pressed() -> void:
    if GameManager and not bonuses.is_empty():
     GameManager.apply_elixir_bonuses(bonuses)
     combat_feedback.show_status_effect(Vector2(640, 300), "ELIXIR: bônus permanente aplicado!")
+    if GameManager.has_method("save_game"):
+     GameManager.save_game()  # bônus permanente no save
    return
  combat_feedback.show_status_effect(Vector2(640, 300), "COZINHA: sem receita craftável")
 

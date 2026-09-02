@@ -80,3 +80,18 @@ func test_world_state_saved_to_disk():
 	GameManager.mark_puzzle_solved(0, "fronteira_espelhos")
 	GameManager.save_game()
 	assert_true(GameManager.game_data.get("world_state", {}).has("0"), "world_state entra no save_data via game_data")
+
+
+func test_interact_traversal_persists_save_immediately():
+	# Progressão permanente grava save no ato (não só no fim da batalha):
+	# se o jogador sair depois da travessia, o world_state sobrevive.
+	GameManager.game_data["current_map"] = 5
+	var scene := _open_explore()
+	var entry: Dictionary = scene.traversal_nodes[1]  # penhasco (climb)
+	scene.player.position = entry["node"].position
+	scene._interact_traversal()
+	# Recarrega do disco num GameManager fresco.
+	var fresh = load("res://scripts/game_manager.gd").new()
+	add_child_autofree(fresh)
+	assert_true(fresh.load_game(), "save no disco carrega")
+	assert_true(fresh.is_traversal_done(5, "penhasco_ignis"), "travessia sobrevive reload via save automático")

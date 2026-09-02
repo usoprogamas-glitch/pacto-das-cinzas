@@ -508,6 +508,8 @@ func _interact_traversal() -> void:
 	entry["node"].modulate = Color(0.5, 1.0, 0.5)
 	if GameManager:
 		GameManager.mark_traversal_done(map_id, String(entry["id"]))
+		if GameManager.has_method("save_game"):
+			GameManager.save_game()  # progressão permanente: recompensas + world_state
 	var rewards: Dictionary = entry["data"].get("rewards", {})
 	if int(rewards.get("soul_ether", 0)) > 0 and GameManager:
 		GameManager.add_soul_ether(int(rewards["soul_ether"]))
@@ -574,6 +576,8 @@ func _on_puzzle_solved(puzzle_id: String, rewards: Dictionary, entry: Dictionary
 			GameManager.add_gold(int(rewards["gold"]))
 		if rewards.has("xp") and GameManager.progression_system:
 			GameManager.progression_system.add_experience(int(rewards["xp"]))
+		if GameManager.has_method("save_game"):
+			GameManager.save_game()  # progressão permanente: recompensas + world_state
 	_show_beam(entry)
 	if _hint_label:
 		_hint_label.text = "Puzzle resolvido: %s (+recompensa)" % puzzle_id
