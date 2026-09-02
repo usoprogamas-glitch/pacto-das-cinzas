@@ -559,6 +559,7 @@ func _resolve_action(multiplier: float, grade: String) -> void:
 		_award_hit_feedback(grade)
 	else:
 		_update_boss_bar()
+	_spawn_damage_number(_pending_target.position + Vector2(0, -70), damage, grade)
 	_log("%s → %s: %d de dano (%s)" % [current_actor.data.unit_name, _pending_target.data.unit_name, damage, grade])
 	await _play_aftermath(_pending_target)
 	_pending_target = null
@@ -656,6 +657,45 @@ func _build_arena() -> void:
 	floor_rect.position = Vector2(140, 280)
 	floor_rect.size = Vector2(1000, 380)
 	add_child(floor_rect)
+
+	# Palco (molde SoS): elipses de "chão" sob cada grupo em vez do vazio.
+	for g in [
+		{"x": 430.0, "y": 470.0, "w": 320.0, "h": 180.0, "c": Color(0.2, 0.17, 0.25)},
+		{"x": 880.0, "y": 470.0, "w": 360.0, "h": 200.0, "c": Color(0.17, 0.13, 0.22)},
+	]:
+		var grad := Gradient.new()
+		grad.set_color(0, Color(g["c"].r, g["c"].g, g["c"].b, 0.9))
+		grad.set_color(1, Color(0, 0, 0, 0))
+		var gtex := GradientTexture2D.new()
+		gtex.gradient = grad
+		gtex.fill = GradientTexture2D.FILL_RADIAL
+		gtex.fill_from = Vector2(0.5, 0.5)
+		gtex.fill_to = Vector2(0.5, 0.0)
+		gtex.width = 128
+		gtex.height = 72
+		var ground := Sprite2D.new()
+		ground.texture = gtex
+		ground.position = Vector2(g["x"], g["y"])
+		ground.scale = Vector2(g["w"] / 128.0, g["h"] / 72.0)
+		add_child(ground)
+
+	# Brasas subindo (lore das Cinzas): partículas laranja lentas com fade.
+	var embers := CPUParticles2D.new()
+	embers.amount = 14
+	embers.lifetime = 4.0
+	embers.preprocess = 4.0
+	embers.position = Vector2(640, 620)
+	embers.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	embers.emission_rect_extents = Vector2(600, 30)
+	embers.direction = Vector2(0, -1)
+	embers.spread = 12.0
+	embers.gravity = Vector2(0, -12)
+	embers.initial_velocity_min = 6.0
+	embers.initial_velocity_max = 18.0
+	embers.scale_amount_min = 1.2
+	embers.scale_amount_max = 2.6
+	embers.color = Color(1.0, 0.55, 0.2, 0.45)
+	add_child(embers)
 
 	turn_label = Label.new()
 	turn_label.position = Vector2(20, 12)
@@ -787,6 +827,27 @@ func _is_boss_unit(u) -> bool:
 		if not foe.is_empty() and foe.get("ai_type", "") == "boss" and u.data.unit_name == foe["name"]:
 			return true
 	return false
+
+
+func _spawn_damage_number(pos: Vector2, damage: int, grade: String) -> void:
+	## Número de dano flutuante: sobe e some (feedback direto, molde SoS).
+	var label := Label.new()
+	label.text = str(damage)
+	label.add_theme_font_size_override("font_size", 26 if grade == "PERFECT" else 20)
+	match grade:
+		"PERFECT":
+			label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2))
+		"MISS":
+			label.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
+		_:
+			label.add_theme_color_override("font_color", Color(1.0, 0.95, 0.9))
+	label.z_index = 50
+	label.position = pos
+	add_child(label)
+	var tween := create_tween()
+	tween.tween_property(label, "position:y", pos.y - 46.0, 0.6)
+	tween.parallel().tween_property(label, "modulate:a", 0.0, 0.6).set_delay(0.25)
+	tween.tween_callback(label.queue_free)
 
 
 ## Feedback de combate (GDD §3.3): PERFECT ganha CP + buff_ally (Éter);
