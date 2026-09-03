@@ -510,6 +510,7 @@ func _begin_timed_hit() -> void:
 	foes.sort_custom(func(a, b): return a.current_hp < b.current_hp)
 	var charging := foes.filter(func(u): return combat.is_charging(u))
 	_pending_target = charging[0] if charging.size() > 0 else foes[0]
+	_show_tutorial_if_first()
 	_timed_hit_active = true
 	_timed_hit_start = Time.get_ticks_msec() / 1000.0
 	_log("TIMED HIT! Clique no impacto!")
@@ -678,6 +679,8 @@ func _enemy_act() -> void:
 		current_actor.current_mp -= ArenaCombatLib.MAGIC_COST
 		combat.start_charge(current_actor, spec)
 		_log("%s começa a canalizar %s! Ataque com o tipo certo!" % [current_actor.data.unit_name, spec.get("name", "Feitiço")])
+		_show_tutorial_if_first("enemy_spell")
+		_show_tutorial_if_first("lock")
 		_advance()
 		return
 	# Janela de defesa reativa (timed block) durante o golpe inimigo.
@@ -688,6 +691,7 @@ func _enemy_act() -> void:
 	_block_start = Time.get_ticks_msec() / 1000.0
 	_block_reduction = 0.0
 	_log("%s ataca! Clique para bloquear!" % current_actor.data.unit_name)
+	_show_tutorial_if_first("block")
 	await get_tree().create_timer(ArenaCombatLib.TIMED_BLOCK_WINDOW).timeout
 	_block_window_open = false
 	var damage: int = combat.calculate_damage(current_actor, target)
@@ -925,8 +929,25 @@ func _is_boss_unit(u) -> bool:
 	return false
 
 
-func _spawn_damage_number(pos: Vector2, damage: int, grade: String) -> void:
-	## Número de dano flutuante: sobe e some (feedback direto, molde SoS).
+## Tutorial contextual (2 primeiras lutas): dicas acionáveis no momento de
+## uso, mostradas 1x por chave (flag persistida em game_data["tutorials"]).
+func _show_tutorial_if_first(key: String = "timed_hit") -> void:
+	if GameManager == null or GameManager.game_data.get("tutorials", {}).get(key, false):
+		return
+	GameManager.game_data.get_or_add("tutorials", {})[key] = true
+	var tips := {
+		"timed_hit": "TUTORIAL: clique no ALVO quando a barra carregar para acertar (PERFECT = mais dano + CP)!",
+		"block": "TUTORIAL: quando um inimigo atacar, CLIQUE rápido para bloquear parte do dano!",
+		"lock": "TUTORIAL: inimigo canalizando? ATAQUE-o com o tipo certo (físico=Corte, magia=Éter) para quebrar os locks!",
+		"enemy_spell": "TUTORIAL: o inimigo vai lançar um feitiço — quebre os locks com o tipo certo do seu ataque!",
+	}
+	if tips.has(key):
+		_log(tips[key])
+		if SoundManager:
+			SoundManager.play_select()
+
+
+func _spawn_damage_number(pos: Vector2, damage: int, grade: String) -> void:	## Número de dano flutuante: sobe e some (feedback direto, molde SoS).
 	var label := Label.new()
 	label.text = str(damage)
 	label.add_theme_font_size_override("font_size", 26 if grade == "PERFECT" else 20)

@@ -349,7 +349,11 @@ var _ash_time: float = 0.0
 func _play_map_intro() -> void:
 	var map: Dictionary = MapDatabase.get_map(map_id)
 	var banner := Label.new()
-	banner.text = String(map.get("name", ""))
+	var tutorial: String = ""
+	if GameManager and not GameManager.game_data.get("tutorials", {}).get("movement", false):
+		GameManager.game_data.get_or_add("tutorials", {})["movement"] = true
+		tutorial = "\n\nWASD/Setas: mover · Shift: correr · E: interagir · ESC: pausa"
+	banner.text = String(map.get("name", "")) + tutorial
 	banner.add_theme_font_size_override("font_size", 34)
 	banner.add_theme_color_override("font_color", Color(0.95, 0.92, 0.85))
 	banner.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
