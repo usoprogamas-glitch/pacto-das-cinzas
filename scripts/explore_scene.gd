@@ -31,6 +31,9 @@ var _buddy_animator
 var buddy_node: Node2D = null  # Kroug na cena (não filho do player: trilha suave)
 var _player_trail: Array = []  # histórico de posições do player (trilha do buddy)
 var _step_distance: float = 0.0  # distância desde o último SFX de passo
+var _player_shadow: Sprite2D = null
+var _buddy_shadow: Sprite2D = null
+var _shadow_phase: float = 0.0
 var _enemy_animators: Array = []  # paralelo a enemy_nodes
 var _enemy_alert: Array = []  # paralelo a enemy_nodes: já percebeu o jogador?
 
@@ -162,7 +165,8 @@ func _terrain_color(terrain: String) -> Color:
 func _spawn_party() -> void:
 	player = Node2D.new()
 	player.position = Vector2(160, 360)
-	player.add_child(_make_ground_shadow())
+	_player_shadow = _make_ground_shadow()
+	player.add_child(_player_shadow)
 	var kael_sprite := _animated_sprite("res://assets/sprites/kael.png", 0.06, Color(0.2, 0.8, 0.3))
 	player.add_child(kael_sprite)
 	player_animator = kael_sprite.get_meta("animator", null)
@@ -173,7 +177,8 @@ func _spawn_party() -> void:
 	if GameManager and GameManager.game_data.get("starting_ally") == "kroug":
 		buddy_node = Node2D.new()
 		buddy_node.position = player.position + Vector2(-44, 26)
-		buddy_node.add_child(_make_ground_shadow())
+		_buddy_shadow = _make_ground_shadow()
+		buddy_node.add_child(_buddy_shadow)
 		var kroug_sprite := _animated_sprite("res://assets/sprites/kroug.png", 0.05, Color(0.8, 0.3, 0.1))
 		buddy_node.add_child(kroug_sprite)
 		_buddy_animator = kroug_sprite.get_meta("animator", null)
@@ -364,8 +369,15 @@ func _process(delta: float) -> void:
 	if Input.is_action_pressed("ui_up") or Input.is_key_pressed(KEY_W):
 		dir.y -= 1
 	var moving := dir != Vector2.ZERO
+	# Sprint (Shift): 1.65x, molde SoS — exploração rápida sem quebrar o trail.
+	var sprinting := moving and (Input.is_key_pressed(KEY_SHIFT) or Input.is_action_pressed("ui_shift"))
+	var speed := SPEED * (1.65 if sprinting else 1.0)
+	if player_animator and sprinting:
+		player_animator.animation_speed = 1.4  # passos mais rápidos no walk cycle
+	elif player_animator:
+		player_animator.animation_speed = 1.0
 	_set_move_anim(player_animator, moving, dir.x)
-	player.position += dir.normalized() * SPEED * delta
+	player.position += dir.normalized() * speed * delta
 	player.position.x = clampf(player.position.x, 30, 1250)
 	player.position.y = clampf(player.position.y, 30, 690)
 
@@ -375,8 +387,9 @@ func _process(delta: float) -> void:
 		_player_trail.push_front(player.position)
 		if _player_trail.size() > 40:
 			_player_trail.pop_back()
-		_step_distance += SPEED * delta
-		if _step_distance > 26.0:
+		_step_distance += speed * delta
+		# Passos: intervalo menor ao correr (cadência de corrida).
+		if _step_distance > (17.0 if sprinting else 26.0):
 			_step_distance = 0.0
 			if SoundManager:
 				SoundManager.play_sfx("step")
@@ -385,8 +398,17 @@ func _process(delta: float) -> void:
 		var to_target := target - buddy_node.position
 		var buddy_moving := to_target.length() > 6.0
 		if buddy_moving:
-			buddy_node.position += to_target.normalized() * minf(to_target.length(), SPEED * 1.05 * delta)
+			buddy_node.position += to_target.normalized() * minf(to_target.length(), speed * 1.05 * delta)
 		_set_move_anim(_buddy_animator, buddy_moving, to_target.x)
+
+	# Sombras respiram com o idle (fase 4Hz do IDLE_FPS do animator): escala
+	# varia sutilmente, lendo como peso do personagem no chão.
+	_shadow_phase += delta * TAU * 4.0 * 0.5
+	var shadow_scale := 0.55 + sin(_shadow_phase) * 0.02
+	if _player_shadow:
+		_player_shadow.scale = Vector2(shadow_scale, shadow_scale * 0.35 / 0.55 * 0.55)
+	if _buddy_shadow:
+		_buddy_shadow.scale = Vector2(shadow_scale, shadow_scale * 0.35 / 0.55 * 0.55)
 
 	for i in range(enemy_nodes.size()):
 		var node = enemy_nodes[i]
