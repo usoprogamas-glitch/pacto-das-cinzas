@@ -121,25 +121,6 @@ func _spawn_tile_decorations(terrain_name: String) -> void:
 		add_child(deco)
 		deco.add_child(_make_ground_shadow(Vector2(0, 20)))
 
-	var rng2 := RandomNumberGenerator.new()
-	rng2.seed = hash(map_id)
-	for i in range(24):
-		# Decoração orgânica (pedras/cinzas/arbustos): polígono irregular escuro
-		# em vez de quadrados chapados (pareciam artefatos no screenshot QA).
-		var deco := Polygon2D.new()
-		var s := rng2.randf_range(6, 14)
-		var points := PackedVector2Array()
-		var sides := rng2.randi_range(5, 8)
-		for side in range(sides):
-			var angle := TAU * side / sides
-			var radius := s * rng2.randf_range(0.6, 1.0)
-			points.append(Vector2(cos(angle), sin(angle)) * radius)
-		deco.polygon = points
-		deco.position = Vector2(rng2.randf_range(20, 1240), rng2.randf_range(20, 660))
-		deco.color = _terrain_color(terrain_name).darkened(0.55)
-		deco.z_index = -1
-		add_child(deco)
-
 
 func _terrain_tile_kind(terrain: String, rng: RandomNumberGenerator) -> String:
 	var roll := rng.randf()
@@ -287,7 +268,15 @@ func _build_ui() -> void:
 	var label := Label.new()
 	label.position = Vector2(20, 12)
 	label.add_theme_font_size_override("font_size", 20)
-	label.text = "%s  (HP 80 | MP 50)" % MapDatabase.get_map(map_id).get("name", "")
+	# Status real da party (era hardcoded "(HP 80 | MP 50)" — parecia debug).
+	var kael: Dictionary = GameManager.party_data[0] if GameManager and GameManager.party_data.size() > 0 else {}
+	label.text = "%s   ·   HP %d" % [
+		String(MapDatabase.get_map(map_id).get("name", "")),
+		int(kael.get("hp", 0)),
+	]
+	label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
+	label.add_theme_constant_override("shadow_offset_x", 1)
+	label.add_theme_constant_override("shadow_offset_y", 1)
 	_ui.add_child(label)
 	_hint_label = Label.new()
 	_hint_label.position = Vector2(20, 680)
@@ -297,7 +286,10 @@ func _build_ui() -> void:
 	_traversal_hint = Label.new()
 	_traversal_hint.position = Vector2(20, 650)
 	_traversal_hint.add_theme_font_size_override("font_size", 14)
-	_traversal_hint.text = "TRAVESSIA: aproxime-se de um nó e pressione E"
+	# Hint só em mapa com nós de travessia (mapa 0 não tem: instrução vazia).
+	var has_traversal: bool = MapDatabase.get_map(map_id).get("traversal_nodes", []).size() > 0
+	_traversal_hint.text = "TRAVESSIA: aproxime-se de um nó e pressione E" if has_traversal else ""
+	_traversal_hint.visible = has_traversal
 	_ui.add_child(_traversal_hint)
 	_build_atmosphere()
 

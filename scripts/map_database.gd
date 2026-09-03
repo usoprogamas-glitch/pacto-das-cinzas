@@ -13,8 +13,7 @@ static var maps: Dictionary = {
    "props": [
     {"id": "arvore1", "texture": "arvore_queimada", "pos": Vector2i(2, 2), "scale": 1.0},
     {"id": "arvore2", "texture": "arvore_queimada", "pos": Vector2i(8, 6), "scale": 0.8},
-    {"id": "barris", "texture": "barris_cinzas", "pos": Vector2i(7, 3), "scale": 0.9},
-    {"id": "fogueira", "texture": "fogueira_acamp", "pos": Vector2i(5, 5), "scale": 0.9}
+    {"id": "barris", "texture": "barris_cinzas", "pos": Vector2i(7, 3), "scale": 0.9}
    ],
    "puzzles": [
     {
