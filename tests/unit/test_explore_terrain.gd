@@ -75,8 +75,10 @@ func test_terrain_palettes_differ_between_biomes():
 
 func test_decorations_still_present_over_canvas():
 	var scene := _open()
-	var polys := 0
+	var decor := 0
 	for child in scene.get_children():
 		if child is Polygon2D:
-			polys += 1
-	assert_gt(polys, 0, "decoração orgânica sobrevive ao canvas")
+			decor += 1
+		elif child is Sprite2D and child.texture is AtlasTexture:
+			decor += 1  # árvores decorativas do tileset do Eder (16px, nearest)
+	assert_gt(decor, 0, "decoração orgânica sobrevive ao canvas")

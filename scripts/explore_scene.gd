@@ -81,6 +81,35 @@ func _build_map() -> void:
 	add_child(pixel_renderer)
 	var terrain_sprite: Sprite2D = pixel_renderer.build_terrain_canvas(terrain_name, hash("terrain_%d" % map_id))
 	add_child(terrain_sprite)
+	_spawn_tile_decorations(terrain_name)
+
+
+## Árvores decorativas do tileset do Eder Muniz (world-map 16px) escaladas
+## com nearest: dão profundidade sem brigar com o piso.
+func _spawn_tile_decorations(terrain_name: String) -> void:
+	var atlas: Texture2D = ResourceLoader.load("res://assets/tilesets/edermunizz_overworld.png")
+	if atlas == null:
+		return
+	var at_img: Image = atlas.get_image()
+	if at_img.get_width() < 64 or at_img.get_height() < 32:
+		return
+	# Tiles de árvore densa: col 0-2, rows 0-2 (bloco verde escuro do atlas).
+	var tree_cells := [Vector2i(0, 0), Vector2i(1, 0), Vector2i(2, 0), Vector2i(1, 1), Vector2i(2, 1)]
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash("trees_%s" % terrain_name)
+	var count := 10 if terrain_name == "forest" else (4 if terrain_name == "mixed" else 2)
+	for i in range(count):
+		var cell: Vector2i = tree_cells[rng.randi() % tree_cells.size()]
+		var tile := AtlasTexture.new()
+		tile.atlas = atlas
+		tile.region = Rect2(cell.x * 16, cell.y * 16, 16, 16)
+		var deco := Sprite2D.new()
+		deco.texture = tile
+		deco.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		deco.position = _tile_center(Vector2i(rng.randi_range(0, 7), rng.randi_range(0, 4)))
+		deco.scale = Vector2(3, 3)  # 16px -> 48px na tela
+		add_child(deco)
+		deco.add_child(_make_ground_shadow(Vector2(0, 20)))
 
 	var rng2 := RandomNumberGenerator.new()
 	rng2.seed = hash(map_id)
