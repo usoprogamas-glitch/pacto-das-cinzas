@@ -297,10 +297,26 @@ func _next_turn() -> void:
 		return
 	current_actor = turn_queue[turn_index]
 	_update_turn_label()
+	_face_toward_enemies(current_actor)
 	if current_actor.is_player_side():
 		_show_action_menu(true)
 	else:
 		_enemy_act()
+
+
+## Todos encaram o campo do time oposto (SoS: sprites sempre de frente).
+func _face_toward_enemies(actor) -> void:
+	for u in combatants:
+		var animator := _animator_for(u)
+		if animator == null:
+			continue
+		var facing: float = 1.0 if u.is_player_side() else -1.0
+		# Ator atual olha o alvo imediato, não só o "lado do time".
+		if u == actor:
+			var foes := combatants.filter(func(t): return t.is_alive() and t.is_player_side() != actor.is_player_side())
+			if not foes.is_empty():
+				facing = signf(foes[0].position.x - u.position.x)
+		animator.face_direction(facing)
 
 
 func _advance() -> void:
@@ -575,6 +591,13 @@ func _play_aftermath(target) -> void:
 		return
 	if target.is_alive():
 		await target_anim.play_hit()
+		if grade_last_hit != "MISS":
+			# Knockback sutil (SoS): recua na direção oposta ao atacante e volta.
+			var push: float = signf(target.position.x - current_actor.position.x) * 12.0
+			var home: Vector2 = _home_positions[target.get_instance_id()]
+			var kb := create_tween()
+			kb.tween_property(target, "position:x", home.x + push, 0.08)
+			kb.tween_property(target, "position:x", home.x, 0.22)
 		if grade_last_hit == "PERFECT":
 			_shake_camera(5.0)  # PERFECT: shake médio
 	else:
