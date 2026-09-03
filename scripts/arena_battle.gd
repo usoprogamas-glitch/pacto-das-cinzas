@@ -563,6 +563,7 @@ func _resolve_action(multiplier: float, grade: String) -> void:
 		_update_boss_bar()
 	_spawn_damage_number(_pending_target.position + Vector2(0, -70), damage, grade)
 	_log("%s → %s: %d de dano (%s)" % [current_actor.data.unit_name, _pending_target.data.unit_name, damage, grade])
+	grade_last_hit = grade
 	await _play_aftermath(_pending_target)
 	_pending_target = null
 	_advance()
@@ -574,13 +575,43 @@ func _play_aftermath(target) -> void:
 		return
 	if target.is_alive():
 		await target_anim.play_hit()
+		if grade_last_hit == "PERFECT":
+			_shake_camera(5.0)  # PERFECT: shake médio
 	else:
 		await target_anim.play_death()
+		_shake_camera(8.0)  # morte: shake forte
+		_flash_screen(Color(1.0, 0.9, 0.8, 0.25))
 	# Fúria (GDD §3.3): morte de inimigo pela mão do jogador = execução.
 	if not target.is_alive() and target.is_player_side() == false:
 		if current_actor != null and current_actor.is_player_side() and balance_system:
 			balance_system.perform_fury_action("execute")
 	_update_boss_bar()
+
+
+var grade_last_hit: String = ""
+
+## Screen shake curto no root da arena (game feel, molde SoS).
+func _shake_camera(strength: float) -> void:
+	var original := position
+	var tween := create_tween()
+	for i in range(4):
+		var offset := Vector2(rng_shake.randf_range(-strength, strength), rng_shake.randf_range(-strength, strength))
+		tween.tween_property(self, "position", original + offset, 0.04)
+	tween.tween_property(self, "position", original, 0.05)
+
+var rng_shake := RandomNumberGenerator.new()
+
+## Flash de tela sobre tudo (impacto de morte/crítico).
+func _flash_screen(color: Color) -> void:
+	var flash := ColorRect.new()
+	flash.color = color
+	flash.size = Vector2(1280, 720)
+	flash.z_index = 100
+	flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(flash)
+	var tween := create_tween()
+	tween.tween_property(flash, "color:a", 0.0, 0.18)
+	tween.tween_callback(flash.queue_free)
 
 
 # --- IA inimiga ---
