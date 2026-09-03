@@ -41,6 +41,8 @@ var _enemy_tile_ids: Array = []  # ids registrados no SeamlessEncounterSystem
 var _ui: CanvasLayer
 var _hint_label: Label
 var _e_was_down := false
+var _esc_was_down := false
+var _pause_menu: PanelContainer = null
 # Travessia §6.1 (data-driven via MapDatabase.traversal_nodes)
 var traversal  # TraversalSystem
 var traversal_nodes: Array = []  # [{id, data, node, solved}]
@@ -57,6 +59,7 @@ func _ready() -> void:
 	_spawn_puzzles()
 	_spawn_traversal_nodes()
 	_build_ui()
+	_play_map_intro()
 
 
 # === PROPS VISUAIS (assets ComfyUI, data-driven via MapDatabase.props) ===
@@ -342,6 +345,35 @@ func _build_atmosphere() -> void:
 var _ash_particles: Array = []
 var _ash_time: float = 0.0
 
+## Entrada do mapa (SoS): fade de preto + banner com nome do local.
+func _play_map_intro() -> void:
+	var map: Dictionary = MapDatabase.get_map(map_id)
+	var banner := Label.new()
+	banner.text = String(map.get("name", ""))
+	banner.add_theme_font_size_override("font_size", 34)
+	banner.add_theme_color_override("font_color", Color(0.95, 0.92, 0.85))
+	banner.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+	banner.add_theme_constant_override("shadow_offset_x", 2)
+	banner.add_theme_constant_override("shadow_offset_y", 2)
+	banner.set_anchors_preset(Control.PRESET_CENTER)
+	banner.position = Vector2(640 - 200, 300)
+	banner.custom_minimum_size = Vector2(400, 50)
+	banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_ui.add_child(banner)
+	var fade := ColorRect.new()
+	fade.color = Color(0, 0, 0, 1.0)
+	fade.size = Vector2(1280, 720)
+	fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_ui.add_child(fade)
+	fade.move_to_front()
+	var tween := create_tween()
+	tween.tween_property(fade, "color:a", 0.0, 0.9)
+	tween.parallel().tween_property(banner, "modulate:a", 1.0, 0.6)
+	tween.tween_interval(1.1)
+	tween.tween_property(banner, "modulate:a", 0.0, 0.7)
+	tween.parallel().tween_callback(banner.queue_free)
+	tween.tween_callback(fade.queue_free)
+
 func _process_atmosphere(delta: float) -> void:
 	_ash_time += delta
 	for ash in _ash_particles:
@@ -358,6 +390,10 @@ func _process_atmosphere(delta: float) -> void:
 func _process(delta: float) -> void:
 	_process_atmosphere(delta)
 	if in_encounter() or player == null:
+		return
+	# Pausado: mundo congelado (movimento/contatos), só o menu respira.
+	if _pause_menu != null and is_instance_valid(_pause_menu) and _pause_menu.visible:
+		_process_puzzles(delta)
 		return
 	var dir := Vector2.ZERO
 	if Input.is_action_pressed("ui_right") or Input.is_key_pressed(KEY_D):
@@ -471,6 +507,69 @@ func _start_arena(enemy_index: int) -> void:
 func _set_explore_ui_visible(visible: bool) -> void:
 	if _ui and is_instance_valid(_ui):
 		_ui.visible = visible
+
+
+# === MENU DE PAUSA (ESC): status da party + voltar ===
+
+func _toggle_pause_menu() -> void:
+	if _pause_menu != null and is_instance_valid(_pause_menu):
+		_pause_menu.visible = not _pause_menu.visible
+	else:
+		_build_pause_menu()
+		_pause_menu.visible = true
+
+
+func _build_pause_menu() -> void:
+	_pause_menu = PanelContainer.new()
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.06, 0.06, 0.1, 0.94)
+	style.set_corner_radius_all(8)
+	style.set_content_margin_all(18)
+	style.border_color = Color(0.5, 0.45, 0.3, 0.8)
+	style.set_border_width_all(2)
+	_pause_menu.add_theme_stylebox_override("panel", style)
+	_pause_menu.position = Vector2(440, 180)
+	_pause_menu.custom_minimum_size = Vector2(400, 0)
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 10)
+	_pause_menu.add_child(vbox)
+	var title := Label.new()
+	title.text = "PAUSA"
+	title.add_theme_font_size_override("font_size", 26)
+	title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.5))
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(title)
+	# Status da party (molde SoS: HP/MP por membro).
+	for member in GameManager.party_data:
+		var row := Label.new()
+		row.text = "%s  —  HP %s  ·  Éter %s  ·  ATK %s" % [
+			String(member.get("name", "?")),
+			str(int(member.get("hp", 0))),
+			str(int(member.get("ether", 0))),
+			str(int(member.get("atk", 0))),
+		]
+		row.add_theme_font_size_override("font_size", 15)
+		vbox.add_child(row)
+	var sep := HSeparator.new()
+	vbox.add_child(sep)
+	var resumo := Label.new()
+	resumo.text = "Ato %d · %s\nÉter %d · Ouro %d · Materiais %d" % [
+		GameManager.campaign_system.current_act + 1 if GameManager and GameManager.campaign_system else 1,
+		String(MapDatabase.get_map(map_id).get("name", "")),
+		int(GameManager.game_data.get("soul_ether", 0)),
+		int(GameManager.game_data.get("gold", 0)),
+		int(GameManager.building_system.resources.get("materials", 0)) if GameManager else 0,
+	]
+	resumo.add_theme_font_size_override("font_size", 14)
+	resumo.add_theme_color_override("font_color", Color(0.85, 0.82, 0.75))
+	vbox.add_child(resumo)
+	var close := Button.new()
+	close.text = "Continuar (ESC)"
+	close.custom_minimum_size = Vector2(220, 32)
+	close.pressed.connect(_toggle_pause_menu)
+	vbox.add_child(close)
+	_ui.add_child(_pause_menu)
+	_pause_menu.move_to_front()
 
 
 func _on_battle_ended(victory: bool, rewards: Dictionary, enemy_index: int) -> void:
@@ -593,13 +692,32 @@ func _make_mirror_node(m: Dictionary) -> Node2D:
 func _make_pedestal(tile: Vector2i, color: Color) -> Node2D:
 	var node := Node2D.new()
 	node.position = _tile_center(tile)
+	# Pedestal de puzzle: base circular escura + anel do tom do pedestal
+	# (substitui os quadradinhos chapados vistos no QA visual).
+	var base := _make_ground_shadow(Vector2.ZERO)
+	base.scale = Vector2(0.5, 0.3)
+	node.add_child(base)
+	var ring := Line2D.new()
+	ring.points = _circle_points(9.0, 10)
+	ring.default_color = color
+	ring.width = 2.5
+	ring.closed = true
+	node.add_child(ring)
 	var core := ColorRect.new()
-	core.size = Vector2(16, 16)
-	core.position = Vector2(-8, -8)
-	core.color = color
+	core.size = Vector2(7, 7)
+	core.position = Vector2(-3.5, -3.5)
+	core.color = color.lightened(0.15)
 	node.add_child(core)
 	add_child(node)
 	return node
+
+
+func _circle_points(radius: float, sides: int) -> PackedVector2Array:
+	var points := PackedVector2Array()
+	for i in range(sides + 1):
+		var angle := TAU * i / sides
+		points.append(Vector2(cos(angle), sin(angle)) * radius)
+	return points
 
 
 func _make_clock_node(tile: Vector2i) -> Node2D:
@@ -624,6 +742,11 @@ func _update_pointer(entry: Dictionary, mirror_id: String) -> void:
 
 
 func _process_puzzles(_delta: float) -> void:
+	if Input.is_key_pressed(KEY_ESCAPE) and not _esc_was_down:
+		_toggle_pause_menu()
+	_esc_was_down = Input.is_key_pressed(KEY_ESCAPE)
+	if _pause_menu != null and is_instance_valid(_pause_menu) and _pause_menu.visible:
+		return  # pausado: para interações do mundo
 	if traversal:
 		traversal.regen_stamina(_delta)
 	if Input.is_key_pressed(KEY_E) and not _e_was_down:

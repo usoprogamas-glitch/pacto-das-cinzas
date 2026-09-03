@@ -1844,7 +1844,10 @@ func _add_action_button(parent: Node, label_text: String, handler: Callable) -> 
  style.set_border_width_all(1)
  style.set_corner_radius_all(4)
  btn.add_theme_stylebox_override("normal", style)
- btn.pressed.connect(handler)
+ btn.pressed.connect(func() -> void:
+  if SoundManager:
+   SoundManager.play_sfx("click")
+  handler.call())
  parent.add_child(btn)
 
 

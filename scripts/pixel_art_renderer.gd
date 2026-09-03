@@ -936,12 +936,12 @@ static func build_terrain_canvas(terrain_type: String, seed: int = 0) -> Sprite2
 
  # 2) Manchas orgânicas (blobs) em tons mais claros: sobe a variedade sem
  #    virar tile gritante. 14 manchas de raio 14-30.
- for i in range(14):
+ for i in range(18):
   var cx := rng.randf_range(0, w)
   var cy := rng.randf_range(0, h)
-  var radius := rng.randf_range(14, 30)
+  var radius := rng.randf_range(9, 20)
   var tone := light if rng.randf() < 0.6 else lightest
-  var opacity := rng.randf_range(0.35, 0.6)
+  var opacity := rng.randf_range(0.2, 0.4)
   var steps := int(radius * 2.4)
   for s in range(steps):
    var angle := TAU * s / steps
