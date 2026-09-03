@@ -28,7 +28,11 @@ var terrain_tiles: Array = []  # [{node, kind}] - fundo decorado data-driven
 var pixel_renderer  # PixelArtRenderer
 var player_animator  # UnitAnimator (ciclos do MotionLib)
 var _buddy_animator
+var buddy_node: Node2D = null  # Kroug na cena (não filho do player: trilha suave)
+var _player_trail: Array = []  # histórico de posições do player (trilha do buddy)
+var _step_distance: float = 0.0  # distância desde o último SFX de passo
 var _enemy_animators: Array = []  # paralelo a enemy_nodes
+var _enemy_alert: Array = []  # paralelo a enemy_nodes: já percebeu o jogador?
 
 var _enemy_tile_ids: Array = []  # ids registrados no SeamlessEncounterSystem
 var _ui: CanvasLayer
@@ -164,15 +168,16 @@ func _spawn_party() -> void:
 	player_animator = kael_sprite.get_meta("animator", null)
 	add_child(player)
 
-	# Kroug segue o Kael (party no mapa, molde SoS).
+	# Kroug segue o Kael com atraso (trilha suave, molde SoS): filho da CENA,
+	# não do player — interpola para a posição histórica do líder.
 	if GameManager and GameManager.game_data.get("starting_ally") == "kroug":
-		var buddy := Node2D.new()
-		buddy.position = Vector2(-44, 26)
-		buddy.add_child(_make_ground_shadow())
+		buddy_node = Node2D.new()
+		buddy_node.position = player.position + Vector2(-44, 26)
+		buddy_node.add_child(_make_ground_shadow())
 		var kroug_sprite := _animated_sprite("res://assets/sprites/kroug.png", 0.05, Color(0.8, 0.3, 0.1))
-		buddy.add_child(kroug_sprite)
+		buddy_node.add_child(kroug_sprite)
 		_buddy_animator = kroug_sprite.get_meta("animator", null)
-		player.add_child(buddy)
+		add_child(buddy_node)
 
 
 ## Sprite HD com ciclos de movimento gerados em runtime (MotionLib). Mantém o
@@ -260,6 +265,7 @@ func _spawn_enemies() -> void:
 		node.add_child(_animated_sprite("res://assets/sprites/%s.png" % type, 0.05, Color(e["color"])))
 		add_child(node)
 		enemy_nodes.append(node)
+		_enemy_alert.append(false)
 		var foe_sprite: Sprite2D = node.get_children()[0]
 		_enemy_animators.append(foe_sprite.get_meta("animator", null))
 		var foe_type := "boss" if stage.get("boss", false) else "random"
@@ -359,18 +365,53 @@ func _process(delta: float) -> void:
 		dir.y -= 1
 	var moving := dir != Vector2.ZERO
 	_set_move_anim(player_animator, moving, dir.x)
-	if _buddy_animator:
-		_set_move_anim(_buddy_animator, moving, dir.x)
 	player.position += dir.normalized() * SPEED * delta
 	player.position.x = clampf(player.position.x, 30, 1250)
 	player.position.y = clampf(player.position.y, 30, 690)
+
+	# Trilha do líder (SoS): histórico de posições do player; o buddy segue
+	# ~14 pontos atrás com interpolação — vira e anda independentemente.
+	if moving:
+		_player_trail.push_front(player.position)
+		if _player_trail.size() > 40:
+			_player_trail.pop_back()
+		_step_distance += SPEED * delta
+		if _step_distance > 26.0:
+			_step_distance = 0.0
+			if SoundManager:
+				SoundManager.play_sfx("step")
+	if buddy_node:
+		var target: Vector2 = _player_trail[mini(13, _player_trail.size() - 1)] if _player_trail.size() > 0 else player.position
+		var to_target := target - buddy_node.position
+		var buddy_moving := to_target.length() > 6.0
+		if buddy_moving:
+			buddy_node.position += to_target.normalized() * minf(to_target.length(), SPEED * 1.05 * delta)
+		_set_move_anim(_buddy_animator, buddy_moving, to_target.x)
 
 	for i in range(enemy_nodes.size()):
 		var node = enemy_nodes[i]
 		if not is_instance_valid(node):
 			continue
 		var to_player: Vector2 = player.position - node.position
-		if to_player.length() < 260.0:
+		var dist := to_player.length()
+		# Telegraph de percepção (SoS): "!" visual + SFX quando entra no raio.
+		if dist < 260.0 and not _enemy_alert[i]:
+			_enemy_alert[i] = true
+			if node.has_node("alert_label") == false:
+				var alert := Label.new()
+				alert.name = "alert_label"
+				alert.text = "!"
+				alert.position = Vector2(-6, -64)
+				alert.add_theme_font_size_override("font_size", 22)
+				alert.add_theme_color_override("font_color", Color(1.0, 0.3, 0.2))
+				node.add_child(alert)
+				if SoundManager:
+					SoundManager.play_select()
+		elif dist >= 300.0:
+			_enemy_alert[i] = false
+			if node.has_node("alert_label"):
+				node.get_node("alert_label").queue_free()
+		if dist < 260.0:
 			node.position += to_player.normalized() * 90.0 * delta
 			_set_move_anim(_enemy_animators[i], true, to_player.x)
 		else:
