@@ -34,3 +34,9 @@ workflow_api.json
 *_workflow.json
 .env
 __pycache__/
+
+tools/qa_shots/*.import
+tools/*.html
+tools/*.zip
+tools/itch_*.txt
+tools/durl*.json
