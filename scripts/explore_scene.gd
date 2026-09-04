@@ -34,6 +34,14 @@ var _step_distance: float = 0.0  # distância desde o último SFX de passo
 var _player_shadow: Sprite2D = null
 var _buddy_shadow: Sprite2D = null
 var _shadow_phase: float = 0.0
+var buddy_sos_char: String = ""  # personagem SoS do buddy (piloto: Garl)
+var _buddy_sos_sets: Dictionary = {}
+var _buddy_sos_sprite: Sprite2D = null
+var _buddy_sos_frame: float = 0.0
+var player_sos_char: String = ""  # piloto: Kael renderiza Zale
+var _player_sos_sets: Dictionary = {}
+var _player_sos_sprite: Sprite2D = null
+var _player_sos_frame: float = 0.0
 var _enemy_animators: Array = []  # paralelo a enemy_nodes
 var _enemy_alert: Array = []  # paralelo a enemy_nodes: já percebeu o jogador?
 
@@ -278,8 +286,19 @@ func _spawn_party() -> void:
 	player.position = Vector2(160, 360)
 	_player_shadow = _make_ground_shadow()
 	player.add_child(_player_shadow)
+	# Piloto SoS (estudo): Kael renderiza NarcisKingZale quando disponível.
+	var sos_kael: Dictionary = SOSMotionLoader.build_motion_sets("NarcisKingZale", 3)
+	if not sos_kael.is_empty():
+		player_sos_char = "NarcisKingZale"
+		_player_sos_sets = _hue_shift_sets(sos_kael, 0.30)  # verde Kael
+		_player_sos_sprite = Sprite2D.new()
+		_player_sos_sprite.texture = _player_sos_sets["idle"][0]
+		_player_sos_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		_player_sos_sprite.scale = Vector2(1.7, 1.7)
+		player.add_child(_player_sos_sprite)
 	var kael_sprite := _animated_sprite("res://assets/sprites/kael.png", 0.06, Color(0.2, 0.8, 0.3))
-	player.add_child(kael_sprite)
+	if player_sos_char == "":
+		player.add_child(kael_sprite)
 	player_animator = kael_sprite.get_meta("animator", null)
 	add_child(player)
 
@@ -290,9 +309,22 @@ func _spawn_party() -> void:
 		buddy_node.position = player.position + Vector2(-44, 26)
 		_buddy_shadow = _make_ground_shadow()
 		buddy_node.add_child(_buddy_shadow)
-		var kroug_sprite := _animated_sprite("res://assets/sprites/kroug.png", 0.05, Color(0.8, 0.3, 0.1))
-		buddy_node.add_child(kroug_sprite)
-		_buddy_animator = kroug_sprite.get_meta("animator", null)
+		# Sprite SoS do Garl (estudo): walk cycle real por direção.
+		if SOSMotionLoader.build_motion_sets("Garl", 1):
+			buddy_sos_char = "Garl"
+			var sos_sets: Dictionary = _hue_shift_sets(SOSMotionLoader.build_motion_sets("Garl", 1), 0.07)  # laranja Kroug
+			var sos_sprite := Sprite2D.new()
+			sos_sprite.texture = sos_sets["idle"][0]
+			sos_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			sos_sprite.scale = Vector2(1.7, 1.7)
+			buddy_node.add_child(sos_sprite)
+			_buddy_animator = null  # direção manual (ver _process do buddy SoS)
+			_buddy_sos_sets = sos_sets
+			_buddy_sos_sprite = sos_sprite
+		else:
+			var kroug_sprite := _animated_sprite("res://assets/sprites/kroug.png", 0.05, Color(0.8, 0.3, 0.1))
+			buddy_node.add_child(kroug_sprite)
+			_buddy_animator = kroug_sprite.get_meta("animator", null)
 		add_child(buddy_node)
 
 
@@ -317,6 +349,79 @@ func _animated_sprite(path: String, scale_f: float, fallback_color: Color) -> Sp
 	s.scale = s.scale * (float(img.get_width()) / float(MotionLib.FRAME_SIZE))
 	s.set_meta("animator", animator)
 	return s
+
+
+## Direções SoS: D1=Sul, D2=SO, D3=Oeste, D4=Norte, D5=Leste.
+func _sos_dir_from_vector(v: Vector2) -> int:
+	if v == Vector2.ZERO:
+		return 1
+	if absf(v.x) > absf(v.y):
+		return 5 if v.x > 0 else 3
+	return 1 if v.y > 0 else 5
+
+
+## Recoloração por dominância de matiz: pixels do matiz dominante do sprite
+## (a roupa do personagem) migram para o matiz alvo. Preserva sombreado.
+func _hue_shift_sets(sets: Dictionary, target_hue: float) -> Dictionary:
+	var shifted := {}
+	for action: String in sets:
+		shifted[action] = []
+		for tex in sets[action]:
+			var img: Image = tex.get_image()
+			if img == null:
+				continue
+			_shift_hue_image(img, target_hue)
+			shifted[action].append(ImageTexture.create_from_image(img))
+	return shifted
+
+
+func _shift_hue_image(img: Image, target_hue: float) -> void:
+	# 1) matiz dominante (maior soma de saturação^2 * alpha)
+	var hue_x := 0.0
+	var hue_y := 0.0
+	for y in range(img.get_height()):
+		for x in range(img.get_width()):
+			var c := img.get_pixel(x, y)
+			if c.a < 0.5:
+				continue
+			if c.s > 0.25 and c.v > 0.15:
+				hue_x += cos(c.h * TAU) * c.s
+				hue_y += sin(c.h * TAU) * c.s
+	if hue_x == 0.0 and hue_y == 0.0:
+		return
+	var dominant := atan2(hue_y, hue_x) / TAU
+	if dominant < 0:
+		dominant += 1.0
+	var delta := (target_hue - dominant)
+	# 2) rotaciona a matiz dos pixels saturados na mesma proporção
+	for y in range(img.get_height()):
+		for x in range(img.get_width()):
+			var c := img.get_pixel(x, y)
+			if c.a < 0.05 or c.s < 0.2:
+				continue
+			var shifted := c
+			shifted.h = fposmod(c.h + delta, 1.0)
+			img.set_pixel(x, y, shifted)
+
+
+## Tick do sprite SoS: troca frame do walk cycle na direção dada.
+func _tick_sos_sprite(sprite: Sprite2D, sets: Dictionary, dir_key: int, moving: bool, delta: float, frame_state) -> void:
+	if sprite == null or sets.is_empty():
+		return
+	var action := "walk" if moving else "idle"
+	var frames: Array = sets.get(action, [])
+	if frames.is_empty():
+		return
+	var fps := 8.0 if moving else 3.0
+	frame_state += fps * delta
+	if int(frame_state) >= frames.size():
+		frame_state = 0.0
+	sprite.texture = frames[int(frame_state)]
+	# D3 = Oeste: flip para Leste (sprites SoS andam para a esquerda por padrão).
+	if dir_key == 5:
+		sprite.flip_h = true
+	elif dir_key == 3:
+		sprite.flip_h = false
 
 
 func _set_move_anim(anim, moving: bool, dir_x: float = 0.0) -> void:
@@ -553,7 +658,19 @@ func _process(delta: float) -> void:
 			_step_distance = 0.0
 			if SoundManager:
 				SoundManager.play_sfx("step")
-	if buddy_node:
+	# Sprites SoS na exploração: walk cycle real por direção do movimento.
+	var dir_key := _sos_dir_from_vector(dir)
+	if player_sos_char != "":
+		_tick_sos_sprite(_player_sos_sprite, _player_sos_sets, dir_key, moving, delta, _player_sos_frame)
+	if buddy_node and buddy_sos_char != "":
+		var target: Vector2 = _player_trail[mini(13, _player_trail.size() - 1)] if _player_trail.size() > 0 else player.position
+		var to_target := target - buddy_node.position
+		var buddy_moving := to_target.length() > 6.0
+		if buddy_moving:
+			buddy_node.position += to_target.normalized() * minf(to_target.length(), speed * 1.05 * delta)
+		var buddy_dir := _sos_dir_from_vector(to_target) if buddy_moving else dir_key
+		_tick_sos_sprite(_buddy_sos_sprite, _buddy_sos_sets, buddy_dir, buddy_moving, delta, _buddy_sos_frame)
+	elif buddy_node:
 		var target: Vector2 = _player_trail[mini(13, _player_trail.size() - 1)] if _player_trail.size() > 0 else player.position
 		var to_target := target - buddy_node.position
 		var buddy_moving := to_target.length() > 6.0

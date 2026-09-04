@@ -73,12 +73,31 @@ func test_explore_attaches_animator_with_frames_to_party_and_enemies():
 	assert_not_null(scene.player_animator, "Kael tem animator com ciclos")
 	assert_gt(scene.player_animator.walk_frames.size(), 0, "Kael tem frames de passada")
 	assert_gt(scene.player_animator.idle_frames.size(), 0, "Kael tem frames de idle")
-	assert_not_null(scene._buddy_animator, "Kroug tem animator com ciclos")
+	# Kroug agora usa sprites SoS (Garl) com walk cycle por direção.
+	if scene.buddy_sos_char != "":
+		assert_not_null(scene._buddy_sos_sets["walk"], "Kroug-SoS tem walk frames")
+		assert_not_null(scene._buddy_sos_sprite, "Kroug-SoS tem sprite")
+	else:
+		assert_not_null(scene._buddy_animator, "Kroug tem animator com ciclos")
 	assert_eq(scene._enemy_animators.size(), scene.enemy_nodes.size(), "cada inimigo tem animator")
 
 
 func test_animator_cycles_texture_over_time():
 	var scene := _open()
+	if scene.player_sos_char != "":
+		# Sprites SoS: idle é 1 frame estático (autêntico); walk tem 6 frames.
+		# Ticka o walk cycle manualmente e valida que a textura muda.
+		var spr: Sprite2D = scene._player_sos_sprite
+		var frame0: Texture2D = spr.texture
+		var changed := false
+		for i in range(10):
+			scene._player_sos_frame += 0.5  # ~4 frames a 8 FPS
+			scene._tick_sos_sprite(spr, scene._player_sos_sets, 1, true, 0.0, scene._player_sos_frame)
+			if spr.texture != frame0:
+				changed = true
+				break
+		assert_true(changed, "walk cycle SoS troca frame ao tickar")
+		return
 	var anim = scene.player_animator
 	var frame0: Texture2D = anim.sprite.texture
 	await get_tree().create_timer(0.35).timeout  # idle fps 4 → ~1.4 frames
