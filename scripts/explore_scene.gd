@@ -290,7 +290,7 @@ func _spawn_party() -> void:
 	var sos_kael: Dictionary = SOSMotionLoader.build_motion_sets("NarcisKingZale", 3)
 	if not sos_kael.is_empty():
 		player_sos_char = "NarcisKingZale"
-		_player_sos_sets = _hue_shift_sets(sos_kael, 0.30)  # verde Kael
+		_player_sos_sets = _hue_shift_sets(sos_kael, 0.55)  # azul Valere: contrasta com o verde do chão
 		_player_sos_sprite = Sprite2D.new()
 		_player_sos_sprite.texture = _player_sos_sets["idle"][0]
 		_player_sos_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -402,6 +402,31 @@ func _shift_hue_image(img: Image, target_hue: float) -> void:
 			var shifted := c
 			shifted.h = fposmod(c.h + delta, 1.0)
 			img.set_pixel(x, y, shifted)
+	# 3) Contorno interno escuro (assinatura SoS): pixels opacos adjacentes a
+	#    transparentes escurecem ~60%, dando leitura de desenho.
+	var w2 := img.get_width()
+	var h2 := img.get_height()
+	var edges := []
+	for y in range(h2):
+		for x in range(w2):
+			var c := img.get_pixel(x, y)
+			if c.a < 0.5:
+				continue
+			var transparent_neighbor := false
+			for off in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+				var nx: int = x + off.x
+				var ny: int = y + off.y
+				if nx < 0 or ny < 0 or nx >= w2 or ny >= h2:
+					transparent_neighbor = true
+					break
+				if img.get_pixel(nx, ny).a < 0.5:
+					transparent_neighbor = true
+					break
+			if transparent_neighbor:
+				edges.append(Vector2i(x, y))
+	for e in edges:
+		var c := img.get_pixel(e.x, e.y)
+		img.set_pixel(e.x, e.y, Color(c.r * 0.35, c.g * 0.35, c.b * 0.35, c.a))
 
 
 ## Tick do sprite SoS: troca frame do walk cycle na direção dada.
