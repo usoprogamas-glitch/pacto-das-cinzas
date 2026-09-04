@@ -509,14 +509,14 @@ func _build_lighting() -> void:
 
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash("light_%s" % String(MapDatabase.get_map(map_id).get("name", "")))
-	var count: int = int({"cave": 4, "volcanic": 4, "castle": 3, "forest": 3}.get(_map_terrain(), 3))
+	var count: int = int({"cave": 3, "volcanic": 3, "castle": 2, "forest": 2}.get(_map_terrain(), 2))
 	for i in range(count):
 		var light := Sprite2D.new()
 		light.texture = _light_gradient_texture()
 		light.material = _add_blend_material()
 		light.position = Vector2(rng.randf_range(150, 1130), rng.randf_range(130, 610))
-		light.scale = Vector2(1.6, 1.6)
-		light.modulate = Color(1.0, 0.72, 0.35, rng.randf_range(0.3, 0.45))
+		light.scale = Vector2(1.15, 1.15)
+		light.modulate = Color(0.9, 0.62, 0.28, rng.randf_range(0.2, 0.32))
 		add_child(light)
 		# Flicker sutil (vida da chama).
 		var flicker := create_tween().set_loops()
@@ -1095,6 +1095,10 @@ func _process(delta: float) -> void:
 		_tick_sos_sprite(_player_sos_sprite, _player_sos_sets, dir_key, moving, delta, _player_sos_frame)
 	if buddy_node and buddy_sos_char != "":
 		var target: Vector2 = _player_trail[mini(13, _player_trail.size() - 1)] if _player_trail.size() > 0 else player.position
+		# Nunca fica exatamente em cima do líder (offset mínimo na direção oposta).
+		var away: Vector2 = (buddy_node.position - target)
+		if away.length() < 20.0 and away.length() > 0.01:
+			target = buddy_node.position + away.normalized() * 24.0
 		var to_target := target - buddy_node.position
 		var buddy_moving := to_target.length() > 6.0
 		if buddy_moving:

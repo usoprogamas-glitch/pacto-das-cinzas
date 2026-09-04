@@ -40,7 +40,8 @@ var _result_shown := false
 var _pending_victory := false
 var _pending_rewards := {}
 var _hp_labels: Dictionary = {}  # unit -> Label
-var _animators: Dictionary = {}  # instance_id -> UnitAnimator (P0-2: key por instância)
+var _animators: Dictionary = {}  # instance_id -> UnitAnimator
+var _current_enemy_type: String = ""  # tipo do inimigo sendo posicionado (SoS) (P0-2: key por instância)
 var _home_positions: Dictionary = {}  # instance_id -> Vector2 (destino da entrada)
 var combo_system  # ComboSystem (GDD §3.3): CP no HUD da arena
 var balance_system  # BalanceSystem (GDD §3.3): barra Éter/Fúria no HUD
@@ -118,7 +119,7 @@ func _setup_from_campaign() -> void:
 		combatants.append(foe)
 		if e.has("enemy_spell"):
 			_charge_specs[foe.get_instance_id()] = e["enemy_spell"]
-		_arena_position(foe, Vector2(pos_x, 400 + i * 130), Color(e["color"]), _sprite_key(e["name"]))
+		_arena_position(foe, Vector2(pos_x, 400 + i * 130), Color(e["color"]), _sprite_key(e["name"]), type)
 		pos_x += 40
 		enemies_meta.append({"type": type, "soul_ether": e.get("soul_ether", 10)})
 
@@ -160,22 +161,36 @@ func _make_combatant(unit_name: String, is_player: bool, hp: int, atk: int, def:
 	return u
 
 
-func _arena_position(u: Unit, pos: Vector2, color: Color, sprite_key: String) -> void:
+func _arena_position(u: Unit, pos: Vector2, color: Color, sprite_key: String, enemy_type: String = "") -> void:
 	u.position = pos
 	u.visible = true
 	_home_positions[u.get_instance_id()] = pos
+	_current_enemy_type = enemy_type
 	var path := "res://assets/sprites/%s.png" % sprite_key
 	var sprite: Sprite2D
 	var motion_sets := {}
-	# Piloto SoS (estudo): sprites extraídos substituem o wiggle procedural
-	# quando a pasta do personagem existe (ver .gitignore — nunca commitados).
-	var sos_char := "NarcisKingZale"
-	motion_sets = SOSMotionLoader.build_motion_sets(sos_char, 3)
+	# SoS (estudo): jogadores renderizam NarcisKingZale; inimigos usam o
+	# personagem SoS mapeado pelo tipo do jogo (mercenario->StrifeMinion etc).
+	var sos_char: String = ""
+	var sos_dir := 3
+	if not u.is_player_side() and _current_enemy_type != "":
+		var enemy_sos := {
+			"mercenario": "StrifeMinion", "cacador": "Owlsassin", "esqueleto": "BilePile",
+			"mago": "Keymouseter", "inquisidor": "Acolyte1", "paladino": "Acolyte4",
+			"orc_chefe": "BoulderDouche", "troll": "BoulderGoat",
+		}
+		sos_char = String(enemy_sos.get(_current_enemy_type, ""))
+		sos_dir = 3  # inimigos à direita olham para o lado do jogador (D3=Oeste)
+	elif u.is_player_side():
+		sos_char = "NarcisKingZale"
+		sos_dir = 5
+	if sos_char != "":
+		motion_sets = SOSMotionLoader.build_motion_sets(sos_char, sos_dir)
 	if not motion_sets.is_empty():
 		sprite = Sprite2D.new()
 		sprite.texture = motion_sets["idle"][0]
 		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		sprite.scale = Vector2(2.4, 2.4)  # 31x53 px fonte -> ~75x127 na arena
+		sprite.scale = Vector2(2.4, 2.4)  # ~31x53 px fonte -> ~75x127 na arena
 		sprite.offset = Vector2(0, -8)
 	elif FileAccess.file_exists(path):
 		var img := Image.new()
@@ -461,7 +476,7 @@ func _spawn_next_wave() -> void:
 		combatants.append(foe)
 		if e.has("enemy_spell"):
 			_charge_specs[foe.get_instance_id()] = e["enemy_spell"]
-		_arena_position(foe, Vector2(pos_x, 380 + (_wave_index % 2) * 90), Color(e["color"]), _sprite_key(e["name"]))
+		_arena_position(foe, Vector2(pos_x, 380 + (_wave_index % 2) * 90), Color(e["color"]), _sprite_key(e["name"]), String(type))
 		pos_x += 40
 		enemies_meta.append({"type": String(type), "soul_ether": int(e.get("soul_ether", 10))})
 	_log("ONDA %d/%d entra na arena!" % [_wave_index, _wave_specs.size()])
