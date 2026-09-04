@@ -1224,23 +1224,24 @@ func _toggle_pause_menu() -> void:
 func _build_pause_menu() -> void:
 	_pause_menu = PanelContainer.new()
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.06, 0.06, 0.1, 0.94)
-	style.set_corner_radius_all(8)
-	style.set_content_margin_all(18)
-	style.border_color = Color(0.5, 0.45, 0.3, 0.8)
+	style.bg_color = Color(0.09, 0.11, 0.16, 0.96)
+	style.set_content_margin_all(22)
+	style.border_color = Color(0.35, 0.33, 0.28, 0.9)
 	style.set_border_width_all(2)
 	_pause_menu.add_theme_stylebox_override("panel", style)
-	_pause_menu.position = Vector2(440, 180)
-	_pause_menu.custom_minimum_size = Vector2(400, 0)
+	_pause_menu.position = Vector2(480, 120)
+	_pause_menu.custom_minimum_size = Vector2(340, 0)
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 10)
+	vbox.add_theme_constant_override("separation", 4)
 	_pause_menu.add_child(vbox)
 	var title := Label.new()
 	title.text = "PAUSA"
-	title.add_theme_font_size_override("font_size", 26)
-	title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.5))
+	title.add_theme_font_size_override("font_size", 30)
+	title.add_theme_color_override("font_color", Color(0.95, 0.95, 0.98))
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(title)
+	var title_sep := HSeparator.new()
+	vbox.add_child(title_sep)
 	# Status da party (molde SoS: HP/MP por membro).
 	for member in GameManager.party_data:
 		var row := Label.new()
@@ -1251,9 +1252,11 @@ func _build_pause_menu() -> void:
 			str(int(member.get("atk", 0))),
 		]
 		row.add_theme_font_size_override("font_size", 15)
+		row.add_theme_color_override("font_color", Color(0.85, 0.85, 0.9))
+		row.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		vbox.add_child(row)
-	var sep := HSeparator.new()
-	vbox.add_child(sep)
+	var sep2 := HSeparator.new()
+	vbox.add_child(sep2)
 	var resumo := Label.new()
 	resumo.text = "Ato %d · %s\nÉter %d · Ouro %d · Materiais %d" % [
 		GameManager.campaign_system.current_act + 1 if GameManager and GameManager.campaign_system else 1,
@@ -1263,13 +1266,48 @@ func _build_pause_menu() -> void:
 		int(GameManager.building_system.resources.get("materials", 0)) if GameManager else 0,
 	]
 	resumo.add_theme_font_size_override("font_size", 14)
-	resumo.add_theme_color_override("font_color", Color(0.85, 0.82, 0.75))
+	resumo.add_theme_color_override("font_color", Color(0.7, 0.68, 0.62))
+	resumo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(resumo)
-	var close := Button.new()
-	close.text = "Continuar (ESC)"
-	close.custom_minimum_size = Vector2(220, 32)
-	close.pressed.connect(_toggle_pause_menu)
-	vbox.add_child(close)
+	var sep3 := HSeparator.new()
+	vbox.add_child(sep3)
+	# Itens de menu no molde SoS: centralizados, highlight azul com borda no hover.
+	var opts := [
+		["Continuar", func() -> void: _toggle_pause_menu()],
+		["Diário (J)", func() -> void:
+			_toggle_pause_menu()
+			_toggle_quest_log()],
+		["Salvar", func() -> void:
+			if GameManager.has_method("save_game"):
+				GameManager.save_game()
+			_show_quest_toast("JOGO SALVO")],
+		["Voltar ao início", func() -> void:
+			if GameManager:
+				GameManager.save_game()
+			get_tree().change_scene_to_file("res://scenes/main_menu.tscn")],
+	]
+	for opt: Array in opts:
+		var btn := Button.new()
+		btn.text = String(opt[0])
+		btn.flat = true
+		btn.custom_minimum_size = Vector2(300, 38)
+		btn.add_theme_font_size_override("font_size", 18)
+		btn.add_theme_color_override("font_color", Color(0.92, 0.92, 0.96))
+		btn.add_theme_color_override("font_hover_color", Color(0.55, 0.85, 1.0))
+		btn.add_theme_color_override("font_focus_color", Color(0.55, 0.85, 1.0))
+		var hover := StyleBoxFlat.new()
+		hover.bg_color = Color(0.15, 0.45, 0.7, 0.85)
+		hover.set_border_width_all(2)
+		hover.border_color = Color(0.5, 0.85, 1.0)
+		hover.set_corner_radius_all(3)
+		btn.add_theme_stylebox_override("hover", hover)
+		var focus := StyleBoxFlat.new()
+		focus.draw_center = false
+		focus.set_border_width_all(2)
+		focus.border_color = Color(0.5, 0.85, 1.0)
+		btn.add_theme_stylebox_override("focus", focus)
+		btn.pressed.connect(opt[1])
+		vbox.add_child(btn)
 	_ui.add_child(_pause_menu)
 	_pause_menu.move_to_front()
 
