@@ -59,6 +59,72 @@ func _ready() -> void:
 	_spawn_puzzles()
 	_spawn_traversal_nodes()
 	_build_ui()
+	_build_lighting()
+	_play_map_intro()
+
+
+# === ILUMINAÇÃO DINÂMICA (SoS): escurece o mundo + poços de luz aditivos ===
+
+func _build_lighting() -> void:
+	# CanvasModulate: escurece o mundo; as luzes "revelam" por cima.
+	var modulate := CanvasModulate.new()
+	modulate.color = _ambient_color()
+	add_child(modulate)
+
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash("light_%s" % String(MapDatabase.get_map(map_id).get("name", "")))
+	var count: int = int({"cave": 5, "volcanic": 6, "castle": 4, "forest": 2}.get(_map_terrain(), 3))
+	for i in range(count):
+		var light := Sprite2D.new()
+		light.texture = _light_gradient_texture()
+		light.material = _add_blend_material()
+		light.position = Vector2(rng.randf_range(120, 1160), rng.randf_range(100, 640))
+		light.scale = Vector2(2.2, 2.2)
+		light.modulate = Color(1.0, 0.75, 0.4, rng.randf_range(0.5, 0.75))
+		add_child(light)
+		# Flicker sutil (vida da chama).
+		var flicker := create_tween().set_loops()
+		var base_alpha: float = light.modulate.a
+		flicker.tween_property(light, "modulate:a", base_alpha * 0.75, rng.randf_range(0.7, 1.3)).set_trans(Tween.TRANS_SINE)
+		flicker.tween_property(light, "modulate:a", base_alpha, rng.randf_range(0.7, 1.3)).set_trans(Tween.TRANS_SINE)
+
+
+func _light_gradient_texture() -> GradientTexture2D:
+	var grad := Gradient.new()
+	grad.set_color(0, Color(1.0, 0.75, 0.4, 0.6))
+	grad.set_color(1, Color(1.0, 0.75, 0.4, 0.0))
+	var gtex := GradientTexture2D.new()
+	gtex.gradient = grad
+	gtex.fill = GradientTexture2D.FILL_RADIAL
+	gtex.fill_from = Vector2(0.5, 0.5)
+	gtex.fill_to = Vector2(1.0, 0.5)
+	gtex.width = 256
+	gtex.height = 256
+	return gtex
+
+
+func _add_blend_material() -> CanvasItemMaterial:
+	var mat := CanvasItemMaterial.new()
+	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	return mat
+
+
+func _map_terrain() -> String:
+	return String(MapDatabase.get_map(map_id).get("terrain", "mixed"))
+
+
+func _ambient_color() -> Color:
+	match _map_terrain():
+		"cave":
+			return Color(0.62, 0.62, 0.7)  # caverna fria e escura
+		"volcanic":
+			return Color(0.85, 0.72, 0.62)  # brasa quente
+		"castle":
+			return Color(0.78, 0.76, 0.8)  # pedra fria
+		"forest":
+			return Color(0.72, 0.78, 0.68)  # copas filtrando o sol
+		_:
+			return Color(0.88, 0.86, 0.8)  # crepúsculo da Fronteira
 	_play_map_intro()
 
 
