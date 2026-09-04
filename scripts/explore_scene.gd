@@ -95,9 +95,24 @@ func _spawn_npc() -> void:
 	quest_system = load("res://scripts/quest_system.gd").new()
 	quest_system.quest_added.connect(_on_quest_added)
 	quest_system.quest_completed.connect(_on_quest_completed)
-	var npc_id := "brugaves_fronteira" if map_id == 0 else ("guia_ignis" if map_id == 5 else "brugaves_act2")
+	# NPC por mapa: cada bioma tem seu informante (lore GDD por Cardeal).
+	var npc_by_map := {
+		0: "brugaves_fronteira",
+		5: "guia_ignis",
+		3: "refugiado_castelo",
+		6: "eremita_floresta",
+		7: "pescador_lago",
+		8: "refugiado_castelo",
+		9: "nomo_sombras",
+		10: "mensageiro_solaria",
+	}
+	var npc_id: String = npc_by_map.get(map_id, "")
+	if npc_id == "":
+		npc_node = null
+		return
+	_npc_current_id = npc_id
 	npc_node = Node2D.new()
-	npc_node.position = Vector2(240, 300) if map_id != 5 else Vector2(420, 420)
+	npc_node.position = Vector2(420, 420) if map_id == 5 else Vector2(240, 300)
 	npc_sos_char = "Brugaves"
 	_npc_sos_sets = SOSMotionLoader.build_motion_sets("Brugaves", 1)  # D1 = Sul (encara o player)
 	if not _npc_sos_sets.is_empty():
@@ -108,9 +123,10 @@ func _spawn_npc() -> void:
 		npc_node.add_child(_npc_sos_sprite)
 	npc_node.add_child(_make_ground_shadow())
 	add_child(npc_node)
-	# Nome flutuante do NPC (SoS).
+	# Nome flutuante do NPC (SoS) — puxado do diálogo.
+	var npc_display: String = String(load("res://scripts/dialogue_system.gd").DIALOGUES.get(_npc_current_id, {}).get("name", "Andarilho"))
 	var name_tag := Label.new()
-	name_tag.text = "Brugaves"
+	name_tag.text = npc_display
 	name_tag.position = Vector2(-30, -52)
 	name_tag.add_theme_font_size_override("font_size", 13)
 	name_tag.add_theme_color_override("font_color", Color(1.0, 0.9, 0.5))
@@ -185,7 +201,7 @@ func _interact_npc() -> void:
 		else:
 			_update_dialogue_box()
 	else:
-		_npc_current_id = "brugaves_fronteira" if map_id == 0 else ("guia_ignis" if map_id == 5 else "brugaves_act2")
+		_npc_current_id = _npc_current_id if _npc_current_id != "" else ("brugaves_fronteira" if map_id == 0 else ("guia_ignis" if map_id == 5 else "brugaves_act2"))
 		var seen_key := "dlg_" + _npc_current_id
 		var seen: bool = GameManager.game_data.get("tutorials", {}).get(seen_key, false)
 		_npc_first_time = not seen

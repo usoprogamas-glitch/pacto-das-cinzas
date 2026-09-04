@@ -43,6 +43,57 @@ const DIALOGUES: Dictionary = {
 		"repeat": [
 			"Ignis observa do vulcão. O chão brilha antes do golpe dele — não esqueça."
 		]
+	},
+	"refugiado_castelo": {
+		"name": "Refugiado do Castelo",
+		"first": [
+			"O Cardeal de Mármore dorme dentro das paredes... Elas SE MEXEM, entende? As muralhas são o corpo dele.",
+			"Ataque-o quando ele eriçar as pedras. E não confie no chão verde do salão — é ilusão de mármore."
+		],
+		"repeat": [
+			"As muralhas sussurram à noite. Derrote-o, por favor."
+		]
+	},
+	"eremita_floresta": {
+		"name": "Eremita dos Ventos",
+		"first": [
+			"Zephyr corta o céu em cinco direções, como seus golpes. Cinco! Aprenda as cinco e você o alcança.",
+			"Os ventos também trazem asas... dizem que quem liberta a Floresta dos Ventos herda o dom de voar."
+		],
+		"repeat": [
+			"O vento sussurra o nome dele: Zephyr. Cinco direções, Kael."
+		]
+	},
+	"pescador_lago": {
+		"name": "Pescador Cego",
+		"first": [
+			"Eu pesquei nessas águas bentas por quarenta anos... até que ficaram corrosivas. Aquilo lá embaixo não é mais água.",
+			"Aqua reza com um cálice. Quebre a fé dele e as águas voltam ao leito."
+		],
+		"repeat": [
+			"As águas gemem à noite. Só o cálice importa."
+		]
+	},
+	"nomo_sombras": {
+		"name": "Gnomo das Sombras",
+		"first": [
+			"Hehe... me viu? Ninguém me vê. Mas EU vejo a Luz Negra dele, o Cardeal sem rosto.",
+			"Umbra vive de silhuetas. Onde sua sombra pisar, a dele estará. Atenção às sombras, Kael."
+		],
+		"repeat": [
+			"Sombras, Kael. Sombra contra sombra."
+		]
+	},
+	"mensageiro_solaria": {
+		"name": "Mensageiro Ferido",
+		"first": [
+			"Você... você subiu até aqui? Solaria está ADENTRO, no salão do Trono Monumental.",
+			"Aurius nos enganou por eras com a luz roubada de um deus despedaçado. Termine o que os antigos começaram.",
+			"Estas colunas douradas guardam o caminho. Vá. Termine."
+		],
+		"repeat": [
+			"O trono espera. E Aurius o espera mais."
+		]
 	}
 }
 
