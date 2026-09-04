@@ -76,6 +76,7 @@ func _ready() -> void:
 # === NPC + DIÁLOGO (SoS): Brugaves conta a missão (lore GDD) ===
 
 var dialogue  # DialogueSystem
+var quest_system  # QuestSystem (log J, notificações)
 var npc_node: Node2D = null
 var npc_sos_char: String = ""
 var _npc_sos_sets: Dictionary = {}
@@ -84,9 +85,16 @@ var _npc_sos_frame: float = 0.0
 var _dialogue_box: PanelContainer = null
 var _dialogue_label: Label = null
 var _dialogue_hint: Label = null
+var _quest_log_panel: PanelContainer = null
+var _quest_toast: Label = null
+var _quest_toast_t: float = 0.0
+var _j_was_down := false
 
 func _spawn_npc() -> void:
 	dialogue = load("res://scripts/dialogue_system.gd").new()
+	quest_system = load("res://scripts/quest_system.gd").new()
+	quest_system.quest_added.connect(_on_quest_added)
+	quest_system.quest_completed.connect(_on_quest_completed)
 	var npc_id := "brugaves_fronteira" if map_id == 0 else ("guia_ignis" if map_id == 5 else "brugaves_act2")
 	npc_node = Node2D.new()
 	npc_node.position = Vector2(240, 300) if map_id != 5 else Vector2(420, 420)
@@ -165,6 +173,15 @@ func _interact_npc() -> void:
 				GameManager.add_gold(15)
 				GameManager.add_soul_ether(5)
 				_npc_first_time = false
+			# Registrar quest associada ao NPC/mapa (SoS: missão dada na conversa).
+			if map_id == 0 and quest_system and not quest_system.is_active("fronteira_liberdade"):
+				quest_system.add("fronteira_liberdade")
+			if map_id == 5 and quest_system:
+				if not quest_system.is_active("provisoes_sobrevivente"):
+					quest_system.add("provisoes_sobrevivente")
+					quest_system.complete("provisoes_sobrevivente")
+				elif not quest_system.is_completed("ignis_caido") and not quest_system.is_active("ignis_caido"):
+					quest_system.add("ignis_caido")
 		else:
 			_update_dialogue_box()
 	else:
@@ -225,6 +242,88 @@ func _close_dialogue_box() -> void:
 		_dialogue_box.queue_free()
 	_dialogue_box = null
 	_dialogue_label = null
+
+
+# === QUEST LOG (J) + NOTIFICAÇÕES ===
+
+func _toggle_quest_log() -> void:
+	if _quest_log_panel and is_instance_valid(_quest_log_panel):
+		_quest_log_panel.visible = not _quest_log_panel.visible
+	else:
+		_build_quest_log()
+		_quest_log_panel.visible = true
+
+
+func _build_quest_log() -> void:
+	_quest_log_panel = PanelContainer.new()
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.06, 0.06, 0.1, 0.94)
+	style.set_corner_radius_all(8)
+	style.set_content_margin_all(16)
+	style.border_color = Color(0.5, 0.45, 0.3, 0.8)
+	style.set_border_width_all(2)
+	_quest_log_panel.add_theme_stylebox_override("panel", style)
+	_quest_log_panel.position = Vector2(400, 160)
+	_quest_log_panel.custom_minimum_size = Vector2(480, 0)
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 8)
+	_quest_log_panel.add_child(vbox)
+	var title := Label.new()
+	title.text = "DIÁRIO — missões"
+	title.add_theme_font_size_override("font_size", 22)
+	title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.5))
+	vbox.add_child(title)
+	var log: Array = quest_system.get_log() if quest_system else []
+	if log.is_empty():
+		var empty := Label.new()
+		empty.text = "Nenhuma missão ainda. Procure quem tem um '?' sobre a cabeça."
+		empty.add_theme_font_size_override("font_size", 14)
+		empty.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		vbox.add_child(empty)
+	for q: Dictionary in log:
+		var entry := Label.new()
+		entry.text = ("✔ " if bool(q["done"]) else "• ") + String(q["title"]) + "\n   " + String(q["objective"])
+		entry.add_theme_font_size_override("font_size", 14)
+		entry.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		entry.add_theme_color_override("font_color", Color(0.55, 0.85, 0.5) if bool(q["done"]) else Color(0.95, 0.92, 0.85))
+		vbox.add_child(entry)
+	var close := Button.new()
+	close.text = "Fechar (J)"
+	close.custom_minimum_size = Vector2(160, 30)
+	close.pressed.connect(_toggle_quest_log)
+	vbox.add_child(close)
+	_ui.add_child(_quest_log_panel)
+	_quest_log_panel.move_to_front()
+
+
+func _show_quest_toast(text: String) -> void:
+	if _quest_toast == null or not is_instance_valid(_quest_toast):
+		_quest_toast = Label.new()
+		_quest_toast.position = Vector2(20, 620)
+		_quest_toast.add_theme_font_size_override("font_size", 16)
+		_ui.add_child(_quest_toast)
+	_quest_toast.text = text
+	_quest_toast.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
+	_quest_toast.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+	_quest_toast.add_theme_constant_override("shadow_offset_x", 1)
+	_quest_toast.add_theme_constant_override("shadow_offset_y", 1)
+	_quest_toast.visible = true
+	_quest_toast_t = 3.5
+
+
+func _on_quest_added(_id: String, title: String) -> void:
+	_show_quest_toast("NOVA MISSÃO: " + title)
+	if SoundManager:
+		SoundManager.play_select()
+
+
+func _on_quest_completed(_id: String, title: String) -> void:
+	_show_quest_toast("MISSÃO CONCLUÍDA: " + title)
+	if SoundManager:
+		SoundManager.play_puzzle()
+	if quest_system and quest_system.get_reward_gold(_id) > 0 and GameManager:
+		GameManager.add_gold(quest_system.get_reward_gold(_id))
+		_show_quest_toast("MISSÃO CONCLUÍDA: %s  (+%d ouro)" % [title, quest_system.get_reward_gold(_id)])
 
 
 # === PARTÍCULAS POR BIOMA (SoS): cada mundo respira diferente ===
@@ -1055,6 +1154,11 @@ func _on_battle_ended(victory: bool, rewards: Dictionary, enemy_index: int) -> v
 				GameManager.building_system.add_resource("materials", int(rewards["materials"]))
 		# Vitória encerra o estágio da campanha (mesma porta do fluxo linear)
 		# apenas quando o mapa foi LIMPO — 1 estágio por mapa, não por inimigo.
+		if enemy_nodes.is_empty() and quest_system:
+			if quest_system.is_active("fronteira_liberdade"):
+				quest_system.complete("fronteira_liberdade")
+			if quest_system.is_active("ignis_caido"):
+				quest_system.complete("ignis_caido")
 		if enemy_nodes.is_empty() and GameManager and GameManager.campaign_system:
 			if GameManager.campaign_system.is_act_boss_stage():
 				GameManager.campaign_system.complete_act()
@@ -1205,6 +1309,14 @@ func _process_puzzles(_delta: float) -> void:
 	if Input.is_key_pressed(KEY_ESCAPE) and not _esc_was_down:
 		_toggle_pause_menu()
 	_esc_was_down = Input.is_key_pressed(KEY_ESCAPE)
+	# Quest log (J)
+	if Input.is_key_pressed(KEY_J) and not _j_was_down:
+		_toggle_quest_log()
+	_j_was_down = Input.is_key_pressed(KEY_J)
+	if _quest_toast_t > 0.0:
+		_quest_toast_t -= _delta
+		if _quest_toast_t <= 0.0 and _quest_toast:
+			_quest_toast.visible = false
 	if _pause_menu != null and is_instance_valid(_pause_menu) and _pause_menu.visible:
 		return  # pausado: para interações do mundo
 	_process_npc(_delta)
