@@ -69,7 +69,131 @@ func _ready() -> void:
 	_build_ui()
 	_build_lighting()
 	_spawn_biome_particles()
+	_spawn_npc()
 	_play_map_intro()
+
+
+# === NPC + DIÁLOGO (SoS): Brugaves conta a missão (lore GDD) ===
+
+var dialogue  # DialogueSystem
+var npc_node: Node2D = null
+var npc_sos_char: String = ""
+var _npc_sos_sets: Dictionary = {}
+var _npc_sos_sprite: Sprite2D = null
+var _npc_sos_frame: float = 0.0
+var _dialogue_box: PanelContainer = null
+var _dialogue_label: Label = null
+var _dialogue_hint: Label = null
+
+func _spawn_npc() -> void:
+	dialogue = load("res://scripts/dialogue_system.gd").new()
+	var npc_id := "brugaves_fronteira" if map_id == 0 else "brugaves_act2"
+	npc_node = Node2D.new()
+	npc_node.position = Vector2(240, 300)
+	npc_sos_char = "Brugaves"
+	_npc_sos_sets = SOSMotionLoader.build_motion_sets("Brugaves", 1)  # D1 = Sul (encara o player)
+	if not _npc_sos_sets.is_empty():
+		_npc_sos_sprite = Sprite2D.new()
+		_npc_sos_sprite.texture = _npc_sos_sets["idle"][0]
+		_npc_sos_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		_npc_sos_sprite.scale = Vector2(1.7, 1.7)
+		npc_node.add_child(_npc_sos_sprite)
+	npc_node.add_child(_make_ground_shadow())
+	add_child(npc_node)
+	# Nome flutuante do NPC (SoS).
+	var name_tag := Label.new()
+	name_tag.text = "Brugaves"
+	name_tag.position = Vector2(-30, -52)
+	name_tag.add_theme_font_size_override("font_size", 13)
+	name_tag.add_theme_color_override("font_color", Color(1.0, 0.9, 0.5))
+	name_tag.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+	name_tag.add_theme_constant_override("shadow_offset_x", 1)
+	name_tag.add_theme_constant_override("shadow_offset_y", 1)
+	npc_node.add_child(name_tag)
+
+
+func _process_npc(delta: float) -> void:
+	if npc_node == null or dialogue == null:
+		return
+	# Idle cicla mesmo parado (Brugaves tem 1 frame; renderiza igual).
+	if _npc_sos_sprite and not _npc_sos_sets.is_empty():
+		_tick_sos_sprite(_npc_sos_sprite, _npc_sos_sets, 1, false, delta, _npc_sos_frame)
+	# Interação
+	var near := player != null and player.position.distance_to(npc_node.position) < 52.0
+	if _dialogue_hint and is_instance_valid(_dialogue_hint):
+		_dialogue_hint.visible = near and not dialogue.is_active()
+	if near and Input.is_key_pressed(KEY_E) and not _npc_e_was_down:
+		_interact_npc()
+	_npc_e_was_down = Input.is_key_pressed(KEY_E)
+	# Avançar diálogo com E ou clique
+	if dialogue.is_active() and Input.is_key_pressed(KEY_E) and not _npc_e_was_down:
+		pass  # o _interact_npc já chamou advance via edge
+
+
+var _npc_e_was_down := false
+
+func _interact_npc() -> void:
+	if dialogue.is_active():
+		var has_next: bool = dialogue.advance()
+		if not has_next:
+			_close_dialogue_box()
+		else:
+			_update_dialogue_box()
+	else:
+		var seen: bool = GameManager.game_data.get("tutorials", {}).get("dlg_" + "brugaves_" + ("act2" if map_id != 0 else "fronteira"), false)
+		if dialogue.start("brugaves_fronteira" if map_id == 0 else "brugaves_act2", seen):
+			if GameManager:
+				GameManager.game_data.get_or_add("tutorials", {})["dlg_" + ("brugaves_act2" if map_id != 0 else "brugaves_fronteira")] = true
+			_open_dialogue_box()
+
+
+func _open_dialogue_box() -> void:
+	if _dialogue_box and is_instance_valid(_dialogue_box):
+		_dialogue_box.visible = true
+		return
+	_dialogue_box = PanelContainer.new()
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.04, 0.04, 0.08, 0.92)
+	style.set_corner_radius_all(8)
+	style.set_content_margin_all(14)
+	style.border_color = Color(0.55, 0.5, 0.35, 0.8)
+	style.set_border_width_all(2)
+	_dialogue_box.add_theme_stylebox_override("panel", style)
+	_dialogue_box.position = Vector2(140, 560)
+	_dialogue_box.custom_minimum_size = Vector2(1000, 0)
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 6)
+	_dialogue_box.add_child(vbox)
+	var name_label := Label.new()
+	name_label.text = dialogue.get_npc_name()
+	name_label.add_theme_font_size_override("font_size", 17)
+	name_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
+	vbox.add_child(name_label)
+	_dialogue_label = Label.new()
+	_dialogue_label.add_theme_font_size_override("font_size", 16)
+	_dialogue_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_dialogue_label.custom_minimum_size = Vector2(960, 0)
+	vbox.add_child(_dialogue_label)
+	var hint := Label.new()
+	hint.name = "advance_hint"
+	hint.text = "E / clique — continuar"
+	hint.add_theme_font_size_override("font_size", 12)
+	hint.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
+	vbox.add_child(hint)
+	_ui.add_child(_dialogue_box)
+	_dialogue_box.move_to_front()
+
+
+func _update_dialogue_box() -> void:
+	if _dialogue_label and is_instance_valid(_dialogue_label):
+		_dialogue_label.text = dialogue._pages[dialogue._page_index] if dialogue._page_index < dialogue._pages.size() else ""
+
+
+func _close_dialogue_box() -> void:
+	if _dialogue_box and is_instance_valid(_dialogue_box):
+		_dialogue_box.queue_free()
+	_dialogue_box = null
+	_dialogue_label = null
 
 
 # === PARTÍCULAS POR BIOMA (SoS): cada mundo respira diferente ===
@@ -1052,6 +1176,13 @@ func _process_puzzles(_delta: float) -> void:
 	_esc_was_down = Input.is_key_pressed(KEY_ESCAPE)
 	if _pause_menu != null and is_instance_valid(_pause_menu) and _pause_menu.visible:
 		return  # pausado: para interações do mundo
+	_process_npc(_delta)
+	if dialogue != null and dialogue.is_active():
+		# Diálogo aberto: E avança páginas (não interage com o mundo).
+		if Input.is_key_pressed(KEY_E) and not _e_was_down:
+			_interact_npc()
+		_e_was_down = Input.is_key_pressed(KEY_E)
+		return
 	if traversal:
 		traversal.regen_stamina(_delta)
 	if Input.is_key_pressed(KEY_E) and not _e_was_down:
