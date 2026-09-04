@@ -44,3 +44,4 @@ tools/durl*.json
 # Assets extraidos do SoS — USO PESSOAL/ESTUDO, nunca commitar
 assets/sos/
 tools/sheets/
+assets/sos_clean/
