@@ -85,6 +85,7 @@ var _npc_sos_frame: float = 0.0
 var _dialogue_box: PanelContainer = null
 var _dialogue_label: Label = null
 var _dialogue_hint: Label = null
+var _npc_portrait: String = ""  # nome do retrato do diálogo atual
 var _quest_log_panel: PanelContainer = null
 var _quest_toast: Label = null
 var _quest_toast_t: float = 0.0
@@ -213,6 +214,7 @@ func _interact_npc() -> void:
 		if dialogue.start(_npc_current_id, seen):
 			if GameManager:
 				GameManager.game_data.get_or_add("tutorials", {})[seen_key] = true
+			_npc_portrait = String(load("res://scripts/dialogue_system.gd").DIALOGUES.get(_npc_current_id, {}).get("portrait", ""))
 			_open_dialogue_box()
 
 
@@ -233,22 +235,46 @@ func _open_dialogue_box() -> void:
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 6)
 	_dialogue_box.add_child(vbox)
+	# Retrato (SoS): emoldurado à esquerda, fundo dourado como a referência.
+	var hrow := HBoxContainer.new()
+	hrow.add_theme_constant_override("separation", 14)
+	vbox.add_child(hrow)
+	var portrait_path := "res://assets/sos_clean/_portraits/%s.png" % _npc_portrait
+	if ResourceLoader.exists(portrait_path):
+		var frame := PanelContainer.new()
+		var pstyle := StyleBoxFlat.new()
+		pstyle.bg_color = Color(0.85, 0.65, 0.25)
+		pstyle.set_border_width_all(3)
+		pstyle.border_color = Color(0.2, 0.15, 0.1)
+		frame.add_theme_stylebox_override("panel", pstyle)
+		frame.custom_minimum_size = Vector2(120, 116)
+		var tex_rect := TextureRect.new()
+		tex_rect.texture = load(portrait_path)
+		tex_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		tex_rect.custom_minimum_size = Vector2(114, 110)
+		frame.add_child(tex_rect)
+		hrow.add_child(frame)
+	var text_col := VBoxContainer.new()
+	text_col.add_theme_constant_override("separation", 6)
+	text_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hrow.add_child(text_col)
 	var name_label := Label.new()
 	name_label.text = dialogue.get_npc_name()
 	name_label.add_theme_font_size_override("font_size", 17)
 	name_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
-	vbox.add_child(name_label)
+	text_col.add_child(name_label)
 	_dialogue_label = Label.new()
 	_dialogue_label.add_theme_font_size_override("font_size", 16)
 	_dialogue_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_dialogue_label.custom_minimum_size = Vector2(960, 0)
-	vbox.add_child(_dialogue_label)
+	_dialogue_label.custom_minimum_size = Vector2(760, 0)
+	text_col.add_child(_dialogue_label)
 	var hint := Label.new()
 	hint.name = "advance_hint"
 	hint.text = "E / clique — continuar"
 	hint.add_theme_font_size_override("font_size", 12)
 	hint.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
-	vbox.add_child(hint)
+	text_col.add_child(hint)
 	_ui.add_child(_dialogue_box)
 	_dialogue_box.move_to_front()
 

@@ -12,6 +12,7 @@ signal dialogue_ended(npc_id: String)
 const DIALOGUES: Dictionary = {
 	"brugaves_fronteira": {
 		"name": "Brugaves",
+		"portrait": "dialog-portrait-Brugaves",
 		"first": [
 			"Kael... você despertou. O Éter lateja em suas mãos — eu senti daqui.",
 			"Nossos deuses mentiram por mil anos. A Igreja de Solaria colhe a fé como quem colhe trigo... e agora vêm colher VOCÊ.",
@@ -35,6 +36,7 @@ const DIALOGUES: Dictionary = {
 	},
 	"guia_ignis": {
 		"name": "Sobrevivente",
+		"portrait": "dialog-portrait-valereDLCThroes",
 		"first": [
 			"Ei! Você não é dessas terras... Se veio pelo Cardeal Ignis, saiba que ele AQUECE o ar antes do golpe — o chão brilha quando ele vai atacar!",
 			"Ele canaliza um feitiço devastador. Quebre os selos brilhantes com golpes do tipo certo, ou vire cinza.",
@@ -46,6 +48,7 @@ const DIALOGUES: Dictionary = {
 	},
 	"mercador_fronteira": {
 		"name": "Mercador Errante",
+		"portrait": "dialog-portrait-zaleDLCThroes",
 		"first": [
 			"Mercador Errante a serviço de quem paga! Tenho poções roubadas da Igreja — quer ver?"
 		],
@@ -55,6 +58,7 @@ const DIALOGUES: Dictionary = {
 	},
 	"refugiado_castelo": {
 		"name": "Refugiado do Castelo",
+		"portrait": "dialog-portrait-valereDLCThroes",
 		"first": [
 			"O Cardeal de Mármore dorme dentro das paredes... Elas SE MEXEM, entende? As muralhas são o corpo dele.",
 			"Ataque-o quando ele eriçar as pedras. E não confie no chão verde do salão — é ilusão de mármore."
@@ -65,6 +69,7 @@ const DIALOGUES: Dictionary = {
 	},
 	"eremita_floresta": {
 		"name": "Eremita dos Ventos",
+		"portrait": "dialog-portrait-Brugaves",
 		"first": [
 			"Zephyr corta o céu em cinco direções, como seus golpes. Cinco! Aprenda as cinco e você o alcança.",
 			"Os ventos também trazem asas... dizem que quem liberta a Floresta dos Ventos herda o dom de voar."
@@ -75,6 +80,7 @@ const DIALOGUES: Dictionary = {
 	},
 	"pescador_lago": {
 		"name": "Pescador Cego",
+		"portrait": "dialog-portrait-Brugaves",
 		"first": [
 			"Eu pesquei nessas águas bentas por quarenta anos... até que ficaram corrosivas. Aquilo lá embaixo não é mais água.",
 			"Aqua reza com um cálice. Quebre a fé dele e as águas voltam ao leito."
@@ -85,6 +91,7 @@ const DIALOGUES: Dictionary = {
 	},
 	"nomo_sombras": {
 		"name": "Gnomo das Sombras",
+		"portrait": "dialog-portrait-zaleDLCThroes",
 		"first": [
 			"Hehe... me viu? Ninguém me vê. Mas EU vejo a Luz Negra dele, o Cardeal sem rosto.",
 			"Umbra vive de silhuetas. Onde sua sombra pisar, a dele estará. Atenção às sombras, Kael."
@@ -95,6 +102,7 @@ const DIALOGUES: Dictionary = {
 	},
 	"mensageiro_solaria": {
 		"name": "Mensageiro Ferido",
+		"portrait": "dialog-portrait-Brugaves",
 		"first": [
 			"Você... você subiu até aqui? Solaria está ADENTRO, no salão do Trono Monumental.",
 			"Aurius nos enganou por eras com a luz roubada de um deus despedaçado. Termine o que os antigos começaram.",
