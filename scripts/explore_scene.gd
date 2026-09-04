@@ -60,7 +60,68 @@ func _ready() -> void:
 	_spawn_traversal_nodes()
 	_build_ui()
 	_build_lighting()
+	_spawn_biome_particles()
 	_play_map_intro()
+
+
+# === PARTÍCULAS POR BIOMA (SoS): cada mundo respira diferente ===
+## Padrão das cinzas: update no _process, determinístico, sem tweens.
+
+var _biome_particles: Array = []  # [{node, vy, drift, phase, pulse, base_a}]
+
+func _spawn_biome_particles() -> void:
+	var terrain := _map_terrain()
+	match terrain:
+		"forest":
+			_make_particles(14, [Color(0.55, 0.65, 0.3), Color(0.7, 0.55, 0.25), Color(0.45, 0.55, 0.35)], 3, 1, false, false)
+		"volcanic":
+			_make_particles(16, [Color(1.0, 0.45, 0.15), Color(1.0, 0.6, 0.2)], 3, -1, false, true)
+		"cave":
+			_make_particles(10, [Color(0.6, 0.9, 1.0)], 3, 0, false, true)
+		"castle":
+			_make_particles(12, [Color(0.85, 0.85, 0.9)], 2, 1, false, false)
+		_:
+			_make_particles(10, [Color(0.95, 0.9, 0.5)], 3, 0, false, true)
+
+
+func _make_particles(count: int, colors: Array, size: int, vy_sign: int, _unused: bool, pulse: bool) -> void:
+	var speeds := {"forest": Vector2(28.0, 16.0), "volcanic": Vector2(20.0, 8.0), "cave": Vector2(6.0, 10.0), "castle": Vector2(8.0, 5.0)}
+	var sp: Vector2 = speeds.get(_map_terrain(), Vector2(20.0, 10.0))
+	for i in range(count):
+		var dot := ColorRect.new()
+		dot.size = Vector2(size, size)
+		var col: Color = colors[i % colors.size()]
+		dot.color = Color(col.r, col.g, col.b, randf_range(0.3, 0.7))
+		dot.position = Vector2(randf_range(0, 1280), randf_range(-40, 720))
+		dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_ui.add_child(dot)
+		_biome_particles.append({
+			"node": dot,
+			"vy": sp.y * vy_sign * randf_range(0.7, 1.3),
+			"drift": sp.x * randf_range(-1.0, 1.0),
+			"phase": randf_range(0.0, TAU),
+			"pulse": pulse,
+			"base_a": dot.color.a,
+			"period": randf_range(1.0, 2.5),
+		})
+
+
+func _process_biome_particles(delta: float) -> void:
+	_ash_time += delta
+	for p in _biome_particles:
+		var dot: ColorRect = p["node"]
+		var pos: Vector2 = dot.position
+		pos.y += p["vy"] * delta
+		pos.x += sin(_ash_time * 0.8 + p["phase"]) * p["drift"] * delta
+		var out_bottom: bool = pos.y > 730 and p["vy"] > 0
+		var out_top: bool = pos.y < -20 and p["vy"] < 0
+		if out_bottom or out_top:
+			pos.y = -20.0 if p["vy"] > 0 else 740.0
+			pos.x = randf_range(0, 1280)
+		dot.position = pos
+		if p["pulse"]:
+			var a: float = p["base_a"] * (0.55 + 0.45 * sin(_ash_time * TAU / p["period"] + p["phase"]))
+			dot.color.a = a
 
 
 # === ILUMINAÇÃO DINÂMICA (SoS): escurece o mundo + poços de luz aditivos ===
@@ -451,6 +512,7 @@ func _process_atmosphere(delta: float) -> void:
 
 func _process(delta: float) -> void:
 	_process_atmosphere(delta)
+	_process_biome_particles(delta)
 	if in_encounter() or player == null:
 		return
 	# Pausado: mundo congelado (movimento/contatos), só o menu respira.

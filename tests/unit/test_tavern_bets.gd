@@ -60,6 +60,7 @@ func test_negative_bet_clamps_to_zero():
 
 func test_play_rune_win_resolves_bet():
 	# Caminho real de vitória: HP do oponente em 1 + carta de dano na mão.
+	seed(777)  # determinismo: partículas/explore mudam o RNG global da sessão
 	tavern.start_game("Jogador", "IA", 10)
 	var out := _win_signals()
 	tavern.set_player_hp("IA", 1)
