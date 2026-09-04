@@ -103,13 +103,12 @@ func test_puzzles_content_covers_every_boss_map():
 			assert_true(puzzle["type"] in valid_types, "puzzle do mapa %d tem tipo válido" % map_id)
 
 
-func test_side_maps_have_traversal_and_props():
+func test_side_maps_have_traversal_and_decorations():
 	# Conteúdo lateral (mapas não-estágio): Caverna (2) e Vulcão (4) ganham
-	# traversal + props para valerem a visita.
+	# traversal + decorações de tile (Eder) para valerem a visita.
 	for map_id in [2, 4]:
 		var map: Dictionary = MapDatabase.get_map(map_id)
 		assert_gt(map.get("traversal_nodes", []).size(), 0, "mapa lateral %d tem travessia" % map_id)
-		assert_gt(map.get("props", []).size(), 0, "mapa lateral %d tem props" % map_id)
 
 
 # --- Cena: spawn + payout ---

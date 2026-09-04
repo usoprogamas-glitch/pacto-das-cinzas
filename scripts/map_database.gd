@@ -10,11 +10,7 @@ static var maps: Dictionary = {
    "enemy_count": 3,
    "description": "Onde tudo começou. Terreno baldio com vegetação morta.",
    "music": "exploration",
-   "props": [
-    {"id": "arvore1", "texture": "arvore_queimada", "pos": Vector2i(2, 2), "scale": 1.0},
-    {"id": "arvore2", "texture": "arvore_queimada", "pos": Vector2i(8, 6), "scale": 0.8},
-    {"id": "barris", "texture": "barris_cinzas", "pos": Vector2i(7, 3), "scale": 0.9}
-   ],
+   "props": [],
    "puzzles": [
     {
      "id": "fronteira_espelhos",
@@ -38,13 +34,7 @@ static var maps: Dictionary = {
   "enemy_count": 5,
   "description": "Floresta densa e perigosa.",
   "music": "exploration",
-  "props": [
-   {"id": "arvore1", "texture": "arvore_queimada", "pos": Vector2i(3, 3), "scale": 1.0},
-   {"id": "arvore2", "texture": "arvore_queimada", "pos": Vector2i(9, 8), "scale": 1.1},
-   {"id": "taverna", "texture": "taverna_fachada", "pos": Vector2i(6, 1), "scale": 1.3},
-   {"id": "barris", "texture": "barris_cinzas", "pos": Vector2i(5, 6), "scale": 0.9},
-   {"id": "fogueira", "texture": "fogueira_acamp", "pos": Vector2i(7, 5), "scale": 0.9}
-  ],
+  "props": [],
   "tiles": generate_forest_map()
  },
   2: {
@@ -55,10 +45,7 @@ static var maps: Dictionary = {
    "enemy_count": 4,
    "description": "Sistema de cavernas com cristais brilhantes.",
    "music": "exploration",
-   "props": [
-    {"id": "estatua", "texture": "estatua_templo", "pos": Vector2i(5, 1), "scale": 1.0},
-    {"id": "barris", "texture": "barris_cinzas", "pos": Vector2i(1, 8), "scale": 0.9}
-   ],
+   "props": [],
    "traversal_nodes": [
     {
      "id": "precipicio_caverna",
@@ -119,10 +106,7 @@ static var maps: Dictionary = {
   "enemy_count": 4,
   "description": "Terra de ninguém. Feras elementais e lava.",
   "music": "battle",
-  "props": [
-   {"id": "fornalha", "texture": "fornalha_vulcanica", "pos": Vector2i(2, 2), "scale": 1.1},
-   {"id": "arvore1", "texture": "arvore_queimada", "pos": Vector2i(9, 9), "scale": 1.0}
-  ],
+  "props": [],
   "traversal_nodes": [
    {
     "id": "garganta_vulcao",
@@ -153,12 +137,7 @@ static var maps: Dictionary = {
   "enemy_count": 1,
   "description": "Plataformas sobre lava branca. Ignis aguarda no vulcão.",
   "music": "battle",
-  "props": [
-   {"id": "fornalha", "texture": "fornalha_vulcanica", "pos": Vector2i(9, 2), "scale": 1.0},
-   {"id": "estatua", "texture": "estatua_templo", "pos": Vector2i(1, 9), "scale": 1.0},
-   {"id": "calice", "texture": "calice_corrosivo", "pos": Vector2i(4, 8), "scale": 1.0},
-   {"id": "estatua_ignis", "texture": "estatua_ignis", "pos": Vector2i(7, 6), "scale": 1.1}
-  ],
+  "props": [],
  	  "puzzles": [
  	   {
  	    "id": "despojos_sombras",
@@ -200,10 +179,7 @@ static var maps: Dictionary = {
   "enemy_count": 1,
   "description": "Tempestades de vento. Zephyr comanda as alturas.",
   "music": "battle",
-  "props": [
-   {"id": "estatua_zephyr", "texture": "estatua_zephyr", "pos": Vector2i(7, 2), "scale": 1.2},
-   {"id": "arvore1", "texture": "arvore_queimada", "pos": Vector2i(2, 8), "scale": 1.0}
-  ],
+  "props": [],
   "traversal_nodes": [
    {
     "id": "desfiladeiro_zephyr",
@@ -332,14 +308,7 @@ static var maps: Dictionary = {
   "enemy_count": 1,
   "description": "Trono monumental. O Falso Demiurgo aguarda.",
   "music": "battle",
-  "props": [
-   {"id": "portal", "texture": "portal_solaria", "pos": Vector2i(8, 2), "scale": 1.2},
-   {"id": "estatua1", "texture": "estatua_templo", "pos": Vector2i(3, 5), "scale": 1.0},
-   {"id": "estatua2", "texture": "estatua_templo", "pos": Vector2i(12, 5), "scale": 1.0},
-   {"id": "braseiro1", "texture": "braseiro_solaris", "pos": Vector2i(5, 3), "scale": 1.0},
-   {"id": "braseiro2", "texture": "braseiro_solaris", "pos": Vector2i(10, 3), "scale": 1.0},
-   {"id": "coluna", "texture": "coluna_solaris", "pos": Vector2i(13, 8), "scale": 1.2}
-  ],
+  "props": [],
   "puzzles": [
    {
     "id": "trono_eclipse",

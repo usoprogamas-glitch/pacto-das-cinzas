@@ -142,14 +142,14 @@ func _build_lighting() -> void:
 
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash("light_%s" % String(MapDatabase.get_map(map_id).get("name", "")))
-	var count: int = int({"cave": 5, "volcanic": 6, "castle": 4, "forest": 2}.get(_map_terrain(), 3))
+	var count: int = int({"cave": 4, "volcanic": 4, "castle": 3, "forest": 3}.get(_map_terrain(), 3))
 	for i in range(count):
 		var light := Sprite2D.new()
 		light.texture = _light_gradient_texture()
 		light.material = _add_blend_material()
-		light.position = Vector2(rng.randf_range(120, 1160), rng.randf_range(100, 640))
-		light.scale = Vector2(2.2, 2.2)
-		light.modulate = Color(1.0, 0.75, 0.4, rng.randf_range(0.5, 0.75))
+		light.position = Vector2(rng.randf_range(150, 1130), rng.randf_range(130, 610))
+		light.scale = Vector2(1.6, 1.6)
+		light.modulate = Color(1.0, 0.72, 0.35, rng.randf_range(0.3, 0.45))
 		add_child(light)
 		# Flicker sutil (vida da chama).
 		var flicker := create_tween().set_loops()
@@ -158,18 +158,20 @@ func _build_lighting() -> void:
 		flicker.tween_property(light, "modulate:a", base_alpha, rng.randf_range(0.7, 1.3)).set_trans(Tween.TRANS_SINE)
 
 
-func _light_gradient_texture() -> GradientTexture2D:
-	var grad := Gradient.new()
-	grad.set_color(0, Color(1.0, 0.75, 0.4, 0.6))
-	grad.set_color(1, Color(1.0, 0.75, 0.4, 0.0))
-	var gtex := GradientTexture2D.new()
-	gtex.gradient = grad
-	gtex.fill = GradientTexture2D.FILL_RADIAL
-	gtex.fill_from = Vector2(0.5, 0.5)
-	gtex.fill_to = Vector2(1.0, 0.5)
-	gtex.width = 256
-	gtex.height = 256
-	return gtex
+func _light_gradient_texture() -> ImageTexture:
+	# Radial desenhado manualmente (Image): o GradientTexture2D gerava anel
+	# (donut) com edge visível no blend aditivo.
+	var size := 256
+	var img := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	var cx := size / 2.0
+	var cy := size / 2.0
+	var max_r := size / 2.0
+	for y in range(size):
+		for x in range(size):
+			var dist := Vector2(x - cx, y - cy).length() / max_r
+			var a := pow(clampf(1.0 - dist, 0.0, 1.0), 1.8) * 0.55
+			img.set_pixel(x, y, Color(1.0, 0.72, 0.35, a))
+	return ImageTexture.create_from_image(img)
 
 
 func _add_blend_material() -> CanvasItemMaterial:
@@ -238,23 +240,60 @@ func _spawn_tile_decorations(terrain_name: String) -> void:
 	var at_img: Image = atlas.get_image()
 	if at_img.get_width() < 64 or at_img.get_height() < 32:
 		return
-	# Tiles de árvore densa: col 0-2, rows 0-2 (bloco verde escuro do atlas).
-	var tree_cells := [Vector2i(0, 0), Vector2i(1, 0), Vector2i(2, 0), Vector2i(1, 1), Vector2i(2, 1)]
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash("trees_%s" % terrain_name)
-	var count := 10 if terrain_name == "forest" else (4 if terrain_name == "mixed" else 2)
+	var area_cols := 15
+	var area_rows := 8
+	# Seleção por bioma (grade real do atlas Eder 19x8):
+	# árvore redonda com trunks = célula (11,3); colina gramada (11-14,3-4);
+	# pinheiros col 2/6-7 rows 0-2; casinhas da vila (0-7,7).
+	var cells: Array = []
+	var count := 0
+	var deco_scale := 3.0
+	var tint := Color(0.82, 0.95, 0.78)  # verde levemente escurecido: destaca do chão
+	match terrain_name:
+		"forest":
+			cells = [Vector2i(11, 3), Vector2i(11, 3), Vector2i(11, 3)]
+			count = 14
+			deco_scale = 7.0  # árvores protagonistas na floresta
+			tint = Color(0.75, 0.9, 0.7)
+		"mixed":
+			cells = [Vector2i(11, 3), Vector2i(11, 3), Vector2i(0, 7)]
+			count = 9
+			deco_scale = 6.0
+			tint = Color(0.8, 0.92, 0.75)
+		"castle":
+			cells = [Vector2i(11, 3), Vector2i(11, 3)]
+			count = 8
+			deco_scale = 4.5
+			tint = Color(0.85, 0.9, 0.95)
+		"volcanic":
+			cells = [Vector2i(2, 0), Vector2i(2, 1)]
+			count = 6
+			deco_scale = 3.5
+			tint = Color(0.9, 0.8, 0.7)
+		"cave":
+			cells = [Vector2i(13, 1), Vector2i(13, 2)]
+			count = 6
+			deco_scale = 3.5
+			tint = Color(0.7, 0.85, 0.9)
+		_:
+			cells = [Vector2i(11, 3), Vector2i(11, 3)]
+			count = 8
+			deco_scale = 5.0
 	for i in range(count):
-		var cell: Vector2i = tree_cells[rng.randi() % tree_cells.size()]
+		var cell: Vector2i = cells[rng.randi() % cells.size()]
 		var tile := AtlasTexture.new()
 		tile.atlas = atlas
 		tile.region = Rect2(cell.x * 16, cell.y * 16, 16, 16)
 		var deco := Sprite2D.new()
 		deco.texture = tile
 		deco.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		deco.position = _tile_center(Vector2i(rng.randi_range(0, 7), rng.randi_range(0, 4)))
-		deco.scale = Vector2(3, 3)  # 16px -> 48px na tela
+		deco.position = Vector2(rng.randf_range(60, 1220), rng.randf_range(50, 670))
+		deco.scale = Vector2(deco_scale, deco_scale)
+		deco.modulate = tint
 		add_child(deco)
-		deco.add_child(_make_ground_shadow(Vector2(0, 20)))
+		deco.add_child(_make_ground_shadow(Vector2(0, 26)))
 
 
 func _terrain_tile_kind(terrain: String, rng: RandomNumberGenerator) -> String:
