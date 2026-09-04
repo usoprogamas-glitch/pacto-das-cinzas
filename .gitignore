@@ -40,3 +40,7 @@ tools/*.html
 tools/*.zip
 tools/itch_*.txt
 tools/durl*.json
+
+# Assets extraidos do SoS — USO PESSOAL/ESTUDO, nunca commitar
+assets/sos/
+tools/sheets/

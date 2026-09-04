@@ -167,7 +167,17 @@ func _arena_position(u: Unit, pos: Vector2, color: Color, sprite_key: String) ->
 	var path := "res://assets/sprites/%s.png" % sprite_key
 	var sprite: Sprite2D
 	var motion_sets := {}
-	if FileAccess.file_exists(path):
+	# Piloto SoS (estudo): sprites extraídos substituem o wiggle procedural
+	# quando a pasta do personagem existe (ver .gitignore — nunca commitados).
+	var sos_char := "NarcisKingZale"
+	motion_sets = SOSMotionLoader.build_motion_sets(sos_char, 3)
+	if not motion_sets.is_empty():
+		sprite = Sprite2D.new()
+		sprite.texture = motion_sets["idle"][0]
+		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		sprite.scale = Vector2(2.4, 2.4)  # 31x53 px fonte -> ~75x127 na arena
+		sprite.offset = Vector2(0, -8)
+	elif FileAccess.file_exists(path):
 		var img := Image.new()
 		if img.load(path) == OK:
 			motion_sets = MotionLib.build_motion_sets(img)
