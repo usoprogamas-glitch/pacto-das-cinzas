@@ -32,6 +32,17 @@ const DIALOGUES: Dictionary = {
 		"repeat": [
 			"O fogo purifica, Kael. Mas é o gelo da dúvida que forja mestres."
 		]
+	},
+	"guia_ignis": {
+		"name": "Sobrevivente",
+		"first": [
+			"Ei! Você não é dessas terras... Se veio pelo Cardeal Ignis, saiba que ele AQUECE o ar antes do golpe — o chão brilha quando ele vai atacar!",
+			"Ele canaliza um feitiço devastador. Quebre os selos brilhantes com golpes do tipo certo, ou vire cinza.",
+			"Leve isto: provisões que achei no acampamento dele. Que a fúria esteja com você."
+		],
+		"repeat": [
+			"Ignis observa do vulcão. O chão brilha antes do golpe dele — não esqueça."
+		]
 	}
 }
 

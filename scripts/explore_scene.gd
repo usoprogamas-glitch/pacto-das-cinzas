@@ -87,9 +87,9 @@ var _dialogue_hint: Label = null
 
 func _spawn_npc() -> void:
 	dialogue = load("res://scripts/dialogue_system.gd").new()
-	var npc_id := "brugaves_fronteira" if map_id == 0 else "brugaves_act2"
+	var npc_id := "brugaves_fronteira" if map_id == 0 else ("guia_ignis" if map_id == 5 else "brugaves_act2")
 	npc_node = Node2D.new()
-	npc_node.position = Vector2(240, 300)
+	npc_node.position = Vector2(240, 300) if map_id != 5 else Vector2(420, 420)
 	npc_sos_char = "Brugaves"
 	_npc_sos_sets = SOSMotionLoader.build_motion_sets("Brugaves", 1)  # D1 = Sul (encara o player)
 	if not _npc_sos_sets.is_empty():
@@ -125,25 +125,56 @@ func _process_npc(delta: float) -> void:
 	if near and Input.is_key_pressed(KEY_E) and not _npc_e_was_down:
 		_interact_npc()
 	_npc_e_was_down = Input.is_key_pressed(KEY_E)
+	# Quest marker dourado pulsando sobre o NPC enquanto a conversa não aconteceu.
+	if npc_node and is_instance_valid(npc_node):
+		var dlg_key := "dlg_" + ("brugaves_fronteira" if map_id == 0 else ("guia_ignis" if map_id == 5 else "brugaves_act2"))
+		var seen_now: bool = GameManager.game_data.get("tutorials", {}).get(dlg_key, false)
+		var marker_name := "quest_marker"
+		if not seen_now and npc_node.has_node(marker_name) == false:
+			var marker := Label.new()
+			marker.name = marker_name
+			marker.text = "?"
+			marker.position = Vector2(-6, -76)
+			marker.add_theme_font_size_override("font_size", 24)
+			marker.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2))
+			marker.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+			marker.add_theme_constant_override("shadow_offset_x", 2)
+			marker.add_theme_constant_override("shadow_offset_y", 2)
+			npc_node.add_child(marker)
+		elif seen_now and npc_node.has_node(marker_name):
+			npc_node.get_node(marker_name).queue_free()
+		if npc_node.has_node(marker_name):
+			var m := npc_node.get_node(marker_name) as Label
+			m.position.y = -76.0 + sin(_ash_time * 3.0) * 4.0
 	# Avançar diálogo com E ou clique
 	if dialogue.is_active() and Input.is_key_pressed(KEY_E) and not _npc_e_was_down:
 		pass  # o _interact_npc já chamou advance via edge
 
 
 var _npc_e_was_down := false
+var _npc_current_id: String = ""
+var _npc_first_time: bool = false
 
 func _interact_npc() -> void:
 	if dialogue.is_active():
 		var has_next: bool = dialogue.advance()
 		if not has_next:
 			_close_dialogue_box()
+			# Recompensa por ouvir a missão inteira (1ª vez): provisões.
+			if _npc_first_time and GameManager:
+				GameManager.add_gold(15)
+				GameManager.add_soul_ether(5)
+				_npc_first_time = false
 		else:
 			_update_dialogue_box()
 	else:
-		var seen: bool = GameManager.game_data.get("tutorials", {}).get("dlg_" + "brugaves_" + ("act2" if map_id != 0 else "fronteira"), false)
-		if dialogue.start("brugaves_fronteira" if map_id == 0 else "brugaves_act2", seen):
+		_npc_current_id = "brugaves_fronteira" if map_id == 0 else ("guia_ignis" if map_id == 5 else "brugaves_act2")
+		var seen_key := "dlg_" + _npc_current_id
+		var seen: bool = GameManager.game_data.get("tutorials", {}).get(seen_key, false)
+		_npc_first_time = not seen
+		if dialogue.start(_npc_current_id, seen):
 			if GameManager:
-				GameManager.game_data.get_or_add("tutorials", {})["dlg_" + ("brugaves_act2" if map_id != 0 else "brugaves_fronteira")] = true
+				GameManager.game_data.get_or_add("tutorials", {})[seen_key] = true
 			_open_dialogue_box()
 
 
