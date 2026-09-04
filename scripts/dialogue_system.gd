@@ -44,6 +44,15 @@ const DIALOGUES: Dictionary = {
 			"Ignis observa do vulcão. O chão brilha antes do golpe dele — não esqueça."
 		]
 	},
+	"mercador_fronteira": {
+		"name": "Mercador Errante",
+		"first": [
+			"Mercador Errante a serviço de quem paga! Tenho poções roubadas da Igreja — quer ver?"
+		],
+		"repeat": [
+			"O ouro fala mais alto que reza, amigo. O que vai levar?"
+		]
+	},
 	"refugiado_castelo": {
 		"name": "Refugiado do Castelo",
 		"first": [

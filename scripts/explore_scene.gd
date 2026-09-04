@@ -98,6 +98,7 @@ func _spawn_npc() -> void:
 	# NPC por mapa: cada bioma tem seu informante (lore GDD por Cardeal).
 	var npc_by_map := {
 		0: "brugaves_fronteira",
+		1: "mercador_fronteira",
 		5: "guia_ignis",
 		3: "refugiado_castelo",
 		6: "eremita_floresta",
@@ -109,6 +110,10 @@ func _spawn_npc() -> void:
 	var npc_id: String = npc_by_map.get(map_id, "")
 	if npc_id == "":
 		npc_node = null
+		return
+	# Mercador: abre a loja em vez de diálogo.
+	if npc_id == "mercador_fronteira":
+		_toggle_shop()
 		return
 	_npc_current_id = npc_id
 	npc_node = Node2D.new()
@@ -258,6 +263,98 @@ func _close_dialogue_box() -> void:
 		_dialogue_box.queue_free()
 	_dialogue_box = null
 	_dialogue_label = null
+
+
+# === LOJA DO MERCADOR (ouro → itens de party) ===
+
+const SHOP_ITEMS: Dictionary = {
+	"pocao_cura": {"name": "Poção de Cura", "price": 30, "desc": "Restaura 50 HP de Kael agora"},
+	"elixir_eter": {"name": "Elixir de Éter", "price": 45, "desc": "+1 Éter máximo permanente"},
+	"amuleto_defesa": {"name": "Amuleto de Defesa", "price": 80, "desc": "+3 Defesa permanente na party"},
+}
+
+var _shop_panel: PanelContainer = null
+
+func _toggle_shop() -> void:
+	if _shop_panel and is_instance_valid(_shop_panel):
+		_shop_panel.visible = not _shop_panel.visible
+	else:
+		_build_shop()
+		_shop_panel.visible = true
+
+
+func _build_shop() -> void:
+	_shop_panel = PanelContainer.new()
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.08, 0.07, 0.06, 0.95)
+	style.set_corner_radius_all(8)
+	style.set_content_margin_all(16)
+	style.border_color = Color(0.85, 0.65, 0.2, 0.8)
+	style.set_border_width_all(2)
+	_shop_panel.add_theme_stylebox_override("panel", style)
+	_shop_panel.position = Vector2(400, 160)
+	_shop_panel.custom_minimum_size = Vector2(480, 0)
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 10)
+	_shop_panel.add_child(vbox)
+	var title := Label.new()
+	title.text = "MERCADOR ERRANTE — Ouro: %d" % int(GameManager.game_data.get("gold", 0))
+	title.name = "shop_gold"
+	title.add_theme_font_size_override("font_size", 20)
+	title.add_theme_color_override("font_color", Color(1.0, 0.8, 0.3))
+	vbox.add_child(title)
+	for item_id: String in SHOP_ITEMS:
+		var item: Dictionary = SHOP_ITEMS[item_id]
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+		var info := Label.new()
+		info.text = "%s\n%s" % [item["name"], item["desc"]]
+		info.add_theme_font_size_override("font_size", 13)
+		info.custom_minimum_size = Vector2(300, 0)
+		row.add_child(info)
+		var btn := Button.new()
+		btn.text = "%d ouro" % int(item["price"])
+		btn.custom_minimum_size = Vector2(120, 28)
+		btn.pressed.connect(_on_shop_buy.bind(item_id))
+		row.add_child(btn)
+		vbox.add_child(row)
+	var close := Button.new()
+	close.text = "Fechar"
+	close.custom_minimum_size = Vector2(140, 28)
+	close.pressed.connect(func() -> void:
+		if SoundManager:
+			SoundManager.play_sfx("click")
+		_shop_panel.visible = false)
+	vbox.add_child(close)
+	_ui.add_child(_shop_panel)
+	_shop_panel.move_to_front()
+
+
+func _on_shop_buy(item_id: String) -> void:
+	var item: Dictionary = SHOP_ITEMS[item_id]
+	var price := int(item["price"])
+	if GameManager.game_data.get("gold", 0) < price:
+		_show_quest_toast("OURO INSUFICIENTE: precisa de %d" % price)
+		return
+	GameManager.game_data["gold"] = int(GameManager.game_data["gold"]) - price
+	match item_id:
+		"pocao_cura":
+			for member in GameManager.party_data:
+				member["hp"] = int(member.get("hp", 0)) + 0  # cura no combate; aqui aplica no líder
+			if GameManager.party_data.size() > 0:
+				GameManager.party_data[0]["hp"] = int(GameManager.party_data[0].get("hp", 0)) + 50
+		"elixir_eter":
+			GameManager.party_data[0]["ether"] = int(GameManager.party_data[0].get("ether", 0)) + 1
+		"amuleto_defesa":
+			for member in GameManager.party_data:
+				member["def"] = int(member.get("def", 0)) + 3
+	if SoundManager:
+		SoundManager.play_forge()
+	_show_quest_toast("COMPRADO: " + String(item["name"]))
+	_shop_panel.queue_free()
+	_shop_panel = null
+	_build_shop()
+	_shop_panel.visible = true
 
 
 # === QUEST LOG (J) + NOTIFICAÇÕES ===
