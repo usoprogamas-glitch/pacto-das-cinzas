@@ -137,7 +137,11 @@ static var maps: Dictionary = {
   "enemy_count": 1,
   "description": "Plataformas sobre lava branca. Ignis aguarda no vulcão.",
   "music": "battle",
-  "props": [],
+  "props": [
+   {"texture": "estatua_ignis", "pos": Vector2i(9, 2), "scale": 1.6},
+   {"texture": "arvore_queimada", "pos": Vector2i(2, 9), "scale": 1.4},
+   {"texture": "arvore_queimada", "pos": Vector2i(10, 8), "scale": 1.3}
+  ],
  	  "puzzles": [
  	   {
  	    "id": "despojos_sombras",
@@ -179,7 +183,9 @@ static var maps: Dictionary = {
   "enemy_count": 1,
   "description": "Tempestades de vento. Zephyr comanda as alturas.",
   "music": "battle",
-  "props": [],
+  "props": [
+   {"texture": "estatua_zephyr", "pos": Vector2i(7, 1), "scale": 1.7}
+  ],
   "traversal_nodes": [
    {
     "id": "desfiladeiro_zephyr",
@@ -213,6 +219,9 @@ static var maps: Dictionary = {
   "enemy_count": 1,
   "description": "Águas bentas corrosivas. O cálice aguarda.",
   "music": "battle",
+  "props": [
+   {"texture": "calice_corrosivo", "pos": Vector2i(6, 5), "scale": 1.5}
+  ],
   "traversal_nodes": [
    {
     "id": "corrente_subterranea",
@@ -242,6 +251,10 @@ static var maps: Dictionary = {
   "enemy_count": 1,
   "description": "Muralhas vivas se fecham. Terra não cede.",
   "music": "battle",
+  "props": [
+   {"texture": "estatua_templo", "pos": Vector2i(3, 2), "scale": 1.7},
+   {"texture": "estatua_templo", "pos": Vector2i(10, 2), "scale": 1.7}
+  ],
   "traversal_nodes": [
    {
     "id": "muralha_terra",
@@ -275,6 +288,10 @@ static var maps: Dictionary = {
   "enemy_count": 1,
   "description": "Ilusões de luz negra. A máscara aguarda.",
   "music": "battle",
+  "props": [
+   {"texture": "braseiro_solaris", "pos": Vector2i(3, 7), "scale": 1.4},
+   {"texture": "braseiro_solaris", "pos": Vector2i(10, 7), "scale": 1.4}
+  ],
   "traversal_nodes": [
    {
     "id": "fosso_umbra",
@@ -308,7 +325,13 @@ static var maps: Dictionary = {
   "enemy_count": 1,
   "description": "Trono monumental. O Falso Demiurgo aguarda.",
   "music": "battle",
-  "props": [],
+  "props": [
+   {"texture": "coluna_solaris", "pos": Vector2i(5, 4), "scale": 1.8},
+   {"texture": "coluna_solaris", "pos": Vector2i(10, 4), "scale": 1.8},
+   {"texture": "portal_solaria", "pos": Vector2i(8, 1), "scale": 1.6},
+   {"texture": "braseiro_solaris", "pos": Vector2i(4, 7), "scale": 1.4},
+   {"texture": "braseiro_solaris", "pos": Vector2i(11, 7), "scale": 1.4}
+  ],
   "puzzles": [
    {
     "id": "trono_eclipse",
@@ -336,8 +359,12 @@ static var maps: Dictionary = {
 	  "terrain": "castle",
 	  "enemies": ["aurius_fase2"],
 	  "enemy_count": 1,
-	  "description": "Asas solares cortam o céu. O Serafim Tirano voa.",
-	  "music": "battle",
+  "description": "Asas solares cortam o céu. O Serafim Tirano voa.",
+  "music": "battle",
+  "props": [
+   {"texture": "coluna_solaris", "pos": Vector2i(4, 5), "scale": 1.8},
+   {"texture": "coluna_solaris", "pos": Vector2i(11, 5), "scale": 1.8}
+  ],
 	  "tiles": generate_castle_map()
 	 },
 	 12: {
@@ -346,8 +373,11 @@ static var maps: Dictionary = {
 	  "terrain": "castle",
 	  "enemies": ["aurius_fase3"],
 	  "enemy_count": 1,
-	  "description": "O núcleo brilha. A Luz Desesperada aguarda.",
-	  "music": "battle",
+  "description": "O núcleo brilha. A Luz Desesperada aguarda.",
+  "music": "battle",
+  "props": [
+   {"texture": "portal_solaria", "pos": Vector2i(8, 2), "scale": 1.8}
+  ],
 	  "tiles": generate_castle_map()
 	 }
 }
