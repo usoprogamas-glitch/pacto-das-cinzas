@@ -69,8 +69,35 @@ func _ready() -> void:
 	_build_ui()
 	_build_lighting()
 	_spawn_biome_particles()
+	_spawn_water_pools()
 	_spawn_npc()
 	_play_map_intro()
+
+
+# === POÇAS DE ÁGUA ANIMADA (shader water_2d) — biomas aquáticos ===
+
+func _spawn_water_pools() -> void:
+	if _map_terrain() != "cave" or map_id != 7:
+		return
+	var shader: Shader = load("res://shaders/water_2d.gdshader")
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash("pools_%d" % map_id)
+	# 4 poças elípticas grandes em posições variadas.
+	for i in range(4):
+		var pool := ColorRect.new()
+		pool.size = Vector2(rng.randf_range(180, 320), rng.randf_range(80, 130))
+		pool.position = Vector2(rng.randf_range(80, 1080 - pool.size.x), rng.randf_range(80, 640 - pool.size.y))
+		pool.rotation = rng.randf_range(-0.15, 0.15)
+		var mat := ShaderMaterial.new()
+		mat.shader = shader
+		# Água corrosiva do Aqua: tons verdes-teal em vez de azul.
+		mat.set_shader_parameter("deep_color", Color(0.03, 0.16, 0.12))
+		mat.set_shader_parameter("shallow_color", Color(0.1, 0.45, 0.3))
+		mat.set_shader_parameter("sparkle_color", Color(0.6, 1.0, 0.8))
+		mat.set_shader_parameter("wave_speed", 1.3)
+		pool.material = mat
+		pool.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(pool)
 
 
 # === NPC + DIÁLOGO (SoS): Brugaves conta a missão (lore GDD) ===
@@ -661,10 +688,12 @@ func _spawn_tile_decorations(terrain_name: String) -> void:
 			deco_scale = 4.5
 			tint = Color(0.85, 0.9, 0.95)
 		"volcanic":
-			cells = [Vector2i(2, 0), Vector2i(2, 1)]
-			count = 6
-			deco_scale = 3.5
-			tint = Color(0.9, 0.8, 0.7)
+			# Vulcão: rochas/montanhas escuras do atlas (16,0)-(17,1) — sem árvores
+			# verdes em solo de brasa (autocrítica do QA visual).
+			cells = [Vector2i(16, 0), Vector2i(17, 0), Vector2i(16, 1), Vector2i(13, 3)]
+			count = 10
+			deco_scale = 4.0
+			tint = Color(0.55, 0.45, 0.45)  # rocha acinzentada escura
 		"cave":
 			cells = [Vector2i(13, 1), Vector2i(13, 2)]
 			count = 6
