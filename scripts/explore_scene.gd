@@ -679,7 +679,7 @@ func _spawn_tile_decorations(terrain_name: String) -> void:
 			tint = Color(0.75, 0.9, 0.7)
 		"mixed":
 			cells = [Vector2i(11, 3), Vector2i(11, 3), Vector2i(0, 7)]
-			count = 9
+			count = 14
 			deco_scale = 6.0
 			tint = Color(0.8, 0.92, 0.75)
 		"castle":
@@ -688,12 +688,13 @@ func _spawn_tile_decorations(terrain_name: String) -> void:
 			deco_scale = 4.5
 			tint = Color(0.85, 0.9, 0.95)
 		"volcanic":
-			# Vulcão: rochas/montanhas escuras do atlas (16,0)-(17,1) — sem árvores
-			# verdes em solo de brasa (autocrítica do QA visual).
-			cells = [Vector2i(16, 0), Vector2i(17, 0), Vector2i(16, 1), Vector2i(13, 3)]
-			count = 10
+			# Vulcão: montanhas escuras + tocos de árvores mortas do atlas
+			# (floresta queimada — autocrítica do QA visual; blocos chapados
+			# (16,0)/(17,0) viram placeholder cinza demais).
+			cells = [Vector2i(12, 2), Vector2i(14, 2), Vector2i(13, 1), Vector2i(8, 4), Vector2i(10, 4)]
+			count = 11
 			deco_scale = 4.0
-			tint = Color(0.55, 0.45, 0.45)  # rocha acinzentada escura
+			tint = Color(0.62, 0.5, 0.46)  # rocha acinzentada com brasa
 		"cave":
 			cells = [Vector2i(13, 1), Vector2i(13, 2)]
 			count = 6
@@ -760,7 +761,7 @@ func _spawn_party() -> void:
 	var kael_sprite := _animated_sprite("res://assets/sprites/kael.png", 0.06, Color(0.2, 0.8, 0.3))
 	if player_sos_char == "":
 		player.add_child(kael_sprite)
-	player_animator = kael_sprite.get_meta("animator", null)
+	player_animator = kael_sprite.get_meta("animator") if kael_sprite.has_meta("animator") else null
 	add_child(player)
 
 	# Kroug segue o Kael com atraso (trilha suave, molde SoS): filho da CENA,
@@ -785,7 +786,7 @@ func _spawn_party() -> void:
 		else:
 			var kroug_sprite := _animated_sprite("res://assets/sprites/kroug.png", 0.05, Color(0.8, 0.3, 0.1))
 			buddy_node.add_child(kroug_sprite)
-			_buddy_animator = kroug_sprite.get_meta("animator", null)
+			_buddy_animator = kroug_sprite.get_meta("animator") if kroug_sprite.has_meta("animator") else null
 		add_child(buddy_node)
 
 
@@ -969,12 +970,12 @@ func _spawn_enemies() -> void:
 		var node := Node2D.new()
 		node.position = Vector2(rng.randf_range(760, 1180), rng.randf_range(120, 620))
 		node.add_child(_make_ground_shadow())
-		node.add_child(_animated_sprite("res://assets/sprites/%s.png" % type, 0.05, Color(e["color"])))
+		var sprite := _animated_sprite("res://assets/sprites/%s.png" % type, 0.05, Color(e["color"]))
+		node.add_child(sprite)
 		add_child(node)
 		enemy_nodes.append(node)
 		_enemy_alert.append(false)
-		var foe_sprite: Sprite2D = node.get_children()[0]
-		_enemy_animators.append(foe_sprite.get_meta("animator", null))
+		_enemy_animators.append(sprite.get_meta("animator") if sprite.has_meta("animator") else null)
 		var foe_type := "boss" if stage.get("boss", false) else "random"
 		encounter.register_enemy("foe_%d" % i, Vector2i(int(node.position.x / TILE), int(node.position.y / TILE)), foe_type, 1)
 		_enemy_tile_ids.append("foe_%d" % i)

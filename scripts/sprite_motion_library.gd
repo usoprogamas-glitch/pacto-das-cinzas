@@ -22,6 +22,9 @@ static func build_motion_sets(source: Image) -> Dictionary:
 		return {}
 	var small := Image.new()
 	small.copy_from(source)
+	# blit_rect exige mesmo formato: PNGs RGB8 (sem alpha) são convertidos.
+	if small.get_format() != Image.FORMAT_RGBA8:
+		small.convert(Image.FORMAT_RGBA8)
 	small.resize(FRAME_SIZE, FRAME_SIZE, Image.INTERPOLATE_LANCZOS)
 	var idle := []
 	for i in range(2):
