@@ -688,13 +688,13 @@ func _spawn_tile_decorations(terrain_name: String) -> void:
    deco_scale = 4.5
    tint = Color(0.85, 0.9, 0.95)
   "volcanic":
-   # Vulcão: montanhas escuras + tocos de árvores mortas do atlas
-   # (floresta queimada — autocrítica do QA visual; blocos chapados
-   # (16,0)/(17,0) viram placeholder cinza demais).
-   cells = [Vector2i(12, 2), Vector2i(14, 2), Vector2i(13, 1), Vector2i(8, 4), Vector2i(10, 4)]
-   count = 11
+   # Vulcão: tocos e troncos queimados do atlas (floresta morta do GDD).
+   # Tiles de montanha (12-14,2) ficam ruins como deco solta: triângulos
+   # recortados sem contexto (autocrítica do QA visual).
+   cells = [Vector2i(8, 4), Vector2i(9, 4), Vector2i(10, 4), Vector2i(7, 4), Vector2i(9, 5)]
+   count = 12
    deco_scale = 4.0
-   tint = Color(0.62, 0.5, 0.46)  # rocha acinzentada com brasa
+   tint = Color(0.62, 0.5, 0.46)  # toco torrado com brasa
   "cave":
    cells = [Vector2i(13, 1), Vector2i(13, 2)]
    count = 6
@@ -716,7 +716,11 @@ func _spawn_tile_decorations(terrain_name: String) -> void:
   deco.scale = Vector2(deco_scale, deco_scale)
   deco.modulate = tint
   add_child(deco)
-  deco.add_child(_make_ground_shadow(Vector2(0, 26)))
+  # Sombra ancora no pe do deco e escala com ele (arvores scale 7 flutuavam
+  # com a sombra fixa de 35px — QA visual).
+  var sh := _make_ground_shadow(Vector2(0, 16.0 * deco_scale * 0.45))
+  sh.scale = Vector2(0.55, 0.35) * maxf(1.0, deco_scale * 0.45)
+  deco.add_child(sh)
 
 
 func _terrain_tile_kind(terrain: String, rng: RandomNumberGenerator) -> String:
