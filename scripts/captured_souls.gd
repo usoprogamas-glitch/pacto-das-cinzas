@@ -6,15 +6,15 @@ extends RefCounted
 var souls: Array[Dictionary] = []
 
 func add(soul_type: String, display_name: String) -> void:
-	if soul_type == "":
-		return
-	for s in souls:
-		if s["type"] == soul_type:
-			return
-	souls.append({"type": soul_type, "display_name": display_name})
+ if soul_type == "":
+  return
+ for s in souls:
+  if s["type"] == soul_type:
+   return
+ souls.append({"type": soul_type, "display_name": display_name})
 
 func has_captured() -> bool:
-	return not souls.is_empty()
+ return not souls.is_empty()
 
 func clear() -> void:
-	souls.clear()
+ souls.clear()

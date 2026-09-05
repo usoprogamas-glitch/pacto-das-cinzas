@@ -35,61 +35,61 @@ signal ether_generated(unit, amount: int, total: int)
 ## Gera 1 carga de Éter para uma unidade (chamar ao acertar ataque).
 ## Retorna true se houve geração efetiva.
 func generate_on_hit(unit) -> bool:
-	if unit == null or not unit.is_alive():
-		return false
-	var current: int = unit.get_ether()
-	if current >= MAX_CHARGES:
-		return false
-	unit.set_ether(current + 1)
-	ether_generated.emit(unit, 1, unit.get_ether())
-	ether_changed.emit(unit, unit.get_ether())
-	return true
+ if unit == null or not unit.is_alive():
+  return false
+ var current: int = unit.get_ether()
+ if current >= MAX_CHARGES:
+  return false
+ unit.set_ether(current + 1)
+ ether_generated.emit(unit, 1, unit.get_ether())
+ ether_changed.emit(unit, unit.get_ether())
+ return true
 
 
 ## Regenera Éter no início do turno (1 carga).
 ## Retorna true se houve regeneração efetiva.
 func regen_turn_start(unit) -> bool:
-	if unit == null or not unit.is_alive():
-		return false
-	var current: int = unit.get_ether()
-	if current >= MAX_CHARGES:
-		return false
-	unit.set_ether(current + 1)
-	ether_generated.emit(unit, 1, unit.get_ether())
-	ether_changed.emit(unit, unit.get_ether())
-	return true
+ if unit == null or not unit.is_alive():
+  return false
+ var current: int = unit.get_ether()
+ if current >= MAX_CHARGES:
+  return false
+ unit.set_ether(current + 1)
+ ether_generated.emit(unit, 1, unit.get_ether())
+ ether_changed.emit(unit, unit.get_ether())
+ return true
 
 
 ## Gasta cargas de Éter de uma unidade.
 ## Retorna as cargas realmente gastas (pode ser menor que pedido).
 func spend(unit, amount: int) -> int:
-	if unit == null or not unit.is_alive() or amount <= 0:
-		return 0
-	var current: int = unit.get_ether()
-	var to_spend := mini(amount, current)
-	if to_spend <= 0:
-		return 0
-	unit.set_ether(current - to_spend)
-	ether_spent.emit(unit, to_spend, unit.get_ether())
-	ether_changed.emit(unit, unit.get_ether())
-	return to_spend
+ if unit == null or not unit.is_alive() or amount <= 0:
+  return 0
+ var current: int = unit.get_ether()
+ var to_spend := mini(amount, current)
+ if to_spend <= 0:
+  return 0
+ unit.set_ether(current - to_spend)
+ ether_spent.emit(unit, to_spend, unit.get_ether())
+ ether_changed.emit(unit, unit.get_ether())
+ return to_spend
 
 
 ## Retorna o multiplicador de dano físico com base nas cargas gastas.
 ## Ex: 1 carga -> 1.3, 2 cargas -> 1.6, 3 cargas -> 1.9
 func get_physical_multiplier(charges_spent: int) -> float:
-	return 1.0 + (charges_spent * PHYSICAL_BONUS_PER_CHARGE)
+ return 1.0 + (charges_spent * PHYSICAL_BONUS_PER_CHARGE)
 
 
 ## Retorna o multiplicador de dano mágico com base nas cargas gastas.
 ## Ex: 1 carga -> 1.5, 2 cargas -> 2.0, 3 cargas -> 2.5
 func get_magic_multiplier(charges_spent: int) -> float:
-	return 1.0 + (charges_spent * MAGIC_BONUS_PER_CHARGE)
+ return 1.0 + (charges_spent * MAGIC_BONUS_PER_CHARGE)
 
 
 ## Gera Éter para todas as unidades vivas de um exército.
 ## Chamar ao final de um round completo para_simular o "Éter Vivo".
 func regen_round_end(units: Array) -> void:
-	for unit in units:
-		if unit != null and unit.is_alive():
-			regen_turn_start(unit)
+ for unit in units:
+  if unit != null and unit.is_alive():
+   regen_turn_start(unit)

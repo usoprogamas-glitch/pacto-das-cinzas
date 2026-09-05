@@ -128,7 +128,7 @@ static var maps: Dictionary = {
   ],
   "tiles": generate_volcanic_map()
  },
-	 # ===== ATO II — CARDEAIS =====
+  # ===== ATO II — CARDEAIS =====
  5: {
   "name": "Vale dos Despojos — Ignis",
   "size": Vector2i(12, 12),
@@ -142,16 +142,16 @@ static var maps: Dictionary = {
    {"texture": "arvore_queimada", "pos": Vector2i(2, 9), "scale": 1.4},
    {"texture": "arvore_queimada", "pos": Vector2i(10, 8), "scale": 1.3}
   ],
- 	  "puzzles": [
- 	   {
- 	    "id": "despojos_sombras",
- 	    "type": "shadow_reveal",
- 	    "light": Vector2i(2, 6),
- 	    "target": Vector2i(9, 6),
- 	    "clock": Vector2i(8, 4),
- 	    "mirrors": [
- 	     {"id": "m1", "pos": Vector2i(5, 6), "angle": 6}
- 	    ],
+    "puzzles": [
+     {
+      "id": "despojos_sombras",
+      "type": "shadow_reveal",
+      "light": Vector2i(2, 6),
+      "target": Vector2i(9, 6),
+      "clock": Vector2i(8, 4),
+      "mirrors": [
+       {"id": "m1", "pos": Vector2i(5, 6), "angle": 6}
+      ],
     "rewards": {"soul_ether": 8, "gold": 15, "xp": 80}
    }
   ],
@@ -173,8 +173,8 @@ static var maps: Dictionary = {
     "grants_wings": false
    }
   ],
- 	  "tiles": generate_volcanic_map()
- 	 },
+    "tiles": generate_volcanic_map()
+   },
  6: {
   "name": "Floresta dos Ventos — Zephyr",
   "size": Vector2i(14, 14),
@@ -316,7 +316,7 @@ static var maps: Dictionary = {
   ],
   "tiles": generate_castle_map()
  },
-	 # ===== ATO IV — AURIUS =====
+  # ===== ATO IV — AURIUS =====
  10: {
   "name": "Solaria — Sala do Trono",
   "size": Vector2i(16, 16),
@@ -353,33 +353,33 @@ static var maps: Dictionary = {
   ],
   "tiles": generate_castle_map()
  },
-	 11: {
-	  "name": "Solaria — Cúpula Solar",
-	  "size": Vector2i(16, 16),
-	  "terrain": "castle",
-	  "enemies": ["aurius_fase2"],
-	  "enemy_count": 1,
+  11: {
+   "name": "Solaria — Cúpula Solar",
+   "size": Vector2i(16, 16),
+   "terrain": "castle",
+   "enemies": ["aurius_fase2"],
+   "enemy_count": 1,
   "description": "Asas solares cortam o céu. O Serafim Tirano voa.",
   "music": "battle",
   "props": [
    {"texture": "coluna_solaris", "pos": Vector2i(4, 5), "scale": 1.8},
    {"texture": "coluna_solaris", "pos": Vector2i(11, 5), "scale": 1.8}
   ],
-	  "tiles": generate_castle_map()
-	 },
-	 12: {
-	  "name": "Solaria — Núcleo Instável",
-	  "size": Vector2i(16, 16),
-	  "terrain": "castle",
-	  "enemies": ["aurius_fase3"],
-	  "enemy_count": 1,
+   "tiles": generate_castle_map()
+  },
+  12: {
+   "name": "Solaria — Núcleo Instável",
+   "size": Vector2i(16, 16),
+   "terrain": "castle",
+   "enemies": ["aurius_fase3"],
+   "enemy_count": 1,
   "description": "O núcleo brilha. A Luz Desesperada aguarda.",
   "music": "battle",
   "props": [
    {"texture": "portal_solaria", "pos": Vector2i(8, 2), "scale": 1.8}
   ],
-	  "tiles": generate_castle_map()
-	 }
+   "tiles": generate_castle_map()
+  }
 }
 
 static func generate_frontier_map() -> Array:

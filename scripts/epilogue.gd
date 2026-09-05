@@ -31,11 +31,11 @@ Feito em Godot 4"""
 @onready var menu_button: Button = $VBoxContainer/MenuButton
 
 func _ready() -> void:
-	epilogue_label.text = EPILOGUE_TEXT
-	credits_label.text = CREDITS_TEXT
-	menu_button.pressed.connect(_on_menu)
+ epilogue_label.text = EPILOGUE_TEXT
+ credits_label.text = CREDITS_TEXT
+ menu_button.pressed.connect(_on_menu)
 
 func _on_menu() -> void:
-	menu_requested.emit()
-	if SceneManager:
-		SceneManager.change_scene("main_menu")
+ menu_requested.emit()
+ if SceneManager:
+  SceneManager.change_scene("main_menu")
