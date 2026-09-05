@@ -82,12 +82,39 @@ func _setup_from_campaign() -> void:
   _wave_specs = wave_specs
   _wave_index = 1
 
- var kael := _make_combatant("Kael", true, 80, 12, 8, 11, 50)
+ # Balance (#16): stats do Kael derivam do level REAL do ProgressionSystem.
+ # Baseline level 1 = números históricos (compatível com testes/estágio 0).
+ # Crescimento: hp +14/lv, atk +2/lv, def +1/lv, spd fixo, ether (mp) +5/lv.
+ # Elixires permanentes (attack_percent) entram via _recalc_party_atk.
+ var kael_lv := 1
+ var kael_hp := 80
+ var kael_atk := 12
+ var kael_def := 8
+ var kael_mp := 50
+ if GameManager and GameManager.progression_system:
+  kael_lv = GameManager.progression_system.get_current_level()
+  kael_hp = 80 + 14 * (kael_lv - 1)
+  kael_atk = 12 + 2 * (kael_lv - 1)
+  kael_def = 8 + 1 * (kael_lv - 1)
+  kael_mp = 50 + 5 * (kael_lv - 1)
+ if GameManager:
+  # Elixires da cozinha (§7.2): bônus PERMANENTES vale na arena também.
+  var eb: Dictionary = GameManager.game_data.get("elixir_bonuses", {})
+  if eb.has("max_hp"):
+   kael_hp += int(eb["max_hp"])
+  if eb.has("max_ether"):
+   kael_mp += int(eb["max_ether"])
+  if eb.has("attack_percent"):
+   kael_atk = int(round(float(kael_atk) * (1.0 + float(eb["attack_percent"]) / 100.0)))
+ var kael := _make_combatant("Kael", true, kael_hp, kael_atk, kael_def, 11, kael_mp)
  combatants = [kael]
  _arena_position(kael, Vector2(430, 430), Color(0.2, 0.8, 0.3), "kael")
 
  if GameManager and GameManager.game_data.get("starting_ally") == "kroug":
-  var kroug := _make_combatant("Kroug", true, 120, 10, 15, 8, 20)
+  # Kroug cresce junto (60% do ganho do Kael): tanque da dupla.
+  var kroug_hp := 120 + int(8 * (kael_lv - 1))
+  var kroug_atk := 10 + int(1.5 * (kael_lv - 1))
+  var kroug := _make_combatant("Kroug", true, kroug_hp, kroug_atk, 15, 8, 20)
   combatants.append(kroug)
   _arena_position(kroug, Vector2(330, 500), Color(0.8, 0.3, 0.1), "kroug")
 

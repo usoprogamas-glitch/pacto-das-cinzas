@@ -120,8 +120,11 @@
 ### 15. Higiene de recursos (RID leaks no exit)
 - Fontes/texturas alocadas e não liberadas no shutdown dos testes. **Nota (2026-09-01)**: os leaks aparecem só no exit da suíte GUT headless (RIDs de Canvas/CanvasItem/TextServer + 917 orphans) — cosmético, não afeta o jogo em runtime. Baixa prioridade; revisar `free()` nos autoloads.
 
-### 16. Curva de balanceamento não auditada
-- Stats dos inimigos fixos; Ato IV (Aurius 800 HP) vs progressão de Kael — verificar se os gates de XP/memória produzem power curve compatível. Criar spreadsheet/data-driven de balanço por ato.
+### 16. Curva de balanceamento não auditada ✅ RESOLVIDO (2026-09-05)
+- Auditoria fechada (`tools/_balance_curve.py`): campanha linear paga ~3.400 XP → Kael chega ao Aurius no **level 6** (curva `100×lv^1.5`).
+- **Bug real encontrado**: a arena ignorava level e elixires — Kael fixo 80/12/8 nos 13 estágios (Aurius F3 atk 60 = morte em 2 hits).
+- **Fix** (`arena_battle.gd`): stats derivam do level real (hp +14/lv, atk +2/lv, def +1/lv, éter +5/lv; Kroug a 60%) + elixires permanentes da cozinha (max_hp/max_ether/attack_percent) entram no spawn. Baseline level 1 = números históricos (testes antigos intactos).
+- TTK projetado com level 6 no Aurius: Kael ~448 HP / atk 22 — luta de 8-10 turnos com timed hits/locks (alvo do GDD). 6 testes novos (`test_arena_level_scaling.gd`).
 
 ### 17. Menu sem "Continuar" (verificar) ✅ JÁ RESOLVIDO (verificado 2026-09-01)
 - `main_menu.gd` já tem `ContinueButton` conectado a `_on_continue()` e desabilitado quando não há `user://save_game.json` (`main_menu.gd:4/12/17/34`). Sem ação necessária.
