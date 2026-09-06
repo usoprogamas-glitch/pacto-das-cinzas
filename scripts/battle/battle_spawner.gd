@@ -194,18 +194,22 @@ func create_unit(grid_pos: Vector2i, unit_name: String, color: Color, unit_class
 	var sprite = create_unit_sprite(unit_name, color, is_player)
 	unit.add_child(sprite)
 
+	# ORDEM IMPORTA: styleboxes ANTES do size (min-height 27px do tema padrão
+	# clampeia o size.y e vira bloco sobre o rosto — ver arena_battle).
 	var hp_bar = ProgressBar.new()
 	hp_bar.name = "HPBar"
-	hp_bar.position = Vector2(-16, -24)
-	hp_bar.size = Vector2(32, 5)
-	hp_bar.max_value = hp
-	hp_bar.value = hp
+	hp_bar.show_percentage = false
+	hp_bar.visible = false  # limpa o visual: só aparece quando a unidade estiver ferida
 	var hp_fill = StyleBoxFlat.new()
 	hp_fill.bg_color = Color(0.2, 0.8, 0.2)
 	hp_bar.add_theme_stylebox_override("fill", hp_fill)
 	var hp_bg = StyleBoxFlat.new()
 	hp_bg.bg_color = Color(0.2, 0.2, 0.2)
 	hp_bar.add_theme_stylebox_override("background", hp_bg)
+	hp_bar.position = Vector2(-16, -24)
+	hp_bar.size = Vector2(32, 4)
+	hp_bar.max_value = hp
+	hp_bar.value = hp
 	unit.add_child(hp_bar)
 
 	var selection = ColorRect.new()

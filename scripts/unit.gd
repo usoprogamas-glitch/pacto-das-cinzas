@@ -91,6 +91,7 @@ func update_hp_bar() -> void:
  if hp_bar and data:
   hp_bar.max_value = data.max_hp
   hp_bar.value = current_hp
+  hp_bar.visible = current_hp < data.max_hp
 
 # --- Contrato EtherSystem (duck typing, GDD v2 §3.3) ---
 

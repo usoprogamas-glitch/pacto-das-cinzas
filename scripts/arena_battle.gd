@@ -233,13 +233,14 @@ func _arena_position(u: Unit, pos: Vector2, color: Color, sprite_key: String, en
   sprite = _fallback_sprite(color)
  u.add_child(sprite)
 
- # Barra de HP flutuante (molde SoS: HP visível sobre o combatente).
+	# Barra de HP flutuante (molde SoS: HP visível sobre o combatente).
+ # ORDEM IMPORTA: styleboxes ANTES do size — o tema padrão impõe min-height
+ # 27px; sem override primeiro, o size.y é clampeado e a barra vira um bloco
+ # 60x27 tampando o rosto do sprite (bug de visual reportado no QA).
  var bar := ProgressBar.new()
  bar.min_value = 0
  bar.max_value = u.data.max_hp
  bar.value = u.current_hp
- bar.position = Vector2(-30, -62)
- bar.size = Vector2(60, 8)
  bar.show_percentage = false
  # Borda escura: legibilidade sobre sprites claros (screenshot QA).
  var bar_bg := StyleBoxFlat.new()
@@ -250,6 +251,8 @@ func _arena_position(u: Unit, pos: Vector2, color: Color, sprite_key: String, en
  var bar_fill := StyleBoxFlat.new()
  bar_fill.bg_color = Color(0.3, 0.85, 0.35) if u.is_player_side() else Color(0.85, 0.3, 0.3)
  bar.add_theme_stylebox_override("fill", bar_fill)
+ bar.position = Vector2(-30, -66)
+ bar.size = Vector2(60, 6)
  u.add_child(bar)
  u.hp_changed.connect(func(hp): bar.value = hp)
 
