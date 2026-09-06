@@ -556,20 +556,28 @@ func _process_biome_particles(delta: float) -> void:
 
 func _build_lighting() -> void:
  # CanvasModulate: escurece o mundo; as luzes "revelam" por cima.
+ # SoS (direção de arte): ambiente mais dramático — a luz pontual importa.
  var modulate := CanvasModulate.new()
  modulate.color = _ambient_color()
  add_child(modulate)
 
+ # Fallback: pools difusos onde NÃO há props emissores (biomas vazios).
+ # Com props de luz na cena, reduzo a intensidade para não competir.
+ # Floresta é diurna (sol filtrado pelas copas) — sem pools, que viram
+ # manchas de névoa sobre o verde.
+ var has_prop_lights: bool = _LIGHT_PROPS.keys().any(func(k): return ResourceLoader.exists("res://assets/props/%s.png" % k) and not MapDatabase.get_map(map_id).get("props", []).filter(func(c): return String(c.get("texture", "")) == k).is_empty())
  var rng := RandomNumberGenerator.new()
  rng.seed = hash("light_%s" % String(MapDatabase.get_map(map_id).get("name", "")))
- var count: int = int({"cave": 3, "volcanic": 3, "castle": 2, "forest": 2}.get(_map_terrain(), 2))
+ var count: int = int({"cave": 3, "volcanic": 3, "castle": 2, "forest": 0}.get(_map_terrain(), 1))
+ if has_prop_lights:
+  count = 1
  for i in range(count):
   var light := Sprite2D.new()
   light.texture = _light_gradient_texture()
   light.material = _add_blend_material()
   light.position = Vector2(rng.randf_range(150, 1130), rng.randf_range(130, 610))
-  light.scale = Vector2(1.15, 1.15)
-  light.modulate = Color(0.9, 0.62, 0.28, rng.randf_range(0.2, 0.32))
+  light.scale = Vector2(0.95, 0.95)
+  light.modulate = Color(0.9, 0.55, 0.2, rng.randf_range(0.14, 0.22) * (0.6 if has_prop_lights else 1.0))
   add_child(light)
   # Flicker sutil (vida da chama).
   var flicker := create_tween().set_loops()
@@ -605,21 +613,36 @@ func _map_terrain() -> String:
 
 
 func _ambient_color() -> Color:
+ # SoS (direção de arte): ambiente mais dramático — sombra colorida, luz importa.
  match _map_terrain():
   "cave":
-   return Color(0.62, 0.62, 0.7)  # caverna fria e escura
+   return Color(0.5, 0.52, 0.62)  # caverna fria e muito escura
   "volcanic":
-   return Color(0.85, 0.72, 0.62)  # brasa quente
+   return Color(0.78, 0.62, 0.52)  # brasa quente
   "castle":
-   return Color(0.78, 0.76, 0.8)  # pedra fria
+   return Color(0.66, 0.64, 0.72)  # pedra fria
   "forest":
-   return Color(0.72, 0.78, 0.68)  # copas filtrando o sol
+   return Color(0.6, 0.68, 0.58)  # copas filtrando o sol
   _:
-   return Color(0.88, 0.86, 0.8)  # crepúsculo da Fronteira
+   return Color(0.8, 0.78, 0.72)  # crepúsculo da Fronteira
  _play_map_intro()
 
 
 # === PROPS VISUAIS (assets ComfyUI, data-driven via MapDatabase.props) ===
+
+## Props que EMITEM luz (direção de arte SoS): cada um recebe um poço de luz
+## aditivo com flicker ancorado nele — a luz sai de onde a luz está, não de
+## posições aleatórias (os pools aleatórios de _build_lighting viram fallback).
+const _LIGHT_PROPS := {
+ "braseiro_solaris": {"color": Color(1.0, 0.66, 0.3), "scale": 1.6, "a": 0.42},
+ "fogueira_acamp": {"color": Color(1.0, 0.62, 0.26), "scale": 1.5, "a": 0.4},
+ "fornalha_vulcanica": {"color": Color(1.0, 0.45, 0.18), "scale": 1.8, "a": 0.44},
+ "portal_solaria": {"color": Color(0.55, 0.75, 1.0), "scale": 1.7, "a": 0.36},
+ "calice_corrosivo": {"color": Color(0.55, 1.0, 0.5), "scale": 1.3, "a": 0.3},
+ "estatua_ignis": {"color": Color(1.0, 0.5, 0.18), "scale": 2.1, "a": 0.5},
+ "estatua_templo": {"color": Color(1.0, 0.8, 0.42), "scale": 1.6, "a": 0.32},
+ "coluna_solaris": {"color": Color(1.0, 0.82, 0.45), "scale": 1.5, "a": 0.3},
+}
 
 func _spawn_props() -> void:
  var map: Dictionary = MapDatabase.get_map(map_id)
@@ -635,6 +658,26 @@ func _spawn_props() -> void:
   # acima do chão e abaixo das unidades — z_index -1 ficava ATRÁS do bg.
   add_child(sprite)
   sprite.add_child(_make_ground_shadow(Vector2(0, sprite.texture.get_height() * 0.42)))
+  var light_cfg: Dictionary = _LIGHT_PROPS.get(String(cfg.get("texture", "")), {})
+  if not light_cfg.is_empty():
+   _attach_prop_light(sprite, light_cfg)
+
+
+## Poço de luz aditivo com flicker, filho do prop (herda posição/escala).
+func _attach_prop_light(sprite: Sprite2D, cfg: Dictionary) -> void:
+ var light := Sprite2D.new()
+ light.name = "PropLight"
+ light.texture = _light_gradient_texture()
+ light.material = _add_blend_material()
+ var h: float = float(sprite.texture.get_height()) * sprite.scale.y
+ light.position = Vector2(0, h * 0.34)
+ light.scale = Vector2.ONE * float(cfg.get("scale", 1.5))
+ var base_a: float = float(cfg.get("a", 0.38))
+ light.modulate = Color(cfg["color"].r, cfg["color"].g, cfg["color"].b, base_a)
+ sprite.add_child(light)
+ var flicker := create_tween().set_loops()
+ flicker.tween_property(light, "modulate:a", base_a * 0.72, randf_range(0.6, 1.1)).set_trans(Tween.TRANS_SINE)
+ flicker.tween_property(light, "modulate:a", base_a, randf_range(0.6, 1.1)).set_trans(Tween.TRANS_SINE)
 
 
 func _build_map() -> void:
@@ -1126,7 +1169,8 @@ func _process(delta: float) -> void:
   dir.y -= 1
  var moving := dir != Vector2.ZERO
  # Sprint (Shift): 1.65x, molde SoS — exploração rápida sem quebrar o trail.
- var sprinting := moving and (Input.is_key_pressed(KEY_SHIFT) or Input.is_action_pressed("ui_shift"))
+ # ("ui_shift" não existe no InputMap padrão; KEY_SHIFT cobre os dois shifts.)
+ var sprinting := moving and Input.is_key_pressed(KEY_SHIFT)
  var speed := SPEED * (1.65 if sprinting else 1.0)
  if player_animator and sprinting:
   player_animator.animation_speed = 1.4  # passos mais rápidos no walk cycle

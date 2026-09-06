@@ -812,6 +812,27 @@ func _build_arena() -> void:
  embers.color = Color(1.0, 0.55, 0.2, 0.45)
  add_child(embers)
 
+ # Iluminação de palco (direção de arte SoS): braços de luz quente com
+ # flicker sobre cada grupo + vinheta elegendo o centro do combate.
+ for arm_cfg in [
+  {"pos": Vector2(430, 400), "scale": Vector2(3.2, 2.4), "a": 0.5},
+  {"pos": Vector2(880, 400), "scale": Vector2(3.6, 2.6), "a": 0.46},
+  {"pos": Vector2(640, 620), "scale": Vector2(4.4, 2.2), "a": 0.4},
+ ]:
+  var arm := Sprite2D.new()
+  arm.name = "StageLight"
+  arm.texture = _stage_light_texture()
+  arm.material = _stage_add_material()
+  arm.position = arm_cfg["pos"]
+  arm.scale = arm_cfg["scale"]
+  arm.modulate = Color(1.0, 0.68, 0.32, arm_cfg["a"])
+  add_child(arm)
+  var base_a: float = arm.modulate.a
+  var flicker := create_tween().set_loops()
+  flicker.tween_property(arm, "modulate:a", base_a * 0.8, randf_range(0.7, 1.2)).set_trans(Tween.TRANS_SINE)
+  flicker.tween_property(arm, "modulate:a", base_a, randf_range(0.7, 1.2)).set_trans(Tween.TRANS_SINE)
+ _build_stage_vignette()
+
  turn_label = Label.new()
  turn_label.position = Vector2(24, 16)
  turn_label.add_theme_font_size_override("font_size", 22)
@@ -827,6 +848,47 @@ func _build_arena() -> void:
  turn_panel.add_child(turn_label)
  turn_panel.position = Vector2(16, 10)
  add_child(turn_panel)
+
+
+## Radial quente desenhado por Image (GradientTexture2D gera anel no blend aditivo —
+## mesma lição de _light_gradient_texture no explore_scene).
+func _stage_light_texture() -> ImageTexture:
+ var size := 256
+ var img := Image.create(size, size, false, Image.FORMAT_RGBA8)
+ var c := size / 2.0
+ for y in range(size):
+  for x in range(size):
+   var dist := Vector2(x - c, y - c).length() / c
+   var a := pow(clampf(1.0 - dist, 0.0, 1.0), 1.7) * 0.6
+   img.set_pixel(x, y, Color(1.0, 0.74, 0.38, a))
+ return ImageTexture.create_from_image(img)
+
+
+func _stage_add_material() -> CanvasItemMaterial:
+ var mat := CanvasItemMaterial.new()
+ mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+ return mat
+
+
+## Vinheta radial sobre a arena: cantos escurecidos elegem o palco (SoS).
+func _build_stage_vignette() -> void:
+ var vignette := TextureRect.new()
+ vignette.name = "StageVignette"
+ var grad := Gradient.new()
+ grad.set_color(0, Color(0, 0, 0, 0))
+ grad.set_color(1, Color(0, 0, 0, 0.4))
+ var gtex := GradientTexture2D.new()
+ gtex.gradient = grad
+ gtex.fill = GradientTexture2D.FILL_RADIAL
+ gtex.fill_from = Vector2(0.5, 0.5)
+ gtex.fill_to = Vector2(0.5, 0.0)
+ gtex.width = 640
+ gtex.height = 360
+ vignette.texture = gtex
+ vignette.size = Vector2(1280, 720)
+ vignette.stretch_mode = TextureRect.STRETCH_SCALE
+ vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE
+ add_child(vignette)
 
  log_label = Label.new()
  log_label.position = Vector2(20, 668)
