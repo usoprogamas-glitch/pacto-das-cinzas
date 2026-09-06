@@ -109,8 +109,9 @@
 
 ## P2 — Qualidade / arquitetura
 
-### 13. `battle_scene.gd` = 1431 linhas (god file)
-- Concentra spawn, UI, HUD, combate, campanha, progression. Extrair em módulos coesos: `battle_spawner.gd`, `battle_hud.gd`, `battle_flow.gd`. **Regra: só refatorar com a suíte verde e um item por commit.**
+### 13. `battle_scene.gd` god file 🟡 EM PROGRESSO (2026-09-06: spawner extraído)
+- 2041 linhas concentrando spawn/UI/combate/campanha. **Extraído (2026-09-06)**: `scripts/battle/battle_spawner.gd` (RefCounted, ~340 linhas — setup_battle, pool data-driven, party/souls, create_unit/sprites/HP bar, binding de bosses) com **wrappers de delegação** na cena preservando a API dos testes (lazy: testes instanciam a cena sem _ready e stubam grid/unit_container).battle_scene → 1701 linhas. **Regra**: 1 módulo por commit com a suíte verde. Próximos: `battle_hud.gd` (setup_ui + HUDs ~600 linhas), `battle_flow.gd` (fluxo/resultado/sinais).
+- **Lição**: novo script com `class_name` não entra no cache global do Godot headless (`-s`) → testes que preloader a cena quebram com "does not extend GutTest". Usar `preload` const. E nunca misturar tabs/espaços (parse error silencioso em cadeia).
 
 ### 14. Save sem versionamento nem backup ✅ FEITO (2026-09-01)
 - **Era**: 1 slot (`user://save_game.json`), sem campo `version`, sem backup.
