@@ -80,7 +80,7 @@
 
 ## FILA PARA A PRÓXIMA SESSÃO (2026-09-02)
 1. **QA jogável ponta a ponta** — usuário joga intro → Aurius Fase 1 e reporta bugs de runtime/game feel (único risco não coberto pelos 695 testes).
-2. **LoRA pixel-art no ComfyUI** — elevar precisão dos assets (usuário instala o LoRA; pipeline em tools/ já pronto).
+2. **LoRA pixel-art no ComfyUI** — elevar precisão dos assets (usuário instala o LoRA; pipeline em tools/ já pronto). **Direção de arte fixada (2026-09-06): Sea of Stars** — ver `docs/direcao_arte.md` (pilares, gap atual, rotas A luz+grade / B LoRA / C tilesets reais).
 3. Se sobrar tempo: menu de seleção de elixir na cozinha (hoje pega o 1º craftável), batch 3 de props (estátuas dos Cardeais, decoração Solaria), padronizar indentação tabs→espaços com .editorconfig (quebrou 3x na sessão).
 - Suíte: **695/695 ✅** | `main` @ `0ede89d` | working tree limpo.
 
