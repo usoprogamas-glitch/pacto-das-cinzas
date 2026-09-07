@@ -460,8 +460,35 @@ static func generate_volcanic_map() -> Array:
 
 static func get_map(map_id: int) -> Dictionary:
  if maps.has(map_id):
-  return maps[map_id]
+  var map: Dictionary = maps[map_id]
+  var override: Array = get_tile_override(map_id)
+  if not override.is_empty():
+   map["tiles"] = override  # Cartographer: JSON vence o gerador em código
+  return map
  return {}
+
+
+# === Cartographer (ferramenta dev): override de tiles via assets/maps/*.json ===
+# O CLI (tools/cartographer_cli.py) grava assets/maps/map_<id>.json com
+# {"tiles": [...]} gerado pelo CartographerCore; o JSON vence o gerador.
+static var _tile_overrides: Dictionary = {}
+static var _tile_overrides_loaded := false
+
+static func get_tile_override(map_id: int) -> Array:
+ if not _tile_overrides_loaded:
+  _tile_overrides_loaded = true
+  var dir := DirAccess.open("res://assets/maps")
+  if dir != null:
+   for fname in dir.get_files():
+    if not fname.ends_with(".json"):
+     continue
+    var f := FileAccess.open("res://assets/maps/" + fname, FileAccess.READ)
+    if f == null:
+     continue
+    var data = JSON.parse_string(f.get_as_text())
+    if data is Dictionary and data.has("map_id") and data.has("tiles"):
+     _tile_overrides[int(data["map_id"])] = data["tiles"]
+ return _tile_overrides.get(map_id, [])
 
 static func get_random_spawn_position(map_id: int) -> Vector2i:
  var map = get_map(map_id)

@@ -45,3 +45,9 @@ tools/durl*.json
 assets/sos/
 tools/sheets/
 assets/sos_clean/
+
+# Cartographer: saidas geradas (previews/JSON de mapas)
+maps/
+tools/cartographer_out/
+tools/_cartographer_runner.gd
+tools/_cartographer_job.json
