@@ -20,7 +20,8 @@ func _on_tutorial_message(message: String, position: Vector2) -> void:
  label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
  label.custom_minimum_size = Vector2(400, 0)
 
- battle.ui_layer.add_child(label)
+ if battle.ui_layer != null:  # teste sem árvore: painel vira orphan reportado
+  battle.ui_layer.add_child(label)
 
  # Auto-remover após 3 segundos
  await battle.get_tree().create_timer(3.0).timeout
@@ -379,11 +380,13 @@ func _on_forge_item_pressed(equipment_id: String) -> void:
    SoundManager.play_forge()
   if GameManager.has_method("save_game"):
    GameManager.save_game()  # bônus permanente + inventário da vila no save
- # Atualiza a painel (custos/estado mudaram).
- battle._forge_panel.queue_free()
- battle._forge_panel = null
- battle._build_forge_panel()
- battle._forge_panel.visible = true
+  # Atualiza a painel (custos/estado mudaram). Mesmo guard do cook (teste sem árvore).
+  if battle._forge_panel != null and is_instance_valid(battle._forge_panel):
+   battle._forge_panel.queue_free()
+  battle._forge_panel = null
+  battle._build_forge_panel()
+  if battle._forge_panel != null:
+   battle._forge_panel.visible = true
 
 
 # --- Handlers de excitação (disparam métodos que emitem sinais §6-7) ---
@@ -427,11 +430,14 @@ func _on_cook_item_pressed(recipe_id: String, is_food: bool) -> void:
    SoundManager.play_heal()
   if GameManager.has_method("save_game"):
    GameManager.save_game()  # bônus permanente no save
- # Atualiza o painel (ingredientes mudaram).
- battle._cook_panel.queue_free()
- battle._cook_panel = null
- battle._build_cook_panel()
- battle._cook_panel.visible = true
+  # Atualiza o painel (ingredientes mudaram). Painel ausente (teste sem árvore
+  # chama o handler direto) → só recria o estado, sem tocar em nós.
+  if battle._cook_panel != null and is_instance_valid(battle._cook_panel):
+   battle._cook_panel.queue_free()
+  battle._cook_panel = null
+  battle._build_cook_panel()
+  if battle._cook_panel != null:
+   battle._cook_panel.visible = true
 
 
 func _on_tavern_pressed() -> void:

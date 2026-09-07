@@ -49,7 +49,8 @@ func _create_kaelen_hud() -> void:
 	panel_style.set_border_width_all(2)
 	panel_style.set_corner_radius_all(6)
 	panel.add_theme_stylebox_override("panel", panel_style)
-	battle.ui_layer.add_child(panel)
+	if battle.ui_layer != null:  # teste sem árvore: painel vira orphan reportado
+		battle.ui_layer.add_child(panel)
 
 	var vbox = VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 6)
@@ -169,7 +170,8 @@ func _create_combo_ui() -> void:
 	panel_style.set_border_width_all(2)
 	panel_style.set_corner_radius_all(6)
 	panel.add_theme_stylebox_override("panel", panel_style)
-	battle.ui_layer.add_child(panel)
+	if battle.ui_layer != null:  # teste sem árvore: painel vira orphan reportado
+		battle.ui_layer.add_child(panel)
 
 	var vbox = VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 4)
@@ -208,7 +210,8 @@ func _create_balance_ui() -> void:
 	panel_style.set_border_width_all(2)
 	panel_style.set_corner_radius_all(6)
 	panel.add_theme_stylebox_override("panel", panel_style)
-	battle.ui_layer.add_child(panel)
+	if battle.ui_layer != null:  # teste sem árvore: painel vira orphan reportado
+		battle.ui_layer.add_child(panel)
 
 	var vbox = VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 4)
@@ -251,7 +254,8 @@ func _create_boss_ui() -> void:
 	panel_style.set_border_width_all(2)
 	panel_style.set_corner_radius_all(4)
 	battle.boss_panel.add_theme_stylebox_override("panel", panel_style)
-	battle.ui_layer.add_child(battle.boss_panel)
+	if battle.ui_layer != null:  # teste sem árvore: painel vira orphan reportado
+		battle.ui_layer.add_child(battle.boss_panel)
 
 	var vbox = VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 2)
@@ -292,7 +296,8 @@ func _create_progression_hud() -> void:
 	style.set_border_width_all(2)
 	style.set_corner_radius_all(6)
 	battle.progression_hud.add_theme_stylebox_override("panel", style)
-	battle.ui_layer.add_child(battle.progression_hud)
+	if battle.ui_layer != null:  # teste sem árvore: painel vira orphan reportado
+		battle.ui_layer.add_child(battle.progression_hud)
 
 	var vbox = VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 4)
@@ -369,7 +374,8 @@ func _create_actions_panel() -> void:
 	style.set_border_width_all(2)
 	style.set_corner_radius_all(6)
 	battle.actions_panel.add_theme_stylebox_override("panel", style)
-	battle.ui_layer.add_child(battle.actions_panel)
+	if battle.ui_layer != null:  # teste sem árvore: painel vira orphan reportado
+		battle.ui_layer.add_child(battle.actions_panel)
 
 	var vbox = VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 4)
@@ -463,7 +469,8 @@ func _build_forge_panel() -> void:
 	close.custom_minimum_size = Vector2(140, 26)
 	close.pressed.connect(func() -> void: battle._forge_panel.visible = false)
 	vbox.add_child(close)
-	battle.ui_layer.add_child(battle._forge_panel)
+	if battle.ui_layer != null:  # teste sem árvore: painel vira orphan reportado
+		battle.ui_layer.add_child(battle._forge_panel)
 
 
 func _build_cook_panel() -> void:
@@ -493,7 +500,10 @@ func _build_cook_panel() -> void:
 	close.custom_minimum_size = Vector2(140, 26)
 	close.pressed.connect(func() -> void: battle._cook_panel.visible = false)
 	vbox.add_child(close)
-	battle.ui_layer.add_child(battle._cook_panel)
+	# Testes podem chamar o handler sem árvore (ui_layer stubado com null):
+	# o painel fica órfão de propósito e é reportado como orphan do teste.
+	if battle.ui_layer != null:
+		battle.ui_layer.add_child(battle._cook_panel)
 
 
 func _add_cook_row(vbox: VBoxContainer, recipe_id: String, recipe: Dictionary, is_food: bool) -> void:

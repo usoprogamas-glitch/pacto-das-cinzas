@@ -78,11 +78,12 @@
 - **Forja UI (05b9902)**: painel de seleção por item (nome/slot/custo/estado) com toggle e refresh pós-forja.
 - **Side content (0ede89d)**: mapas 2 e 4 com traversal+puzzle+props. Todo mapa explorável (0-10) tem conteúdo completo.
 
-## FILA PARA A PRÓXIMA SESSÃO (2026-09-02)
-1. **QA jogável ponta a ponta** — usuário joga intro → Aurius Fase 1 e reporta bugs de runtime/game feel (único risco não coberto pelos 695 testes).
-2. **LoRA pixel-art no ComfyUI** — elevar precisão dos assets (usuário instala o LoRA; pipeline em tools/ já pronto). **Direção de arte fixada (2026-09-06): Sea of Stars** — ver `docs/direcao_arte.md` (pilares, gap atual, rotas A luz+grade / B LoRA / C tilesets reais).
-3. Se sobrar tempo: menu de seleção de elixir na cozinha (hoje pega o 1º craftável), batch 3 de props (estátuas dos Cardeais, decoração Solaria), padronizar indentação tabs→espaços com .editorconfig (quebrou 3x na sessão).
-- Suíte: **695/695 ✅** | `main` @ `0ede89d` | working tree limpo.
+## FILA PARA A PRÓXIMA SESSÃO (2026-09-07)
+1. **QA jogável ponta a ponta** — usuário joga intro → Aurius e reporta bugs de runtime/game feel (único risco não coberto pelos 723 testes).
+2. **Tiles LoRA nos biomas** — 5 tiles gerados (`assets/pixel/tile_*.png`) esperando integração nos canvases do explore (substitui grade procedural).
+3. **Ícones regenerados** — server ComfyUI fechado; `icon_corte/eter` recortados de sheets; regenerar com prompt single-item quando reabrir.
+4. Se sobrar tempo: UI de diálogo SoS (retrato pixel + keywords coloridas), menu de seleção de elixir na cozinha, batch de props (estátuas dos Cardeais).
+- Suíte: **723/723 ✅** (81 scripts) | `main` @ `3cd3ace` | AUDIT P2 zerado.
 
 ---
 
@@ -118,8 +119,10 @@
 - **Fix aplicado**: `SAVE_VERSION = 2` em `game_manager.gd`; `save_game()` grava `"version"` no JSON e rotaciona o save anterior para `user://save_game_backup.json` (copy_absolute) antes de sobrescrever; `load_game()` valida parse/Dictionary e cai no backup quando o save principal está corrompido (`_load_backup`/`_restore_save` extraído). Saves antigos (sem version) carregam normalmente. 4 testes (`test_save_versioning.gd`: version no save, rotação, fallback de carga, carga limpa sem save). Suíte: 679/679.
 - **Não feito** (YAGNI por ora): autosave no `NOTIFICATION_WM_CLOSE_REQUEST` e migração automática — o campo `version` já destrava a migração quando houver necessidade real.
 
-### 15. Higiene de recursos (RID leaks no exit)
-- Fontes/texturas alocadas e não liberadas no shutdown dos testes. **Nota (2026-09-01)**: os leaks aparecem só no exit da suíte GUT headless (RIDs de Canvas/CanvasItem/TextServer + 917 orphans) — cosmético, não afeta o jogo em runtime. Baixa prioridade; revisar `free()` nos autoloads.
+### 15. Higiene de recursos (RID leaks no exit) ✅ FECHADO COMO WONTFIX DOCUMENTADO (2026-09-07)
+- **Análise**: 2339 orphans / 211 sites espalhados por ~30 arquivos de teste — padrão é Nodes criados com `.new()` nos testes sem árvore nem `free()` (Units/painéis de teste). RID leaks (Canvas/CanvasItem/TextServer) são ruído de shutdown do processo headless, não existe em runtime do jogo.
+- **Mitigado hoje**: handlers blindados contra teste sem árvore (`_build_cook_panel`/ui_layer guards, `_on_cook_item_pressed`/`_on_forge_item_pressed` com `is_instance_valid`) — suíte ficou sem SCRIPT ERROR de handler. Orphans restantes são reportados pelo GUT e coletados no exit do processo.
+- **Decisão**: consertar 211 sites (add_child_autofree/autofree em cada teste) é churn alto com zero valor de runtime. Se um dia o orfanato atrapalhar CI memória, atacar os top-5 sites (360/56/45/32/29 orphans).
 
 ### 16. Curva de balanceamento não auditada ✅ RESOLVIDO (2026-09-05)
 - Auditoria fechada (`tools/_balance_curve.py`): campanha linear paga ~3.400 XP → Kael chega ao Aurius no **level 6** (curva `100×lv^1.5`).
