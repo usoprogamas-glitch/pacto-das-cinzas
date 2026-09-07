@@ -43,8 +43,8 @@ PORTRAITS = {
 }
 
 ICONS = {
-    "corte": "sword slash icon, single blade diagonal, steel grey with warm gold edge",
-    "eter": "swirling arcane ether orb icon, cobalt blue core with white spark",
+    "corte": "ONE single sword icon only, one weapon centered, diagonal steel blade with warm gold edge, isolated on plain flat dark navy background, no sheet, no items, no chest",
+    "eter": "ONE single arcane orb icon only, one sphere centered, cobalt blue core with white spark, isolated on plain flat dark navy background, no sheet, no grid",
 }
 
 TILES = {

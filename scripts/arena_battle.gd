@@ -48,6 +48,7 @@ var menu_root: VBoxContainer
 var _menu_name_label: Label
 var _banner_label: Label
 var _banner_effect: Label
+var _effect_icon: TextureRect
 var _party_plates: Array = []  # [{unit, root, pv_bar, pv_val, pm_bar, pm_val}]
 var _plate_poll := 0.0
 var _combo_boost := 1.0  # Golpe Combinado (menu COMBO): dano x1.5 com 2 CP
@@ -1113,6 +1114,13 @@ func _build_command_banner() -> void:
  _banner_effect.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
  _banner_effect.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
  effect_box.add_child(_banner_effect)
+ _effect_icon = TextureRect.new()
+ _effect_icon.custom_minimum_size = Vector2(36, 36)
+ _effect_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+ _effect_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+ _effect_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+ _effect_icon.visible = false
+ effect_box.add_child(_effect_icon)
  effect_root.add_child(effect_box)
  add_child(effect_root)
  _set_command("", "—")
@@ -1123,6 +1131,16 @@ func _set_command(cmd: String, effect: String) -> void:
   _banner_label.text = cmd
  if _banner_effect:
   _banner_effect.text = effect
+ # Ícone do tipo (réplica SoS): textura se existir em assets/pixel, senão texto.
+ if _effect_icon:
+  var icon_path := "res://assets/pixel/icon_%s.png" % effect.to_lower()
+  if effect != "" and ResourceLoader.exists(icon_path):
+   _effect_icon.texture = load(icon_path)
+   _effect_icon.visible = true
+   _banner_effect.visible = false
+  else:
+   _effect_icon.visible = false
+   _banner_effect.visible = true
 
 
 # --- HUD de combate (Combo Points + Éter/Fúria + Boss HP) ---
@@ -1238,9 +1256,15 @@ func _build_combo_badge() -> void:
  _combo_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 
-## Retrato do personagem: recorte da cabeça do sprite do jogo (topo-centro),
-## ampliado com nearest. Sprite ausente → retrato pintado (Kael) → cinza.
+## Retrato do personagem: 1º retrato pixel gerado pelo LoRA (portraits/pixel_*),
+## 2º recorte da cabeça do sprite do jogo (topo-centro, nearest),
+## 3º retrato pintado (Kael) → null (placa usa fallback cinza).
 func _portrait_for(unit_name: String) -> ImageTexture:
+ var pixel_path := "res://assets/portraits/pixel_%s.png" % unit_name.to_lower()
+ if ResourceLoader.exists(pixel_path):
+  var pixel_img: Image = (load(pixel_path) as Texture2D).get_image()
+  if pixel_img and pixel_img.get_width() >= 32:
+   return ImageTexture.create_from_image(pixel_img)
  var path := "res://assets/sprites/%s.png" % unit_name.to_lower()
  if not ResourceLoader.exists(path):
   if unit_name.to_lower().begins_with("kael") and ResourceLoader.exists("res://assets/portraits/kaelen.png"):
