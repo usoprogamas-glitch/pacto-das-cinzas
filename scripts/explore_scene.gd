@@ -110,8 +110,30 @@ var _npc_sos_sets: Dictionary = {}
 var _npc_sos_sprite: Sprite2D = null
 var _npc_sos_frame: float = 0.0
 var _dialogue_box: PanelContainer = null
-var _dialogue_label: Label = null
+var _dialogue_label: RichTextLabel = null
+var _dialogue_name_plate: PanelContainer = null
 var _dialogue_hint: Label = null
+
+## Keywords coloridas da referência SoS: lore em âmbar, recursos em ciano.
+const DIALOGUE_KEYWORDS := {
+ "amber": ["Kael", "Kroug", "Brugaves", "Valera", "Aurius", "Kaelen", "Cardeais",
+  "Santos Cardeais", "Solaria", "Ignis", "Pacto das Cinzas", "Almas", "Forma"],
+ "cyan": ["éter", "Éter", "ouro", "provisões", "forja", "cozinha", "travessia"],
+}
+
+
+## Coloriza termos de lore/recursos no texto da página (BBCode RichTextLabel).
+## Colchetes escapados antes para não injetar BBCode do conteúdo.
+func _highlight_keywords(text: String) -> String:
+ # Colchetes → marcadores neutros (1ª fase, à prova de reprocessamento),
+ # keywords colorizadas, marcadores viram [lb]/[rb] por último.
+ var safe := text.replace("[", "\u0001").replace("]", "\u0002")
+ for color_name in DIALOGUE_KEYWORDS:
+  var color: String = "#f0a838" if color_name == "amber" else "#7ec8e3"
+  for term: String in DIALOGUE_KEYWORDS[color_name]:
+   safe = safe.replace(term, "[color=%s]%s[/color]" % [color, term])
+ safe = safe.replace("\u0001", "[lb]").replace("\u0002", "[rb]")
+ return safe
 var _npc_portrait: String = ""  # nome do retrato do diálogo atual
 var _quest_log_panel: PanelContainer = null
 var _quest_toast: Label = null
@@ -286,13 +308,10 @@ func _open_dialogue_box() -> void:
  text_col.add_theme_constant_override("separation", 6)
  text_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
  hrow.add_child(text_col)
- var name_label := Label.new()
- name_label.text = dialogue.get_npc_name()
- name_label.add_theme_font_size_override("font_size", 17)
- name_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
- text_col.add_child(name_label)
- _dialogue_label = Label.new()
- _dialogue_label.add_theme_font_size_override("font_size", 16)
+ _dialogue_label = RichTextLabel.new()
+ _dialogue_label.bbcode_enabled = true
+ _dialogue_label.fit_content = true
+ _dialogue_label.add_theme_font_size_override("normal_font_size", 16)
  _dialogue_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
  _dialogue_label.custom_minimum_size = Vector2(760, 0)
  text_col.add_child(_dialogue_label)
@@ -304,11 +323,31 @@ func _open_dialogue_box() -> void:
  text_col.add_child(hint)
  _ui.add_child(_dialogue_box)
  _dialogue_box.move_to_front()
+ # Placa de nome (réplica SoS): sobre a moldura esquerda, âmbar sobre escuro.
+ _dialogue_name_plate = PanelContainer.new()
+ var plate_style := StyleBoxFlat.new()
+ plate_style.bg_color = Color(0.04, 0.04, 0.08, 0.96)
+ plate_style.set_corner_radius_all(5)
+ plate_style.set_content_margin_all(5)
+ plate_style.content_margin_left = 12
+ plate_style.content_margin_right = 12
+ plate_style.border_color = Color(0.55, 0.5, 0.35, 0.8)
+ plate_style.set_border_width_all(2)
+ _dialogue_name_plate.add_theme_stylebox_override("panel", plate_style)
+ var plate_label := Label.new()
+ plate_label.text = dialogue.get_npc_name()
+ plate_label.add_theme_font_size_override("font_size", 15)
+ plate_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
+ _dialogue_name_plate.add_child(plate_label)
+ _dialogue_name_plate.position = Vector2(160, 536)
+ _ui.add_child(_dialogue_name_plate)
+ _update_dialogue_box()  # 1ª página já visível na abertura (antes: só no 1º E)
 
 
 func _update_dialogue_box() -> void:
  if _dialogue_label and is_instance_valid(_dialogue_label):
-  _dialogue_label.text = dialogue._pages[dialogue._page_index] if dialogue._page_index < dialogue._pages.size() else ""
+  var page: String = dialogue._pages[dialogue._page_index] if dialogue._page_index < dialogue._pages.size() else ""
+  _dialogue_label.text = _highlight_keywords(page)
 
 
 func _close_dialogue_box() -> void:
@@ -316,6 +355,9 @@ func _close_dialogue_box() -> void:
   _dialogue_box.queue_free()
  _dialogue_box = null
  _dialogue_label = null
+ if _dialogue_name_plate and is_instance_valid(_dialogue_name_plate):
+  _dialogue_name_plate.queue_free()
+ _dialogue_name_plate = null
 
 
 # === LOJA DO MERCADOR (ouro → itens de party) ===

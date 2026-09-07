@@ -50,6 +50,17 @@ func _run() -> void:
 	await _wait(2.0)
 	await _shot("04_explore_mapa0")
 
+	# 4a) Diálogo com o NPC (réplica SoS: placa de nome + keywords coloridas)
+	if explore.npc_node != null:
+		explore.player.position = explore.npc_node.position + Vector2(30, 0)
+		await _wait(0.5)
+		explore._interact_npc()
+		await _wait(0.5)
+		await _shot("04b_dialogo_sos")
+		explore._interact_npc()  # avança página (keywords coloridas em outra página)
+		await _wait(0.4)
+		explore._close_dialogue_box()
+
 	# 4b) Mover até um inimigo (contato abre a arena)
 	if explore.enemy_nodes.size() > 0:
 		explore.player.position = explore.enemy_nodes[0].position + Vector2(30, 0)
