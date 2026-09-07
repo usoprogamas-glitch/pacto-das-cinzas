@@ -905,7 +905,48 @@ func create_enemy(enemy_type: String) -> Sprite2D:
 
 ## Canvas LoRA (direção de arte Sea of Stars): tilea assets/pixel/tile_<tipo>.png
 ## (96px quantized do LoRA pixel-art) num canvas 320x180 com flip alternado
-## H/V para disfarçar as emendas. Asset ausente → null (caller cai no procedural).
+## para disfarçar as emendas. Asset ausente → null (caller cai no procedural).
+## Paleta DERIVADA do próprio asset (top N cores mais frequentes) — a paleta
+## "nomeada" correta é a real do bioma, nunca cores manuais (lição QA 2026-09-07:
+## const de 5 cores escuras colapsou o tile LoRA num monocromático). Uso:
+## unificar assets de fontes diferentes do MESMO bioma contra a paleta do chão.
+static func apply_biome_palette(img: Image, terrain: String, top_n: int = 16) -> Image:
+ if img == null:
+  return img
+ var freq := {}
+ for y in range(img.get_height()):
+  for x in range(img.get_width()):
+   var px := img.get_pixel(x, y)
+   if px.a < 0.05:
+    continue
+   var key := "%d,%d,%d" % [int(px.r * 32), int(px.g * 32), int(px.b * 32)]
+   freq[key] = int(freq.get(key, 0)) + 1
+ var top: Array = freq.keys()
+ top.sort_custom(func(a, b): return freq[a] > freq[b])
+ var palette: Array = []
+ for k in top.slice(0, top_n):
+  var parts: PackedStringArray = String(k).split(",")
+  palette.append(Color(float(parts[0]) / 32.0, float(parts[1]) / 32.0, float(parts[2]) / 32.0))
+ if palette.is_empty():
+  return img
+ var out := Image.new()
+ out.copy_from(img)
+ for y in range(out.get_height()):
+  for x in range(out.get_width()):
+   var px := out.get_pixel(x, y)
+   if px.a < 0.05:
+    continue
+   var best: Color = palette[0]
+   var best_d := INF
+   for c: Color in palette:
+    var d := (px.r - c.r) * (px.r - c.r) + (px.g - c.g) * (px.g - c.g) + (px.b - c.b) * (px.b - c.b)
+    if d < best_d:
+     best_d = d
+     best = c
+   out.set_pixel(x, y, Color(best.r, best.g, best.b, px.a))
+ return out
+
+
 static func build_lora_terrain_canvas(terrain_type: String) -> Sprite2D:
  var key := "fronteira" if terrain_type == "mixed" else terrain_type
  var path := "res://assets/pixel/tile_%s.png" % key
@@ -927,6 +968,8 @@ static func build_lora_terrain_canvas(terrain_type: String) -> Sprite2D:
  for r in range(rows):
   for c in range(cols):
    var piece: Image = img.duplicate()
+   # NOTA (QA 2026-09-07): NÃO aplicar paleta manual sobre o tile LoRA — o
+   # quantize de origem já é consistente; paleta forçada o colapsa em cinza.
    if c % 2 == 1:
     piece.flip_x()
    if r % 2 == 1:
