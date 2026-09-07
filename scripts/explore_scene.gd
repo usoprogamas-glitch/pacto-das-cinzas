@@ -684,12 +684,13 @@ func _build_map() -> void:
  var map: Dictionary = MapDatabase.get_map(map_id)
  var terrain_name: String = String(map.get("terrain", "mixed"))
 
- # Fundo (molde SoS v2): um único canvas low-res escalado com nearest —
- # paleta coesa por terreno, sem emendas de grade. O pixel_renderer fica
- # para os tiles animados de água usados na arena legada.
+ # Fundo (molde SoS v3): primeiro tenta canvas do tile LoRA (direção de arte
+ # Sea of Stars — docs/direcao_arte.md); fallback = canvas procedural v2.
  pixel_renderer = PixelArtRenderer.new()
  add_child(pixel_renderer)
- var terrain_sprite: Sprite2D = pixel_renderer.build_terrain_canvas(terrain_name, hash("terrain_%d" % map_id))
+ var terrain_sprite: Sprite2D = pixel_renderer.build_lora_terrain_canvas(terrain_name)
+ if terrain_sprite == null:
+  terrain_sprite = pixel_renderer.build_terrain_canvas(terrain_name, hash("terrain_%d" % map_id))
  add_child(terrain_sprite)
  _spawn_tile_decorations(terrain_name)
 

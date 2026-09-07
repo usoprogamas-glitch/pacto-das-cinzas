@@ -903,11 +903,47 @@ func create_enemy(enemy_type: String) -> Sprite2D:
  var palette = PALETTES.get("enemy_" + enemy_type, PALETTES.enemy_mercenary)
  return create_detailed_character("enemy_" + enemy_type, 64)
 
+## Canvas LoRA (direção de arte Sea of Stars): tilea assets/pixel/tile_<tipo>.png
+## (96px quantized do LoRA pixel-art) num canvas 320x180 com flip alternado
+## H/V para disfarçar as emendas. Asset ausente → null (caller cai no procedural).
+static func build_lora_terrain_canvas(terrain_type: String) -> Sprite2D:
+ var key := "fronteira" if terrain_type == "mixed" else terrain_type
+ var path := "res://assets/pixel/tile_%s.png" % key
+ if not ResourceLoader.exists(path):
+  return null
+ var tex: Texture2D = load(path)
+ var img: Image = tex.get_image()
+ if img == null or img.get_width() < 32:
+  return null
+ if img.is_compressed():
+  img.decompress()
+ var w := 320
+ var h := 180
+ var tw := img.get_width()
+ var th := img.get_height()
+ var canvas := Image.create(w, h, false, Image.FORMAT_RGBA8)
+ var cols := int(ceil(float(w) / tw))
+ var rows := int(ceil(float(h) / th))
+ for r in range(rows):
+  for c in range(cols):
+   var piece: Image = img.duplicate()
+   if c % 2 == 1:
+    piece.flip_x()
+   if r % 2 == 1:
+    piece.flip_y()
+   canvas.blend_rect(piece, Rect2i(0, 0, tw, th), Vector2i(c * tw, r * th))
+ var sprite := Sprite2D.new()
+ sprite.texture = ImageTexture.create_from_image(canvas)
+ sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+ sprite.centered = false
+ sprite.scale = Vector2(1280.0 / w, 720.0 / h)
+ return sprite
+
+
 ## Canvas de terreno low-res (320x180) escalado com nearest: um único sprite
 ## coeso em vez de mosaico de tiles — paleta da mesma família, manchas
 ## orgânicas e variação sutil por célula. Substitui a grade 10x6 (QA visual).
-static func build_terrain_canvas(terrain_type: String, seed: int = 0) -> Sprite2D:
- # "volcanic" não existe em TERRAINS (só "lava") — fundo de lava saturado
+static func build_terrain_canvas(terrain_type: String, seed: int = 0) -> Sprite2D: # "volcanic" não existe em TERRAINS (só "lava") — fundo de lava saturado
  # briga com as unidades; deriva para cinza-brasa escuro da mesma família.
  if terrain_type == "volcanic":
   return _build_ash_canvas(seed if seed != 0 else hash(terrain_type))
