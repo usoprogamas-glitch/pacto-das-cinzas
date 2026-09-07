@@ -323,231 +323,85 @@ func connect_signals() -> void:
 
 
 func _input(event: InputEvent) -> void:
- # Timed Block: o clique reativo vale mesmo fora do turno do jogador
- # (a janela abre durante o ENEMY_TURN, quando can_interact é false).
- if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT and _timed_block_active:
-  _resolve_block_input()
-  return
- if not can_interact:
-  return
- if event is InputEventMouseButton and event.pressed:
-  if event.button_index == MOUSE_BUTTON_LEFT:
-   handle_left_click()
-  elif event.button_index == MOUSE_BUTTON_RIGHT:
-   handle_right_click()
+ _get_input().handle_event(event)
+
+## P2 #13d: interação/seleção extraída para BattleInput (scripts/battle/battle_input.gd).
+## Wrappers preservam a API usada por testes, connect_signals e handlers da cena.
+const BattleInputLib := preload("res://scripts/battle/battle_input.gd")
+var _input_lib = null
+
+
+func _get_input():
+ # Lazy (RefCounted): testes instanciam a cena sem _ready e stubam membros.
+ if _input_lib == null:
+  _input_lib = BattleInputLib.new()
+  _input_lib.battle = self
+ return _input_lib
+
 
 func handle_left_click() -> void:
- var mouse_pos = get_global_mouse_position()
- var grid_pos = grid.pixel_to_grid(mouse_pos)
+ _get_input().handle_left_click()
 
- # Se timed hit está ativo, processar timing
- if _timed_hit_active:
-  var elapsed = (Time.get_ticks_msec() / 1000.0) - _timed_hit_start_time
-  var grade = timed_combat.resolve_timing(elapsed)
-  _apply_attack_result(_timed_hit_target, grade.multiplier, grade.label)
-  _timed_hit_active = false
-  return
-
- if not BattleManager.is_valid_position(grid_pos):
-  return
-
- var clicked_unit = BattleManager.get_tile_at(grid_pos)
-
- if clicked_unit and clicked_unit.data and clicked_unit.data.is_player and BattleManager.current_phase == BattleManager.Phase.PLAYER_TURN:
-  select_unit(clicked_unit)
-  tutorial_system.complete_step("select_unit")
- elif is_unit_selected and selected_unit:
-  if not selected_unit.has_moved and grid.movement_tiles.has(grid_pos):
-   move_selected_unit(grid_pos)
-   tutorial_system.complete_step("move_unit")
-  elif not selected_unit.has_acted and grid.attack_tiles.has(grid_pos) and clicked_unit and clicked_unit.data and not clicked_unit.data.is_player:
-   attack_with_selected_unit(clicked_unit)
-   tutorial_system.complete_step("attack_unit")
 
 func handle_right_click() -> void:
- deselect_unit()
+ _get_input().handle_right_click()
+
 
 func select_unit(unit: Unit) -> void:
- deselect_unit()
- selected_unit = unit
- is_unit_selected = true
+ _get_input().select_unit(unit)
 
- # Feedback visual
- SoundManager.play_select()
- combat_feedback.flash_unit(unit, Color(1.2, 1.2, 1.5), 0.1)
-
- show_unit_info(unit)
- show_action_menu(unit)
-
- if not unit.has_moved:
-  grid.show_movement_range(unit, unit.data.move_range)
- if not unit.has_acted:
-  grid.show_attack_range(unit, unit.data.attack_range)
-
- # Kaelen System (§3.4): analisar alvo inimigo selecionado.
- # analyze_target espera um Dictionary, nao o objeto UnitData.
- if unit.data and not unit.data.is_player:
-  # WEAKNESS_TABLE é chaveada por tipo de criatura ("Goblin", "Orc", "Cardeal"...).
-  # O nome do inimigo ("Lobo Sombrio", "Santo Cardeal") é o que casa por
-  # substring no KaelenSystem — melhor que soul_type (raro) ou unit_class (papel).
-  var target_data := {
-   "name": unit.data.unit_name,
-   "type": unit.data.unit_name,
-   "hp": unit.data.current_hp,
-   "max_hp": unit.data.max_hp,
-   "armor": unit.data.defense,
-   "morale": 50,
-   "attack_range": unit.data.attack_range,
-   "locks": [],
-   "spell_counter": 0,
-  }
-  kaelen_system.analyze_target(target_data)
 
 func deselect_unit() -> void:
- selected_unit = null
- is_unit_selected = false
- grid.clear_highlights()
- hide_unit_info()
- hide_action_menu()
- if kaelen_hud_panel and kaelen_hud_panel.visible:
-  kaelen_hud_panel.visible = false
+ _get_input().deselect_unit()
+
 
 func move_selected_unit(grid_pos: Vector2i) -> void:
- if selected_unit and not selected_unit.has_moved:
-  # Animação de movimento
-  var animator = _get_animator(selected_unit)
-  if animator:
-   animator.play_walk(grid.grid_to_pixel(grid_pos))
+ _get_input().move_selected_unit(grid_pos)
 
-  SoundManager.play_step()
-  BattleManager.move_unit(selected_unit, grid_pos)
-  selected_unit.has_moved = true
-  grid.clear_highlights()
-  if not selected_unit.has_acted:
-   grid.show_attack_range(selected_unit, selected_unit.data.attack_range)
 
 func attack_with_selected_unit(target: Unit) -> void:
- if selected_unit and not selected_unit.has_acted:
-  # Iniciar timed hit
-  _timed_hit_active = true
-  _timed_hit_start_time = Time.get_ticks_msec() / 1000.0
-  _timed_hit_target = target
-
-  # Mostrar indicador visual
-  combat_feedback.show_status_effect(target.global_position + Vector2(0, -40), "TIMED HIT!")
-
-  # Esperar input do jogador (timer de 0.3s)
-  await get_tree().create_timer(TimedCombatSystem.ATTACK_WINDOW).timeout
-
-  # Se jogador não clicou a tempo, aplicar dano sem bônus
-  if _timed_hit_active:
-   _apply_attack_result(target, 1.0, "MISS")
+ _get_input().attack_with_selected_unit(target)
 
 
-# --- Timed Block: defesa reativa (espelho do timed hit, GDD v2 §3.1) ---
-
-## Chamado pelo BattleManager quando um ataque inimigo mira um aliado jogador:
-## abre a janela de 0.2s e aguarda o clique reativo antes do dano ser aplicado.
 func _resolve_timed_block(_attacker: Unit, target: Unit) -> float:
- _timed_block_active = true
- _timed_block_start_time = Time.get_ticks_msec() / 1000.0
- _timed_block_reduction = 0.0
-
- combat_feedback.show_status_effect(target.global_position + Vector2(0, -40), "TIMED BLOCK!")
- SoundManager.play_select()
-
- # Espera o input do jogador dentro da janela (0.2s) e devolve a redução
- # para o pipeline de dano do BattleManager.
- await get_tree().create_timer(TimedCombatSystem.BLOCK_WINDOW).timeout
- _timed_block_active = false
- return _timed_block_reduction
+ return _get_input()._resolve_timed_block(_attacker, target)
 
 
-## Clique reativo dentro da janela: gradua o timing e trava a redução obtida.
 func _resolve_block_input() -> void:
- var elapsed = (Time.get_ticks_msec() / 1000.0) - _timed_block_start_time
- var result = timed_combat.resolve_block_timing(elapsed)
- _timed_block_reduction = timed_combat.get_block_reduction(result)
-
- combat_feedback.show_status_effect(Vector2(640, 300), "BLOCK " + result.grade)
- if _timed_block_reduction > 0.0:
-  combat_feedback.shake_light()
-  SoundManager.play_hit()
+ _get_input()._resolve_block_input()
 
 
 func _apply_attack_result(target: Unit, multiplier: float, grade: String) -> void:
- if not selected_unit or not target:
-  return
+ _get_input()._apply_attack_result(target, multiplier, grade)
 
- # Animação de ataque
- var attacker_animator = _get_animator(selected_unit)
- if attacker_animator:
-  await attacker_animator.play_attack(target)
-
- SoundManager.play_hit()
- combat_feedback.shake_light()
-
- # Aplicar dano com bônus de timing + buffs de cozinha §7.2 via BattleManager
- BattleManager.attack_unit(selected_unit, target, "", "", multiplier * _cooking_attack_multiplier(), _cooking_defense_bonus())
-
- # Mostrar grade de timing
- combat_feedback.show_status_effect(target.global_position + Vector2(0, -30), grade)
-
- # Ganhar Éter por timing perfeito
- if grade == "PERFECT":
-  balance_system.apply_action("buff_ally")  # +8 Éter
-  update_balance_ui()
-
- # Animação de dano no alvo
- var target_animator = _get_animator(target)
- if target_animator:
-  target_animator.play_hit()
-
- # Ganhar CP por Perfect
- if grade == "PERFECT":
-  combo_system.earn_from_timed_hit(grade)
-  update_combo_ui()
-
- selected_unit.has_acted = true
- grid.clear_highlights()
- hide_action_menu()
- deselect_unit()
 
 func show_unit_info(unit: Unit) -> void:
- unit_info_panel.visible = true
- unit_name_label.text = unit.data.unit_name
- unit_hp_label.text = "HP: %d/%d" % [unit.current_hp, unit.data.max_hp]
- unit_class_label.text = unit.data.unit_class
+ _get_input().show_unit_info(unit)
+
 
 func hide_unit_info() -> void:
- unit_info_panel.visible = false
+ _get_input().hide_unit_info()
+
 
 func show_action_menu(unit: Unit) -> void:
- if not unit.has_moved or not unit.has_acted:
-  action_menu.visible = true
-  move_button.disabled = unit.has_moved
-  attack_button.disabled = unit.has_acted
- else:
-  hide_action_menu()
+ _get_input().show_action_menu(unit)
+
 
 func hide_action_menu() -> void:
- action_menu.visible = false
+ _get_input().hide_action_menu()
+
 
 func _on_move_pressed() -> void:
- if selected_unit and not selected_unit.has_moved:
-  grid.show_movement_range(selected_unit, selected_unit.data.move_range)
+ _get_input()._on_move_pressed()
+
 
 func _on_attack_pressed() -> void:
- if selected_unit and not selected_unit.has_acted:
-  grid.show_attack_range(selected_unit, selected_unit.data.attack_range)
+ _get_input()._on_attack_pressed()
+
 
 func _on_wait_pressed() -> void:
- if selected_unit:
-  selected_unit.has_moved = true
-  selected_unit.has_acted = true
-  tutorial_system.complete_step("wait_action")
-  deselect_unit()
-  check_all_units_acted()
+ _get_input()._on_wait_pressed()
+
 
 ## P2 #13c: fluxo/resultado/sinais extraídos para BattleFlow (scripts/battle/battle_flow.gd).
 ## Wrappers preservam a API usada por testes e handlers da cena.
