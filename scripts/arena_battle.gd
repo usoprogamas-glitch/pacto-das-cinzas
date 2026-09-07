@@ -27,9 +27,31 @@ var _pending_is_magic := false
 var _block_window_open := false
 var _block_start := 0.0
 var _block_reduction := 0.0
-
 # UI
+
 var action_menu: VBoxContainer
+
+# --- HUD SoS (réplica da referência de combate Sea of Stars) ---
+const SOS_PANEL_BG := Color(0.11, 0.13, 0.19, 0.97)     # #1b2130
+const SOS_BORDER := Color(0.78, 0.82, 0.88)             # borda clara fria
+const SOS_TEXT := Color(0.91, 0.93, 0.95)
+const SOS_ACCENT := Color(0.94, 0.66, 0.22)             # nome do ator (âmbar)
+const SOS_SEL_BG := Color(0.23, 0.43, 0.66)             # item selecionado (azul-aço)
+const SOS_ITEM_TEXT := Color(0.54, 0.58, 0.64)          # itens não selecionados
+const SOS_PV_BG := Color(0.23, 0.17, 0.09)
+const SOS_PV_A := Color(0.97, 0.72, 0.31)               # gradiente PV (dourado→laranja)
+const SOS_PV_B := Color(0.88, 0.48, 0.09)
+const SOS_PM_BG := Color(0.16, 0.11, 0.2)
+const SOS_PM_A := Color(0.94, 0.63, 0.91)               # gradiente PM (rosa→roxo)
+const SOS_PM_B := Color(0.54, 0.35, 0.82)
+var menu_root: VBoxContainer
+var _menu_name_label: Label
+var _banner_label: Label
+var _banner_effect: Label
+var _party_plates: Array = []  # [{unit, root, pv_bar, pv_val, pm_bar, pm_val}]
+var _plate_poll := 0.0
+var _combo_boost := 1.0  # Golpe Combinado (menu COMBO): dano x1.5 com 2 CP
+
 var turn_label: Label
 var log_label: Label
 var result_panel: Control  # result screen dedicada (AUDIT 7d)
@@ -152,6 +174,8 @@ func _setup_from_campaign() -> void:
 
  # Barra do boss visível desde a entrada (não só após o 1º golpe).
  _update_boss_bar()
+ # Placas PV/PM agora: combatants existem (o build do HUD roda antes).
+ _ensure_party_plates()
 
 
 func _make_combatant(unit_name: String, is_player: bool, hp: int, atk: int, def: int, spd: int, mp: int) -> Unit:
@@ -515,14 +539,30 @@ func _spawn_next_wave() -> void:
 # --- Ações do jogador ---
 
 func _show_action_menu(show: bool) -> void:
+ menu_root.visible = show
  action_menu.visible = show
  if show:
   _log("Vez de %s" % current_actor.data.unit_name)
+  # Menu contextual (réplica SoS): cola no ator da vez (segue no _process).
+  _track_menu_to_actor()
+  _menu_name_label.text = String(current_actor.data.unit_name).to_upper()
+  _set_command("Sua vez", "—")
+  _refresh_party_plates()
+
+
+func _track_menu_to_actor() -> void:
+ if current_actor == null:
+  return
+ var pos: Vector2 = current_actor.position + Vector2(70, -150)
+ pos.x = clampf(pos.x, 40.0, 1000.0)
+ pos.y = clampf(pos.y, 60.0, 520.0)
+ menu_root.position = pos
 
 
 func _on_attack_pressed() -> void:
  if not _can_player_act():
   return
+ _set_command("Atacar", "CORTE")
  _show_action_menu(false)
  _pending_is_magic = false
  _begin_timed_hit()
@@ -534,14 +574,32 @@ func _on_magic_pressed() -> void:
  if current_actor.current_mp < ArenaCombatLib.MAGIC_COST:
   _log("MP insuficiente!")
   return
+ _set_command("Habilidades", "ÉTER")
  _show_action_menu(false)
  _pending_is_magic = true
+ _begin_timed_hit()
+
+
+func _on_combo_pressed() -> void:
+ # Golpe Combinado (GDD §4.1 simplificado na arena): 2 CP → dano x1.5
+ # com o mesmo timed hit. Falla graciosa sem CP.
+ if not _can_player_act():
+  return
+ if combo_system == null or combo_system.get_cp() < 2:
+  _log("CP insuficiente para COMBO! (precisa 2)")
+  return
+ combo_system.spend_cp(2, "Golpe Combinado")
+ _set_command("Combo", "CORTE")
+ _show_action_menu(false)
+ _pending_is_magic = false
+ _combo_boost = 1.5
  _begin_timed_hit()
 
 
 func _on_flee_pressed() -> void:
  if not _can_player_act():
   return
+ _set_command("Fugir", "—")
  _show_action_menu(false)
  if randf() < 0.5:
   _log("Fuga bem-sucedida!")
@@ -549,6 +607,12 @@ func _on_flee_pressed() -> void:
  else:
   _log("A fuga falhou!")
   _advance()
+
+
+## Item desabilitado na réplica (arena sem inventário por enquanto) — o clique
+## só informa; o botão segue disabled para fidelidade visual.
+func _on_items_pressed() -> void:
+ _log("A bolsa está vazia! (itens chegam em ato posterior)")
 
 
 func _can_player_act() -> bool:
@@ -609,6 +673,10 @@ func _resolve_action(multiplier: float, grade: String) -> void:
   damage = int(cast.damage * multiplier)
  else:
   damage = combat.calculate_damage(current_actor, _pending_target, multiplier)
+ if _combo_boost > 1.0:
+  damage = int(round(damage * _combo_boost))
+  _log("GOLPE COMBINADO! (2 CP)")
+ _combo_boost = 1.0
  combat.apply_hit(current_actor, _pending_target, damage)
  _pending_target.hp_changed.emit(_pending_target.current_hp)
  if SoundManager:
@@ -847,6 +915,9 @@ func _build_arena() -> void:
  turn_panel.add_theme_stylebox_override("panel", turn_style)
  turn_panel.add_child(turn_label)
  turn_panel.position = Vector2(16, 10)
+ # Réplica SoS: a leitura "Agindo: X" vive no menu contextual (nome âmbar) e
+ # nas placas PV/PM; o painel cru sai da tela mas segue na cena por API/testes.
+ turn_panel.visible = false
  add_child(turn_panel)
 
 
@@ -899,29 +970,159 @@ func _build_stage_vignette() -> void:
  log_label.add_theme_constant_override("shadow_offset_y", 1)
  add_child(log_label)
 
+ # Menu de ação SoS: nome âmbar + painel escuro com itens (réplica da ref).
+ # action_menu segue sendo o VBox de botões (API de testes/_can_player_act);
+ # o chrome (nome + moldura) vive em menu_root ao redor dele.
+ menu_root = VBoxContainer.new()
+ menu_root.position = Vector2(36, 288)
+ menu_root.add_theme_constant_override("separation", 4)
+ add_child(menu_root)
+
+ _menu_name_label = Label.new()
+ _menu_name_label.add_theme_font_size_override("font_size", 18)
+ _menu_name_label.add_theme_color_override("font_color", SOS_ACCENT)
+ _menu_name_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+ _menu_name_label.add_theme_constant_override("shadow_offset_x", 1)
+ _menu_name_label.add_theme_constant_override("shadow_offset_y", 1)
+ _menu_name_label.add_theme_constant_override("outline_size", 4)
+ _menu_name_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
+ menu_root.add_child(_menu_name_label)
+
+ var menu_panel := PanelContainer.new()
+ menu_panel.add_theme_stylebox_override("panel", _sos_panel_style())
+ menu_root.add_child(menu_panel)
+
  action_menu = VBoxContainer.new()
- action_menu.position = Vector2(40, 320)
- action_menu.add_theme_constant_override("separation", 12)
- add_child(action_menu)
+ action_menu.add_theme_constant_override("separation", 2)
+ menu_panel.add_child(action_menu)
 
- var atk_btn := Button.new()
- atk_btn.text = "Atacar"
- atk_btn.pressed.connect(_on_attack_pressed)
- action_menu.add_child(atk_btn)
+ _add_menu_item("ATACAR", _on_attack_pressed, false)
+ _add_menu_item("HABILIDADES", _on_magic_pressed, false)
+ _add_menu_item("COMBO", _on_combo_pressed, false)
+ _add_menu_item("ITENS", _on_items_pressed, true)
+ _add_menu_item("FUGIR", _on_flee_pressed, false)
 
- var magic_btn := Button.new()
- magic_btn.text = "Magia (%d MP)" % ArenaCombatLib.MAGIC_COST
- magic_btn.pressed.connect(_on_magic_pressed)
- action_menu.add_child(magic_btn)
-
- var flee_btn := Button.new()
- flee_btn.text = "Fugir"
- flee_btn.pressed.connect(_on_flee_pressed)
- action_menu.add_child(flee_btn)
-
+ menu_root.visible = false
  action_menu.visible = false
 
  _build_combat_hud()
+
+
+## Item do menu SoS: botão flat com estados (seleção azul-aço, hover idem).
+func _add_menu_item(text: String, handler: Callable, disabled: bool) -> void:
+ var btn := Button.new()
+ btn.text = text
+ btn.disabled = disabled
+ btn.focus_mode = Control.FOCUS_ALL
+ btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
+ btn.add_theme_font_size_override("font_size", 17)
+ btn.add_theme_color_override("font_color", SOS_ITEM_TEXT)
+ btn.add_theme_color_override("font_hover_color", SOS_TEXT)
+ btn.add_theme_color_override("font_focus_color", SOS_TEXT)
+ btn.add_theme_color_override("font_disabled_color", Color(SOS_ITEM_TEXT.r, SOS_ITEM_TEXT.g, SOS_ITEM_TEXT.b, 0.45))
+ btn.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+ btn.add_theme_constant_override("outline_size", 3)
+ var empty := StyleBoxFlat.new()
+ empty.bg_color = Color(0, 0, 0, 0)
+ empty.set_content_margin_all(5)
+ empty.content_margin_left = 14
+ btn.add_theme_stylebox_override("normal", empty)
+ var sel := empty.duplicate()
+ sel.bg_color = SOS_SEL_BG
+ sel.set_corner_radius_all(3)
+ btn.add_theme_stylebox_override("hover", sel)
+ btn.add_theme_stylebox_override("focus", sel)
+ btn.add_theme_stylebox_override("pressed", sel)
+ var dis := empty.duplicate()
+ btn.add_theme_stylebox_override("disabled", dis)
+ btn.custom_minimum_size = Vector2(168, 0)
+ if handler.is_valid():
+  btn.pressed.connect(handler)
+ action_menu.add_child(btn)
+
+
+## Painel escuro com borda clara e cantos suaves — molde SoS.
+func _sos_panel_style() -> StyleBoxFlat:
+ var style := StyleBoxFlat.new()
+ style.bg_color = SOS_PANEL_BG
+ style.set_corner_radius_all(6)
+ style.set_content_margin_all(8)
+ style.border_color = SOS_BORDER
+ style.set_border_width_all(2)
+ return style
+
+
+## Barra com gradiente real (StyleBoxTexture + GradientTexture2D horizontal).
+func _sos_gradient_bar(bar_size: Vector2, bg_color: Color, color_a: Color, color_b: Color) -> ProgressBar:
+ var bar := ProgressBar.new()
+ bar.max_value = 1
+ bar.value = 1
+ bar.show_percentage = false
+ var bg := StyleBoxFlat.new()
+ bg.bg_color = bg_color
+ bg.set_corner_radius_all(3)
+ bar.add_theme_stylebox_override("background", bg)
+ var grad := Gradient.new()
+ grad.set_color(0, color_a)
+ grad.set_color(1, color_b)
+ var gtex := GradientTexture2D.new()
+ gtex.gradient = grad
+ gtex.fill_from = Vector2(0, 0.5)
+ gtex.fill_to = Vector2(1, 0.5)
+ gtex.width = 64
+ gtex.height = 8
+ var fill := StyleBoxTexture.new()
+ fill.texture = gtex
+ bar.add_theme_stylebox_override("fill", fill)
+ bar.custom_minimum_size = bar_size
+ bar.size = bar_size
+ return bar
+
+
+## Banner de comando (topo-centro, réplica da ref): barra larga + slot EFEITO.
+func _build_command_banner() -> void:
+ var banner := PanelContainer.new()
+ banner.name = "CommandBanner"
+ banner.add_theme_stylebox_override("panel", _sos_panel_style())
+ banner.position = Vector2(16, 12)
+ banner.custom_minimum_size = Vector2(984, 52)
+ _banner_label = Label.new()
+ _banner_label.add_theme_font_size_override("font_size", 24)
+ _banner_label.add_theme_color_override("font_color", SOS_TEXT)
+ _banner_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+ banner.add_child(_banner_label)
+ add_child(banner)
+
+ var effect_root := VBoxContainer.new()
+ effect_root.position = Vector2(1010, 0)
+ effect_root.add_theme_constant_override("separation", 0)
+ var effect_caption := Label.new()
+ effect_caption.text = "EFEITO"
+ effect_caption.add_theme_font_size_override("font_size", 12)
+ effect_caption.add_theme_color_override("font_color", SOS_TEXT)
+ effect_caption.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+ effect_caption.add_theme_constant_override("outline_size", 3)
+ effect_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+ effect_root.add_child(effect_caption)
+ var effect_box := PanelContainer.new()
+ effect_box.add_theme_stylebox_override("panel", _sos_panel_style())
+ effect_box.custom_minimum_size = Vector2(52, 40)
+ _banner_effect = Label.new()
+ _banner_effect.add_theme_font_size_override("font_size", 14)
+ _banner_effect.add_theme_color_override("font_color", SOS_TEXT)
+ _banner_effect.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+ _banner_effect.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+ effect_box.add_child(_banner_effect)
+ effect_root.add_child(effect_box)
+ add_child(effect_root)
+ _set_command("", "—")
+
+
+func _set_command(cmd: String, effect: String) -> void:
+ if _banner_label:
+  _banner_label.text = cmd
+ if _banner_effect:
+  _banner_effect.text = effect
 
 
 # --- HUD de combate (Combo Points + Éter/Fúria + Boss HP) ---
@@ -949,8 +1150,10 @@ func _build_combat_hud() -> void:
  add_child(hud_panel)
 
  _combo_label = Label.new()
- _combo_label.add_theme_font_size_override("font_size", 16)
- hud_vbox.add_child(_combo_label)
+ _combo_label.add_theme_font_size_override("font_size", 15)
+ _combo_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+ _combo_label.add_theme_constant_override("outline_size", 3)
+ # O label do CP mora no badge COMBO (losango SoS) — ver _build_combo_badge.
  _update_cp_pips()
 
  _balance_bar = ProgressBar.new()
@@ -983,7 +1186,8 @@ func _build_combat_hud() -> void:
  var boss_vbox := VBoxContainer.new()
  boss_vbox.add_theme_constant_override("separation", 3)
  _boss_panel.add_child(boss_vbox)
- _boss_panel.position = Vector2(420, 12)
+ # Abaixo do banner de comando (réplica SoS ocupa o topo inteiro).
+ _boss_panel.position = Vector2(420, 70)
  _boss_panel.visible = false
  add_child(_boss_panel)
 
@@ -1000,6 +1204,140 @@ func _build_combat_hud() -> void:
  _boss_bar_label.add_theme_font_size_override("font_size", 13)
  _boss_bar_label.visible = false
  boss_vbox.add_child(_boss_bar_label)
+ # O CP agora vive no badge COMBO e o Éter/Fúria sai da tela na réplica SoS
+ # (o sistema segue ativo para gameplay); painel antigo fica só por API/testes.
+ hud_panel.visible = false
+ _build_combo_badge()
+ _ensure_party_plates()
+ _build_command_banner()
+
+
+## Badge COMBO (esquerda-mid, réplica da ref): diamante procedural + label CP.
+func _build_combo_badge() -> void:
+ var size := 88
+ var img := Image.create(size, size, false, Image.FORMAT_RGBA8)
+ var c := Vector2(size / 2.0, size / 2.0)
+ var half := size / 2.0 - 4.0
+ for y in range(size):
+  for x in range(size):
+   var p := Vector2(x + 0.5, y + 0.5)
+   var d := absf(p.x - c.x) / half + absf(p.y - c.y) / half  # métrica losango
+   if d < 0.86:
+    img.set_pixel(x, y, Color(SOS_PANEL_BG.r, SOS_PANEL_BG.g, SOS_PANEL_BG.b, 0.96))
+   elif d < 0.98:
+    img.set_pixel(x, y, Color(SOS_BORDER.r, SOS_BORDER.g, SOS_BORDER.b, 1.0))
+ var tex := ImageTexture.create_from_image(img)
+ var badge := TextureRect.new()
+ badge.name = "ComboBadge"
+ badge.texture = tex
+ badge.position = Vector2(24, 300)
+ add_child(badge)
+ badge.add_child(_combo_label)
+ _combo_label.position = Vector2(12, 34)
+ _combo_label.custom_minimum_size = Vector2(64, 20)
+ _combo_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+
+
+## Retrato do personagem: recorte da cabeça do sprite do jogo (topo-centro),
+## ampliado com nearest. Sprite ausente → retrato pintado (Kael) → cinza.
+func _portrait_for(unit_name: String) -> ImageTexture:
+ var path := "res://assets/sprites/%s.png" % unit_name.to_lower()
+ if not ResourceLoader.exists(path):
+  if unit_name.to_lower().begins_with("kael") and ResourceLoader.exists("res://assets/portraits/kaelen.png"):
+   var tex: Texture2D = load("res://assets/portraits/kaelen.png")
+   return ImageTexture.create_from_image(tex.get_image())
+  return null
+ var img: Image = (load(path) as Texture2D).get_image()
+ if img.is_compressed():
+  img.decompress()
+ var w := img.get_width()
+ var h := img.get_height()
+ # Cabeça = quadrado topo-centro do sprite (personagem ComfyUI centralizado).
+ var side := int(minf(float(w), float(h)) * 0.4)
+ var cx := w / 2
+ var head := img.get_region(Rect2i(cx - side / 2, int(h * 0.03), side, side))
+ head.resize(44, 44, Image.INTERPOLATE_NEAREST)
+ return ImageTexture.create_from_image(head)
+
+
+## Placas PV/PM (bottom-left, réplica da ref): retrato + barras gradiente.
+func _ensure_party_plates() -> void:
+ # Idempotente POR UNIDADE: cada player ganha no máximo uma placa (chamado
+ # tanto no build do HUD quanto após _setup_from_campaign montar combatants).
+ var players := combatants.filter(func(u): return u.is_player_side())
+ var known: Array = _party_plates.map(func(p): return p["unit"])
+ var to_add := players.filter(func(u): return u not in known)
+ if to_add.is_empty():
+  return
+ var y := 560.0 + 78.0 * _party_plates.size()
+ for u in to_add:
+  var plate := PanelContainer.new()
+  plate.name = "PartyPlate_%s" % u.data.unit_name
+  plate.add_theme_stylebox_override("panel", _sos_panel_style())
+  plate.position = Vector2(16, y)
+  var hbox := HBoxContainer.new()
+  hbox.add_theme_constant_override("separation", 8)
+  plate.add_child(hbox)
+  var chip := TextureRect.new()
+  chip.custom_minimum_size = Vector2(44, 44)
+  chip.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+  chip.stretch_mode = TextureRect.STRETCH_SCALE
+  chip.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+  var tex := _portrait_for(u.data.unit_name)
+  if tex:
+   chip.texture = tex
+  else:
+   var fallback := Image.create(44, 44, false, Image.FORMAT_RGBA8)
+   fallback.fill(Color(0.28, 0.31, 0.37))
+   chip.texture = ImageTexture.create_from_image(fallback)
+  hbox.add_child(chip)
+  var rows := VBoxContainer.new()
+  rows.add_theme_constant_override("separation", 1)
+  hbox.add_child(rows)
+  var pv_bar := _sos_gradient_bar(Vector2(120, 9), SOS_PV_BG, SOS_PV_A, SOS_PV_B)
+  var pv_val := Label.new()
+  pv_val.add_theme_font_size_override("font_size", 11)
+  pv_val.add_theme_color_override("font_color", SOS_TEXT)
+  pv_val.text = "PV %d" % u.current_hp
+  rows.add_child(pv_val)
+  rows.add_child(pv_bar)
+  var pm_bar := _sos_gradient_bar(Vector2(120, 9), SOS_PM_BG, SOS_PM_A, SOS_PM_B)
+  var pm_val := Label.new()
+  pm_val.add_theme_font_size_override("font_size", 11)
+  pm_val.add_theme_color_override("font_color", SOS_TEXT)
+  pm_val.text = "PM %d" % u.current_mp
+  rows.add_child(pm_val)
+  rows.add_child(pm_bar)
+  add_child(plate)
+  u.hp_changed.connect(func(_hp): _refresh_party_plates())
+  _party_plates.append({"unit": u, "root": plate, "pv_bar": pv_bar, "pv_val": pv_val,
+   "pm_bar": pm_bar, "pm_val": pm_val})
+  y += 78.0
+ _refresh_party_plates()
+
+
+func _refresh_party_plates() -> void:
+ for p in _party_plates:
+  var u = p["unit"]
+  if not is_instance_valid(u):
+   continue
+  p["pv_bar"].max_value = u.data.max_hp
+  p["pv_bar"].value = u.current_hp
+  p["pv_val"].text = "PV %d" % u.current_hp
+  p["pm_bar"].max_value = u.data.max_mp
+  p["pm_bar"].value = u.current_mp
+  p["pm_val"].text = "PM %d" % u.current_mp
+
+
+func _process(delta: float) -> void:
+ # Unit não tem sinal de MP; poll leve mantém a placa fiel (0.25s).
+ _plate_poll += delta
+ if _plate_poll >= 0.25:
+  _plate_poll = 0.0
+  _refresh_party_plates()
+ # Menu SoS segue o ator da vez (a entrada anda pelo palco).
+ if menu_root != null and menu_root.visible:
+  _track_menu_to_actor()
 
 
 func _update_cp_pips() -> void:
