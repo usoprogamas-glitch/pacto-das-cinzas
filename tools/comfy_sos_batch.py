@@ -43,8 +43,8 @@ PORTRAITS = {
 }
 
 ICONS = {
-    "corte": "ONE single sword icon only, one weapon centered, diagonal steel blade with warm gold edge, isolated on plain flat dark navy background, no sheet, no items, no chest",
-    "eter": "ONE single arcane orb icon only, one sphere centered, cobalt blue core with white spark, isolated on plain flat dark navy background, no sheet, no grid",
+    "corte": "a single sword, one weapon only, vertical diagonal composition, pixel art game icon, steel blade with warm gold guard, centered on a plain flat dark navy background, isolated object, no ui, no menu, no items, no chests, no coins",
+    "eter": "a single glowing arcane orb, one sphere only, pixel art game icon, cobalt blue core with white spark swirl, centered on a plain flat dark navy background, isolated object, no ui, no faces, no grid",
 }
 
 TILES = {
