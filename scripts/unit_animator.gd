@@ -18,8 +18,11 @@ var animation_speed: float = 1.0
 # bob por tween). Array vazio = sprite estático: fallback volta ao tween.
 var idle_frames: Array = []
 var walk_frames: Array = []
+# Sets de combate SoS (16-24 frames a 24fps, gerados por SpriteMotionLibrary).
+var combat_sets: Dictionary = {}
 const IDLE_FPS := 4.0
 const WALK_FPS := 8.0
+const COMBAT_FPS := 24.0
 var _active_frames: Array = []
 var _active_fps: float = IDLE_FPS
 var _frame_i := 0
@@ -43,6 +46,14 @@ func set_frames(motion_sets: Dictionary) -> void:
  idle_frames = motion_sets.get("idle", [])
  walk_frames = motion_sets.get("walk", [])
  _use_frames(idle_frames, IDLE_FPS)
+
+## Recebe os sets de combate SoS {"attack"/"cast"/"hit"/"death": [Texture2D]}.
+func set_combat_sets(sets: Dictionary) -> void:
+ combat_sets = sets
+
+
+func _frames_for(anim: String) -> Array:
+ return combat_sets.get(anim, [])
 
 ## Liga/desliga o ciclo de caminhada (chase no mapa, entrada na arena).
 func set_moving(moving: bool) -> void:
@@ -150,7 +161,13 @@ func play_attack(target: Node2D) -> void:
  # Virar para o alvo
  face_direction(target.position.x - unit.position.x)
 
- # Animação de ataque
+ # Animação de ataque: frames SoS (16f a 24fps) em paralelo ao lunge.
+ var attack_frames := _frames_for("attack")
+ if attack_frames.size() > 1:
+  _use_frames(attack_frames, COMBAT_FPS)
+ elif sprite:
+  face_direction(target.position.x - unit.position.x)
+
  var original_position = unit.position
  var attack_direction = (target.position - unit.position).normalized()
  var attack_position = unit.position + attack_direction * 20
@@ -167,6 +184,8 @@ func play_attack(target: Node2D) -> void:
  tween.tween_property(unit, "position", original_position, 0.15).set_ease(Tween.EASE_IN_OUT)
 
  await tween.finished
+ if attack_frames.size() > 1:
+  _use_frames(idle_frames, IDLE_FPS)
 
 ## Vira o sprite horizontalmente (flip) conforme a direção do movimento/alvo.
 ## sprite HD é simétrico o suficiente para flip; frames direcionais ficam para
@@ -180,6 +199,11 @@ func play_magic_cast() -> void:
  current_animation = "cast"
  if not sprite:
   return
+
+ # Frames SoS de cast (12f): levita + aura pulsante.
+ var cast_frames := _frames_for("cast")
+ if cast_frames.size() > 1:
+  _use_frames(cast_frames, COMBAT_FPS)
 
  # AnimaÃ§Ã£o de conjuraÃ§Ã£o
  var tween = create_tween()
@@ -197,11 +221,18 @@ func play_magic_cast() -> void:
  tween.tween_property(sprite, "position:y", sprite.position.y + 5, 0.2)
 
  await tween.finished
+ if cast_frames.size() > 1:
+  _use_frames(idle_frames, IDLE_FPS)
 
 func play_hit() -> void:
  current_animation = "hit"
  if not sprite:
   return
+
+ # Frames SoS de hit (8f): recoil com wobble.
+ var hit_frames := _frames_for("hit")
+ if hit_frames.size() > 1:
+  _use_frames(hit_frames, COMBAT_FPS)
 
  # AnimaÃ§Ã£o de dano
  var original_position = sprite.position
@@ -221,10 +252,19 @@ func play_hit() -> void:
  tween.tween_property(sprite, "modulate", original_modulate, 0.1)
 
  await tween.finished
+ if hit_frames.size() > 1:
+  _use_frames(idle_frames, IDLE_FPS)
 
 func play_death() -> void:
  current_animation = "death"
  if not sprite:
+  return
+
+ # Frames SoS de death (10f): desaba + fade.
+ var death_frames := _frames_for("death")
+ if death_frames.size() > 1:
+  _use_frames(death_frames, COMBAT_FPS)
+  await get_tree().create_timer(float(death_frames.size()) / COMBAT_FPS).timeout
   return
 
  # AnimaÃ§Ã£o de morte

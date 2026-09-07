@@ -8,6 +8,7 @@ extends Node2D
 const ArenaCombatLib := preload("res://scripts/arena_combat.gd")
 const MotionLib := preload("res://scripts/sprite_motion_library.gd")
 const EnemyDatabaseLib := preload("res://scripts/enemy_database.gd")
+const FxSequence := preload("res://scripts/fx_sequence.gd")
 
 signal battle_ended(victory: bool, rewards: Dictionary)
 signal battle_fled()
@@ -286,6 +287,21 @@ func _arena_position(u: Unit, pos: Vector2, color: Color, sprite_key: String, en
  u.add_child(animator)
  animator.setup(u)
  animator.set_frames(motion_sets)
+ # Sets de combate: primeiro os frames REAIS do SoS (convenção original);
+ # sem frames, gera por bandas da ilustração (ComfyUI ou fallback).
+ var combat_source: Image = null
+ if sos_char != "":
+  var sos_combat: Dictionary = SOSMotionLoader.build_combat_sets(sos_char, sos_dir)
+  if not sos_combat.is_empty():
+   animator.set_combat_sets(sos_combat)
+  else:
+   combat_source = SOSMotionLoader.source_image(sos_char, sos_dir)
+ if combat_source == null and FileAccess.file_exists(path):
+  var cs := Image.new()
+  if cs.load(path) == OK:
+   combat_source = cs
+ if combat_source != null and animator.combat_sets.is_empty():
+  animator.set_combat_sets(MotionLib.build_combat_sets(combat_source))
  animator.play_idle()
  _animators[u.get_instance_id()] = animator
 
@@ -702,8 +718,10 @@ func _resolve_action(multiplier: float, grade: String) -> void:
   _award_hit_feedback(grade)
  else:
   _update_boss_bar()
- _spawn_damage_number(_pending_target.position + Vector2(0, -70), damage, grade)
- _log("%s → %s: %d de dano (%s)" % [current_actor.data.unit_name, _pending_target.data.unit_name, damage, grade])
+  _spawn_damage_number(_pending_target.position + Vector2(0, -70), damage, grade)
+  if _combo_boost > 1.0:
+   _spawn_ether_burst(_pending_target.position)  # FX sequencial SoS no combo
+  _log("%s → %s: %d de dano (%s)" % [current_actor.data.unit_name, _pending_target.data.unit_name, damage, grade])
  grade_last_hit = grade
  await _play_aftermath(_pending_target)
  _pending_target = null
@@ -716,8 +734,7 @@ func _play_aftermath(target) -> void:
   return
  if target.is_alive():
   await target_anim.play_hit()
-  if grade_last_hit != "MISS":
-   # Knockback sutil (SoS): recua na direção oposta ao atacante e volta.
+  if grade_last_hit != "MISS":   # Knockback sutil (SoS): recua na direção oposta ao atacante e volta.
    var push: float = signf(target.position.x - current_actor.position.x) * 12.0
    var home: Vector2 = _home_positions[target.get_instance_id()]
    var kb := create_tween()
@@ -1426,7 +1443,31 @@ func _show_tutorial_if_first(key: String = "timed_hit") -> void:
    SoundManager.play_select()
 
 
-func _spawn_damage_number(pos: Vector2, damage: int, grade: String) -> void: ## Número de dano flutuante: sobe e some (feedback direto, molde SoS).
+## FX sequencial de éter (padrão SoS: FX = texturas _F00.._FNN, 16f 64px):
+## orbe que expande e some — usado no GOLPE COMBINADO e em magias.
+func _spawn_ether_burst(pos: Vector2) -> void:
+ var frames: Array = FxSequence.ether_burst_frames()
+ if frames.is_empty():
+  return
+ var sprite_frames := SpriteFrames.new()
+ sprite_frames.remove_animation("default")
+ sprite_frames.add_animation("burst")
+ sprite_frames.set_animation_speed("burst", 30.0)  # 16f / 30fps ≈ 0.53s
+ for tex in frames:
+  sprite_frames.add_frame("burst", tex)
+ var fx := AnimatedSprite2D.new()
+ fx.sprite_frames = sprite_frames
+ fx.position = pos + Vector2(0, -40)
+ fx.scale = Vector2(1.6, 1.6)
+ fx.z_index = 60
+ fx.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+ add_child(fx)
+ fx.play("burst")
+ fx.animation_finished.connect(fx.queue_free)
+
+
+func _spawn_damage_number(pos: Vector2, damage: int, grade: String) -> void:
+ ## Número de dano flutuante: sobe e some (feedback direto, molde SoS).
  var label := Label.new()
  label.text = str(damage)
  label.add_theme_font_size_override("font_size", 26 if grade == "PERFECT" else 20)

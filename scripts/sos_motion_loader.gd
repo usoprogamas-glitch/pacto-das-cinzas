@@ -36,8 +36,44 @@ static func build_motion_sets(character: String, facing_dir: int = 1) -> Diction
  return sets
 
 
+## Sets de COMBATE do SoS real (réplica da convenção <Char>_<Anim>_D<dir>_F<NN>):
+## tenta nomes de ação alternativos por estágio. Vazio se o personagem não
+## tiver os frames — caller cai no gerador por bandas (SpriteMotionLibrary).
+static func build_combat_sets(character: String, facing_dir: int = 1) -> Dictionary:
+ if not DirAccess.dir_exists_absolute("res://assets/sos_clean/%s" % character):
+  return {}
+ var candidates := {
+  "attack": ["Attack", "Attack1", "Combat", "Slash"],
+  "cast": ["Cast", "CastSpell", "Skill"],
+  "hit": ["Hit", "Hurt", "Damaged"],
+  "death": ["Death", "Die", "Dead"],
+ }
+ var sets := {}
+ for anim in candidates:
+  for action in candidates[anim]:
+   var frames := load_action_frames(character, action, facing_dir)
+   if not frames.is_empty():
+    sets[anim] = frames
+    break
+ return sets
+
+
 ## Lista personagens disponíveis.
 static func available_characters() -> Array:
  if DirAccess.dir_exists_absolute("res://assets/sos_clean"):
   return DirAccess.get_directories_at("res://assets/sos_clean")
  return []
+
+
+## Imagem-fonte do personagem (frame idle D<dir>) para regenerar sets por bandas.
+static func source_image(character: String, facing_dir: int = 1) -> Image:
+ var path := "res://assets/sos_clean/%s/%s_Idle_D%d_F00.png" % [character, character, facing_dir]
+ if not ResourceLoader.exists(path):
+  return null
+ var tex: Texture2D = load(path)
+ var img: Image = tex.get_image()
+ if img == null:
+  return null
+ if img.is_compressed():
+  img.decompress()
+ return img
