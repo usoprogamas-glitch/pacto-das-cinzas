@@ -10,7 +10,11 @@ static var maps: Dictionary = {
    "enemy_count": 3,
    "description": "Onde tudo começou. Terreno baldio com vegetação morta.",
    "music": "exploration",
-   "props": [],
+   "props": [
+    {"texture": "taverna_fachada", "pos": Vector2i(8, 2), "scale": 1.2},
+    {"texture": "barris_cinzas", "pos": Vector2i(1, 8), "scale": 1.2},
+    {"texture": "fogueira_acamp", "pos": Vector2i(6, 7), "scale": 1.3}
+   ],
    "puzzles": [
     {
      "id": "fronteira_espelhos",
@@ -45,7 +49,9 @@ static var maps: Dictionary = {
    "enemy_count": 4,
    "description": "Sistema de cavernas com cristais brilhantes.",
    "music": "exploration",
-   "props": [],
+   "props": [
+    {"texture": "barris_cinzas", "pos": Vector2i(2, 7), "scale": 1.2}
+   ],
    "traversal_nodes": [
     {
      "id": "precipicio_caverna",
@@ -99,14 +105,16 @@ static var maps: Dictionary = {
    "tiles": generate_castle_map()
   },
  4: {
-  "name": "Vulcão do Abismo",
-  "size": Vector2i(12, 12),
-  "terrain": "volcanic",
-  "enemies": ["troll", "santo_cardeal"],
-  "enemy_count": 4,
-  "description": "Terra de ninguém. Feras elementais e lava.",
-  "music": "battle",
-  "props": [],
+   "name": "Vulcão do Abismo",
+   "size": Vector2i(12, 12),
+   "terrain": "volcanic",
+   "enemies": ["troll", "santo_cardeal"],
+   "enemy_count": 4,
+   "description": "Terra de ninguém. Feras elementais e lava.",
+   "music": "battle",
+   "props": [
+    {"texture": "fornalha_vulcanica", "pos": Vector2i(2, 2), "scale": 1.6}
+   ],
   "traversal_nodes": [
    {
     "id": "garganta_vulcao",
