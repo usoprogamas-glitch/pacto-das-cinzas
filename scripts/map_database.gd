@@ -11,7 +11,7 @@ static var maps: Dictionary = {
    "description": "Onde tudo começou. Terreno baldio com vegetação morta.",
    "music": "exploration",
    "props": [
-    {"texture": "taverna_fachada", "pos": Vector2i(8, 2), "scale": 1.2},
+    {"texture": "taverna_fachada", "pos": Vector2i(8, 2), "scale": 1.4},
     {"texture": "barris_cinzas", "pos": Vector2i(1, 8), "scale": 1.2},
     {"texture": "fogueira_acamp", "pos": Vector2i(6, 7), "scale": 1.3}
    ],

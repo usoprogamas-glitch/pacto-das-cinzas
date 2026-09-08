@@ -700,6 +700,9 @@ const _LIGHT_PROPS := {
  "estatua_ignis": {"color": Color(1.0, 0.5, 0.18), "scale": 2.1, "a": 0.5},
  "estatua_templo": {"color": Color(1.0, 0.8, 0.42), "scale": 1.6, "a": 0.32},
  "coluna_solaris": {"color": Color(1.0, 0.82, 0.45), "scale": 1.5, "a": 0.3},
+ # Semi-emissivo: janelas da taverna brilham à noite (prédio de madeira escura
+ # some no chão escuro sem o poço de luz — QA 2026-09-08).
+ "taverna_fachada": {"color": Color(1.0, 0.78, 0.45), "scale": 2.2, "a": 0.4},
 }
 
 func _spawn_props() -> void:
