@@ -45,6 +45,9 @@ PORTRAITS = {
 ICONS = {
     "corte": "a single sword, one weapon only, vertical diagonal composition, pixel art game icon, steel blade with warm gold guard, centered on a plain flat dark navy background, isolated object, no ui, no menu, no items, no chests, no coins",
     "eter": "a single glowing arcane orb, one sphere only, pixel art game icon, cobalt blue core with white spark swirl, centered on a plain flat dark navy background, isolated object, no ui, no faces, no grid",
+    "loja_mercador": "a complete small medieval shop building, single story with large front counter window display, wooden walls, striped awning, hanging sign, pixel art game building, sea of stars style, isolated on a plain flat dark navy background, entire building visible with roof and base, no crop, no ui, no characters, no grid",
+    "forja_camp": "a complete medieval blacksmith forge building, open front with glowing furnace, anvil, hanging tools, stone and wood construction, pixel art game building, sea of stars style, isolated on a plain flat dark navy background, entire building visible with roof and base, no crop, no ui, no characters, no grid",
+    "casa_vila": "a complete small medieval cottage house, wooden walls, thatched roof, warm window light, small garden patch, pixel art game building, sea of stars style, isolated on a plain flat dark navy background, entire building visible with roof and base, no crop, no ui, no characters, no grid",
     "taverna": "a complete two-story medieval fantasy tavern building, full facade side view, wooden walls, red clay tile roof, two warm glowing windows, wooden door with small porch, chimney with light smoke, pixel art game building, sea of stars style, isolated on a plain flat dark navy background, entire building visible with roof and base, no crop, no ui, no characters, no grid",
 }
 
@@ -149,7 +152,7 @@ def run_portraits(use_lora):
 
 
 def run_icons(use_lora, only=None):
-    items = ICONS.items() if not only else [(k, ICONS[k]) for k in [only] if k in ICONS]
+    items = ICONS.items() if not only else [(k, ICONS[k]) for k in only if k in ICONS]
     for name, desc in items:
         prompt = (STYLE + "pixel art game ui icon, " + desc +
                   ", on plain flat dark navy square background, centered, chunky pixels")
@@ -188,8 +191,8 @@ if __name__ == "__main__":
     elif mode == "portraits":
         run_portraits(lora)
     elif mode == "icons":
-        only = sys.argv[2] if len(sys.argv) > 2 else None
-        run_icons(lora, only)
+        targets = sys.argv[2:] if len(sys.argv) > 2 else None
+        run_icons(lora, targets)
     elif mode == "tiles":
         run_tiles(lora)
     else:
