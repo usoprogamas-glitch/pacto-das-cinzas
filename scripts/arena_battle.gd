@@ -147,18 +147,24 @@ func _setup_from_campaign() -> void:
  # Com ondas declaradas, o spawn inicial segue a composição da onda 1.
  var scale_spawn := 1.0
  var pool: Array
- var count: int
  if _wave_specs.size() > 0:
   var w1: Dictionary = _wave_specs[0]
   pool = w1.get("enemies", ["mercenario"])
-  count = pool.size()
   scale_spawn = float(w1.get("stat_scale", 1.0))
  else:
   pool = map.get("enemies", ["mercenario"])
-  count = 1 if stage.get("boss", false) else int(map.get("enemy_count", 2))
   if stage.get("boss_enemy", "") != "":
    pool = [stage["boss_enemy"]]
- var pos_x := 860.0
+ var count := 0
+ if _wave_specs.size() > 0:
+  count = pool.size()
+ elif stage.get("boss", false):
+  count = 1
+ else:
+  count = int(map.get("enemy_count", 2))
+  if stage.get("boss_enemy", "") != "":
+   count = 1
+ # Formação em V (molde SoS) — posições definidas no loop abaixo.
  for i in range(count):
   var type: String = String(pool[i % pool.size()])
   var e: Dictionary = EnemyDatabase.get_enemy(type)
@@ -171,8 +177,11 @@ func _setup_from_campaign() -> void:
   combatants.append(foe)
   if e.has("enemy_spell"):
    _charge_specs[foe.get_instance_id()] = e["enemy_spell"]
-  _arena_position(foe, Vector2(pos_x, 400 + i * 130), Color(e["color"]), _sprite_key(e["name"]), type)
-  pos_x += 40
+  # Formação em V (molde SoS): espalha em X por índice par/ímpar, Y quase
+  # fixo — inimigos não empilham na vertical (QA: 2 na mesma coluna).
+  var col := i / 2
+  var row_y := 400.0 + (i % 2) * 120.0
+  _arena_position(foe, Vector2(760.0 + col * 120.0, row_y), Color(e["color"]), _sprite_key(e["name"]), type)
   enemies_meta.append({"type": type, "soul_ether": e.get("soul_ether", 10)})
 
  # Barra do boss visível desde a entrada (não só após o 1º golpe).
@@ -259,6 +268,22 @@ func _arena_position(u: Unit, pos: Vector2, color: Color, sprite_key: String, en
  else:
   sprite = _fallback_sprite(color)
  u.add_child(sprite)
+ # Sombra elíptica sob o combatente (ancora no chão — sprites flutuavam).
+ var shadow := Sprite2D.new()
+ var sh_grad := Gradient.new()
+ sh_grad.set_color(0, Color(0, 0, 0, 0.42))
+ sh_grad.set_color(1, Color(0, 0, 0, 0))
+ var sh_tex := GradientTexture2D.new()
+ sh_tex.gradient = sh_grad
+ sh_tex.fill = GradientTexture2D.FILL_RADIAL
+ sh_tex.fill_from = Vector2(0.5, 0.5)
+ sh_tex.fill_to = Vector2(0.5, 0.0)
+ sh_tex.width = 64
+ sh_tex.height = 32
+ shadow.texture = sh_tex
+ shadow.position = Vector2(0, 30)
+ shadow.scale = Vector2(0.9, 0.4)
+ add_child(shadow)
 
 	# Barra de HP flutuante (molde SoS: HP visível sobre o combatente).
  # ORDEM IMPORTA: styleboxes ANTES do size — o tema padrão impõe min-height
@@ -536,7 +561,7 @@ func _spawn_next_wave() -> void:
  var wave: Dictionary = _wave_specs[_wave_index]
  _wave_index += 1
  var scale: float = float(wave.get("stat_scale", 1.0 + 0.25 * _wave_index))
- var pos_x := 900.0
+ var col := 0
  for type in wave.get("enemies", []):
   var e: Dictionary = EnemyDatabase.get_enemy(String(type))
   if e.is_empty():
@@ -548,8 +573,11 @@ func _spawn_next_wave() -> void:
   combatants.append(foe)
   if e.has("enemy_spell"):
    _charge_specs[foe.get_instance_id()] = e["enemy_spell"]
-  _arena_position(foe, Vector2(pos_x, 380 + (_wave_index % 2) * 90), Color(e["color"]), _sprite_key(e["name"]), String(type))
-  pos_x += 40
+  # V-formation também nas ondas (não empilha na vertical).
+  var wave_col := col / 2
+  var wave_y := 380.0 + (col % 2) * 120.0 + (_wave_index % 2) * 30.0
+  _arena_position(foe, Vector2(760.0 + wave_col * 120.0, wave_y), Color(e["color"]), _sprite_key(e["name"]), String(type))
+  col += 1
   enemies_meta.append({"type": String(type), "soul_ether": int(e.get("soul_ether", 10))})
  _log("ONDA %d/%d entra na arena!" % [_wave_index, _wave_specs.size()])
 

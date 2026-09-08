@@ -986,6 +986,9 @@ static func build_lora_terrain_canvas(terrain_type: String) -> Sprite2D:
 ## Piso da ARENA: tilea o tile LoRA do bioma numa área retangular (px de tela),
 ## escurecido pelo modulate — os sprites de combate brilham por cima (SoS:
 ## batalha acontece no chão do próprio mundo). Retorna ImageTexture pronta.
+## v2 (QA 2026-09-07): variação por tile (brilho/hue sutil por RNG seedado +
+## rotação de 90° em 1 de cada 3 tiles) quebra a repetição visível do padrão;
+## bordas ORGÂNICAS: invasão de grama/musgo do bioma com forma noise, não retângulo.
 static func build_lora_floor_texture(terrain_key: String, area: Rect2, darken: float) -> ImageTexture:
  var path := "res://assets/pixel/tile_%s.png" % terrain_key
  if not ResourceLoader.exists(path):
@@ -1003,27 +1006,75 @@ static func build_lora_floor_texture(terrain_key: String, area: Rect2, darken: f
  var canvas := Image.create(w, h, false, Image.FORMAT_RGBA8)
  var cols := int(ceil(float(w) / tw))
  var rows := int(ceil(float(h) / th))
+ # RNG seedado por bioma: variação estável entre rodadas (não pisca).
+ var rng := RandomNumberGenerator.new()
+ rng.seed = hash("floor_%s" % terrain_key)
+ # paleta de invasão da borda (grama do bioma — fronteira/mixed verde; outros adaptam)
+ var invade_colors: Array = {
+  "fronteira": [Color(0.23, 0.36, 0.16), Color(0.3, 0.44, 0.2)],
+  "mixed": [Color(0.23, 0.36, 0.16), Color(0.3, 0.44, 0.2)],
+  "forest": [Color(0.16, 0.3, 0.13), Color(0.24, 0.42, 0.18)],
+  "cave": [Color(0.14, 0.16, 0.24), Color(0.2, 0.23, 0.32)],
+  "volcanic": [Color(0.16, 0.1, 0.08), Color(0.32, 0.16, 0.1)],
+  "castle": [Color(0.2, 0.22, 0.28), Color(0.3, 0.32, 0.38)],
+ }.get(terrain_key, [Color(0.23, 0.36, 0.16)])
+ var noise := FastNoiseLite.new()
+ noise.seed = hash("edge_%s" % terrain_key)
+ noise.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
+ noise.frequency = 0.012
  for r in range(rows):
   for c in range(cols):
    var piece: Image = img.duplicate()
-   if c % 2 == 1:
-    piece.flip_x()
-   if r % 2 == 1:
-    piece.flip_y()
+   # variação 1: rotação 90° em ~1/3 dos tiles (quebra o grid visível)
+   var rot := rng.randi() % 3
+   if rot == 1:
+    piece.rotate_90(CLOCKWISE)
+   elif rot == 2:
+    piece.rotate_90(COUNTERCLOCKWISE)
+   # variação 2: brilho/hue sutil por tile (±8%)
+   var shade := 0.92 + rng.randf() * 0.16
+   for y in range(piece.get_height()):
+    for x in range(piece.get_width()):
+     var px := piece.get_pixel(x, y)
+     piece.set_pixel(x, y, Color(
+      clampf(px.r * shade, 0.0, 1.0),
+      clampf(px.g * shade, 0.0, 1.0),
+      clampf(px.b * shade, 0.0, 1.0), px.a))
    canvas.blend_rect(piece, Rect2i(0, 0, tw, th), Vector2i(c * tw, r * th))
- # escurece para o combate + fade ALPHA nas bordas: o palco integra ao
- # mundo em vez de retângulo duro (QA 2026-09-07).
+ # escurece + bordas orgânicas: alpha do pixel cai quando o noise + distância
+ # da borda pedem — a grama do bioma "come" o piso com forma irregular fina
+ # (v2: faixa estreita e irregular — a v1 virava moldura grossa uniforme).
+ var edge_base := 34.0
  for y in range(h):
   for x in range(w):
    var px := canvas.get_pixel(x, y)
-   var fade := 1.0
-   var edge := 44.0
    var ex: float = minf(float(x), float(w - 1 - x))
    var ey: float = minf(float(y), float(h - 1 - y))
-   var e := minf(ex, ey)
-   if e < edge:
-    fade = clampf(e / edge, 0.0, 1.0)
-   canvas.set_pixel(x, y, Color(px.r * darken, px.g * darken, px.b * darken, px.a * fade))
+   var e: float = minf(ex, ey)
+   var n := noise.get_noise_2d(float(x), float(y))  # -1..1
+   # a borda efetiva ondula: base + noise*amplitude
+   var effective := maxf(edge_base + n * 34.0, 6.0)
+   var fade := clampf(e / effective, 0.0, 1.0)
+   # transição: piso → tint de invasão → transparente (2 bandas)
+   if e < effective * 0.5:
+    # dentro: grama invadindo (opaca, cor do bioma com jitter do noise)
+    var ci := int(absf(n * 10.0)) % invade_colors.size()
+    var gc: Color = invade_colors[ci]
+    gc.a = 1.0
+    var shade2 := 0.9 + absf(n) * 0.2
+    canvas.set_pixel(x, y, Color(gc.r * shade2 * darken, gc.g * shade2 * darken, gc.b * shade2 * darken, 1.0))
+   elif e < effective:
+    var k := (e - effective * 0.5) / (effective * 0.5)
+    var ci2 := int(absf(n * 10.0)) % invade_colors.size()
+    var gc2: Color = invade_colors[ci2]
+    canvas.set_pixel(x, y, Color(
+     lerpf(gc2.r, px.r, k) * darken,
+     lerpf(gc2.g, px.g, k) * darken,
+     lerpf(gc2.b, px.b, k) * darken,
+     lerpf(1.0, px.a, k)))
+   else:
+    var shade3 := 1.0
+    canvas.set_pixel(x, y, Color(px.r * darken * shade3, px.g * darken * shade3, px.b * darken * shade3, px.a))
  return ImageTexture.create_from_image(canvas)
 
 
