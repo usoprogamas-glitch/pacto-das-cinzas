@@ -17,7 +17,8 @@ const DIALOGUES: Dictionary = {
    "Kael... você despertou. O Éter lateja em suas mãos — eu senti daqui.",
    "Nossos deuses mentiram por mil anos. A Igreja de Solaria colhe a fé como quem colhe trigo... e agora vêm colher VOCÊ.",
    "Os mercenários do Capitão Cenu cercaram a Fronteira. Derrote-os e mostre ao mundo que a chama de Kaelen ainda vive.",
-   "Vá. Caminhe com W-A-S-D. Encontre os invasores. Eu sigo seus passos, como sempre segui."
+   "Vá. Caminhe com W-A-S-D. Encontre os invasores. Eu sigo seus passos, como sempre segui.",
+   "Uma última coisa: VALERA sobreviveu ao massacre — está ferida na nossa taverna. Quando a fronteira estiver livre, fale com ela. A lâmina dela é leal."
   ],
   "repeat": [
    "A Fronteira ainda respira graças a você. Os invasores esperam — termine o serviço.",
@@ -40,7 +41,8 @@ const DIALOGUES: Dictionary = {
   "first": [
    "Ei! Você não é dessas terras... Se veio pelo Cardeal Ignis, saiba que ele AQUECE o ar antes do golpe — o chão brilha quando ele vai atacar!",
    "Ele canaliza um feitiço devastador. Quebre os selos brilhantes com golpes do tipo certo, ou vire cinza.",
-   "Leve isto: provisões que achei no acampamento dele. Que a fúria esteja com você."
+   "Leve isto: provisões que achei no acampamento dele. Que a fúria esteja com você.",
+   "Ouvi um velho mercador murmurando pactos nas sombras — BRUGAVES, da Fronteira. Se o Cardeal cair, procure-o: homens assim valem um exército."
   ],
   "repeat": [
    "Ignis observa do vulcão. O chão brilha antes do golpe dele — não esqueça."

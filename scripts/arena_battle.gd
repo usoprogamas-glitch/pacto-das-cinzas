@@ -143,6 +143,23 @@ func _setup_from_campaign() -> void:
   combatants.append(kroug)
   _arena_position(kroug, Vector2(330, 500), Color(0.8, 0.3, 0.1), "kroug")
 
+ # Recrutados (Valera/Brugaves — GDD §3): party_data alimenta o spawn em arco
+ # atrás do Kael; stats vindos do recrutamento + crescimento parcial.
+ var recruited_slot := 0
+ for member: Dictionary in GameManager.party_data if GameManager else []:
+  var mname := String(member.get("name", ""))
+  if mname == "Kael" or mname == "Kroug":
+   continue
+  var ally_key := mname.to_lower()
+  var m_hp := int(member.get("hp", 80)) + int(8 * (kael_lv - 1))
+  var m_atk := int(member.get("atk", 12)) + int(1.2 * (kael_lv - 1))
+  var m_def := int(member.get("def", 10))
+  var ally := _make_combatant(mname, true, m_hp, m_atk, m_def, 9, 20)
+  combatants.append(ally)
+  var ally_pos := Vector2(530 + recruited_slot * 40, 500)
+  _arena_position(ally, ally_pos, Color(0.3, 0.6, 0.9), ally_key)
+  recruited_slot += 1
+
  # Inimigos: boss_enemy do estágio sobrepõe o pool do mapa (ROADMAP #8).
  # Com ondas declaradas, o spawn inicial segue a composição da onda 1.
  var scale_spawn := 1.0

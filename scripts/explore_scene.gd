@@ -253,6 +253,14 @@ func _interact_npc() -> void:
      quest_system.complete("provisoes_sobrevivente")
     elif not quest_system.is_completed("ignis_caido") and not quest_system.is_active("ignis_caido"):
      quest_system.add("ignis_caido")
+   # RECRUTAMENTO (party GDD §3): Valera entra na Fronteira (após o boss local
+   # ter sido derrotado); Brugaves junta-se após Ignis cair (Ato II).
+   if GameManager and quest_system:
+    if map_id == 0 and not quest_system.is_active("fronteira_liberdade"):
+     _recruit_ally("valera", "Valera", "Cavaleira da Ordem Caída")
+    if map_id == 5 and quest_system.is_completed("ignis_caido") and GameManager.campaign_system \
+      and GameManager.campaign_system.get_current_stage().get("boss", false):
+     _recruit_ally("brugaves", "Brugaves", "Mercador Sábio")
   else:
    _update_dialogue_box()
  else:
@@ -1112,6 +1120,30 @@ func _spawn_enemies() -> void:
   var foe_type := "boss" if stage.get("boss", false) else "random"
   encounter.register_enemy("foe_%d" % i, Vector2i(int(node.position.x / TILE), int(node.position.y / TILE)), foe_type, 1)
   _enemy_tile_ids.append("foe_%d" % i)
+
+
+## Recruta um aliado na party (Valera/Brugaves — GDD §3): party_data, quest
+## persistida e apostolo na fé. Idempotente (reinteração não duplica).
+func _recruit_ally(ally_id: String, display_name: String, class_name_display: String) -> void:
+ if GameManager.game_data.get("party_recruited", {}).get(ally_id, false):
+  return
+ GameManager.game_data.get_or_add("party_recruited", {})[ally_id] = true
+ GameManager.game_data.get_or_add("tutorials", {})["recruit_" + ally_id] = true
+ var stats: Dictionary = {"valera": {"hp": 95, "atk": 14, "def": 12, "mov": 3, "rng": 1},
+  "brugaves": {"hp": 70, "atk": 9, "def": 10, "mov": 2, "rng": 2}}.get(ally_id, {})
+ GameManager.add_to_party({
+  "name": display_name, "class": class_name_display,
+  "hp": int(stats.get("hp", 80)), "atk": int(stats.get("atk", 12)),
+  "def": int(stats.get("def", 10)), "mov": int(stats.get("mov", 3)),
+  "rng": int(stats.get("rng", 1)),
+ })
+ if GameManager.faith_system:
+  GameManager.faith_system.register_apostle(display_name)
+  GameManager.faith_system.add_faith(display_name, 15)
+ if quest_system and not quest_system.is_active("recruit_" + ally_id):
+  quest_system.add("recruit_" + ally_id)
+  quest_system.complete("recruit_" + ally_id)
+ _show_quest_toast("%s JUNTOU-SE A VOCÊ!" % display_name)
 
 
 func _build_ui() -> void:
