@@ -12,6 +12,8 @@ static var maps: Dictionary = {
    "music": "exploration",
    "props": [
     {"texture": "taverna_fachada", "pos": Vector2i(8, 2), "scale": 1.4},
+    {"texture": "loja_mercador", "pos": Vector2i(6, 2), "scale": 1.3},
+    {"texture": "casa_vila", "pos": Vector2i(4, 8), "scale": 1.3},
     {"texture": "barris_cinzas", "pos": Vector2i(1, 8), "scale": 1.2},
     {"texture": "fogueira_acamp", "pos": Vector2i(6, 7), "scale": 1.3}
    ],
@@ -50,7 +52,8 @@ static var maps: Dictionary = {
    "description": "Sistema de cavernas com cristais brilhantes.",
    "music": "exploration",
    "props": [
-    {"texture": "barris_cinzas", "pos": Vector2i(2, 7), "scale": 1.2}
+    {"texture": "forja_camp", "pos": Vector2i(2, 7), "scale": 1.3},
+    {"texture": "barris_cinzas", "pos": Vector2i(7, 7), "scale": 1.2}
    ],
    "traversal_nodes": [
     {
