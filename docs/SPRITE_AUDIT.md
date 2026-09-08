@@ -63,3 +63,17 @@ assets precisa seguir o CHAIN (banco → nome exibido → key), não grep de ID.
    combat sets gerados por bandas quando sos_clean não tem o inimigo.
 3. **Novos sprites valiosos** (pipeline LoRA pronto): Valera e Brugaves (party GDD
    ainda sem sprite próprio), TorredeVigia/cenários grandes.
+
+## Correcao de lore (2026-09-08, e28a58e)
+
+Valera e Brugaves eram personagens do Sea of Stars infiltrados no nosso lore
+(o usuario pegou a violacao). Recrutamento canonico agora:
+- GARM, O Devorador de Horizontes (GDD 4.4): lobo caolho resgatado de
+  armadilhas inquisitoriais no Ato I (recrutavel na Fronteira)
+- LIRA, A Sacerdotisa da Floresta (GDD 4.2): driade ancestral presa nas
+  correntes rúnicas, Ato II (recrutavel pos-Ignis)
+- NPC informante renomeado para VOZ DE KAELEN (GDD 1)
+
+REGRA: aprender TAMANHO/ESTILO/ESTRUTURA dos assets do SoS e permitido;
+nomes, personagens, lore e universo NUNCA. Retratos pixel_valera/
+pixel_brugaves permanecem no repo como amostras do pipeline (sem uso).
