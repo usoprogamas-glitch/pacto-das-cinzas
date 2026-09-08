@@ -51,3 +51,6 @@ maps/
 tools/cartographer_out/
 tools/_cartographer_runner.gd
 tools/_cartographer_job.json
+
+tools/_dbg_floor.png
+tools/_dbg_lora_canvas.png
