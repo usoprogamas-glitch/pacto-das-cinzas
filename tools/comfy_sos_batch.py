@@ -38,6 +38,10 @@ PORTRAITS = {
              "sharp watchful eyes"),
     "aqua": ("aqua, tide-born mystic with flowing teal hair and pearl ornaments, "
              "serene expression"),
+    "valera": ("valera, valiant knight of the fallen order with silver pauldrons, "
+               "brown short hair, scarred left cheek, blue tabard with gold trim, resolute face"),
+    "brugaves": ("brugaves, wise old merchant with round spectacles, gray beard, "
+                 "velvet green coat with pockets full of trinkets, kind smile"),
     "thalkor": ("thalkor, elder forge-priest with bald head, runic tattoos and "
                 "bronze mask half-raised"),
 }
