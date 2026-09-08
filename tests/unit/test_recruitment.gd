@@ -42,7 +42,7 @@ func test_recruit_brugaves_registers_apostle():
 
 func test_dialogue_has_recruit_pages():
 	var dlg: Dictionary = preload("res://scripts/dialogue_system.gd").DIALOGUES
-	var b_first: Array = dlg["brugaves_fronteira"]["first"]
-	assert_true(b_first.back().contains("VALERA"), "Brugaves apresenta Valera")
+	var b_first: Array = dlg["voz_kaelen_fronteira"]["first"]
+	assert_true(b_first.back().contains("GARM"), "Voz de Kaelen apresenta Garm")
 	var g_first: Array = dlg["guia_ignis"]["first"]
-	assert_true(g_first.back().contains("BRUGAVES"), "Sobrevivente apresenta Brugaves")
+	assert_true(g_first.back().contains("LIRA"), "Sobrevivente apresenta Lira")

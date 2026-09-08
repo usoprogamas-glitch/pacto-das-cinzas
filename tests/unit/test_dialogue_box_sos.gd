@@ -46,9 +46,9 @@ func _explore_highlight(text: String) -> String:
 
 func test_dialogue_box_has_name_plate_and_rich_text():
 	_explore = add_child_autofree(ExploreScript.new())
-	_explore._npc_current_id = "brugaves_fronteira"
-	_explore.dialogue.start("brugaves_fronteira", false)
-	_explore._npc_portrait = String(load("res://scripts/dialogue_system.gd").DIALOGUES.get("brugaves_fronteira", {}).get("portrait", ""))
+	_explore._npc_current_id = "voz_kaelen_fronteira"
+	_explore.dialogue.start("voz_kaelen_fronteira", false)
+	_explore._npc_portrait = String(load("res://scripts/dialogue_system.gd").DIALOGUES.get("voz_kaelen_fronteira", {}).get("portrait", ""))
 	_explore._open_dialogue_box()
 	assert_not_null(_explore._dialogue_name_plate, "placa de nome existe")
 	assert_not_null(_explore._dialogue_label, "label rico existe")

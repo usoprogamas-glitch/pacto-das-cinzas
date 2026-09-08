@@ -100,7 +100,7 @@ func _spawn_water_pools() -> void:
   add_child(pool)
 
 
-# === NPC + DIÁLOGO (SoS): Brugaves conta a missão (lore GDD) ===
+# === NPC + DIÁLOGO (SoS): Voz de Kaelen conta a missão (GDD §1) ===
 
 var dialogue  # DialogueSystem
 var quest_system  # QuestSystem (log J, notificações)
@@ -147,7 +147,7 @@ func _spawn_npc() -> void:
  quest_system.quest_completed.connect(_on_quest_completed)
  # NPC por mapa: cada bioma tem seu informante (lore GDD por Cardeal).
  var npc_by_map := {
-  0: "brugaves_fronteira",
+  0: "voz_kaelen_fronteira",
   1: "mercador_fronteira",
   5: "guia_ignis",
   3: "refugiado_castelo",
@@ -206,7 +206,7 @@ func _process_npc(delta: float) -> void:
  _npc_e_was_down = Input.is_key_pressed(KEY_E)
  # Quest marker dourado pulsando sobre o NPC enquanto a conversa não aconteceu.
  if npc_node and is_instance_valid(npc_node):
-  var dlg_key := "dlg_" + ("brugaves_fronteira" if map_id == 0 else ("guia_ignis" if map_id == 5 else "brugaves_act2"))
+  var dlg_key := "dlg_" + ("voz_kaelen_fronteira" if map_id == 0 else ("guia_ignis" if map_id == 5 else "voz_kaelen_act2"))
   var seen_now: bool = GameManager.game_data.get("tutorials", {}).get(dlg_key, false)
   var marker_name := "quest_marker"
   if not seen_now and npc_node.has_node(marker_name) == false:
@@ -257,14 +257,14 @@ func _interact_npc() -> void:
    # ter sido derrotado); Brugaves junta-se após Ignis cair (Ato II).
    if GameManager and quest_system:
     if map_id == 0 and not quest_system.is_active("fronteira_liberdade"):
-     _recruit_ally("valera", "Valera", "Cavaleira da Ordem Caída")
+     _recruit_ally("garm", "Garm", "Lobo Caolho")
     if map_id == 5 and quest_system.is_completed("ignis_caido") and GameManager.campaign_system \
       and GameManager.campaign_system.get_current_stage().get("boss", false):
-     _recruit_ally("brugaves", "Brugaves", "Mercador Sábio")
+     _recruit_ally("lira", "Lira", "Sacerdotisa da Floresta")
   else:
    _update_dialogue_box()
  else:
-  _npc_current_id = _npc_current_id if _npc_current_id != "" else ("brugaves_fronteira" if map_id == 0 else ("guia_ignis" if map_id == 5 else "brugaves_act2"))
+  _npc_current_id = _npc_current_id if _npc_current_id != "" else ("voz_kaelen_fronteira" if map_id == 0 else ("guia_ignis" if map_id == 5 else "voz_kaelen_act2"))
   var seen_key := "dlg_" + _npc_current_id
   var seen: bool = GameManager.game_data.get("tutorials", {}).get(seen_key, false)
   _npc_first_time = not seen
@@ -1129,8 +1129,8 @@ func _recruit_ally(ally_id: String, display_name: String, class_name_display: St
   return
  GameManager.game_data.get_or_add("party_recruited", {})[ally_id] = true
  GameManager.game_data.get_or_add("tutorials", {})["recruit_" + ally_id] = true
- var stats: Dictionary = {"valera": {"hp": 95, "atk": 14, "def": 12, "mov": 3, "rng": 1},
-  "brugaves": {"hp": 70, "atk": 9, "def": 10, "mov": 2, "rng": 2}}.get(ally_id, {})
+ var stats: Dictionary = {"garm": {"hp": 85, "atk": 17, "def": 9, "mov": 4, "rng": 1},
+  "lira": {"hp": 75, "atk": 11, "def": 10, "mov": 3, "rng": 2}}.get(ally_id, {})
  GameManager.add_to_party({
   "name": display_name, "class": class_name_display,
   "hp": int(stats.get("hp", 80)), "atk": int(stats.get("atk", 12)),

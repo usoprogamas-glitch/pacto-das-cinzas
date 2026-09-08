@@ -143,7 +143,7 @@ func _setup_from_campaign() -> void:
   combatants.append(kroug)
   _arena_position(kroug, Vector2(330, 500), Color(0.8, 0.3, 0.1), "kroug")
 
- # Recrutados (Valera/Brugaves — GDD §3): party_data alimenta o spawn em arco
+ # Recrutados (Garm/Lira — GDD §4.4/§4.2): party_data alimenta o spawn em arco
  # atrás do Kael; stats vindos do recrutamento + crescimento parcial.
  var recruited_slot := 0
  for member: Dictionary in GameManager.party_data if GameManager else []:

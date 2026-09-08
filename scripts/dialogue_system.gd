@@ -10,23 +10,23 @@ signal dialogue_ended(npc_id: String)
 
 ## Diálogos: primeiro acesso conta a missão; visitas seguintes, respostas curtas.
 const DIALOGUES: Dictionary = {
- "brugaves_fronteira": {
-  "name": "Brugaves",
+ "voz_kaelen_fronteira": {
+  "name": "Voz de Kaelen",
   "portrait": "dialog-portrait-Brugaves",
   "first": [
    "Kael... você despertou. O Éter lateja em suas mãos — eu senti daqui.",
    "Nossos deuses mentiram por mil anos. A Igreja de Solaria colhe a fé como quem colhe trigo... e agora vêm colher VOCÊ.",
    "Os mercenários do Capitão Cenu cercaram a Fronteira. Derrote-os e mostre ao mundo que a chama de Kaelen ainda vive.",
    "Vá. Caminhe com W-A-S-D. Encontre os invasores. Eu sigo seus passos, como sempre segui.",
-   "Uma última coisa: VALERA sobreviveu ao massacre — está ferida na nossa taverna. Quando a fronteira estiver livre, fale com ela. A lâmina dela é leal."
+   "Uma última coisa: armadilhas inquisitoriais cercam a mata — e uma delas prendeu algo ANTIGO. Um lobo caolho que ruge com fome de céu. Liberte a fronteira e corte as correntes dele. GARM devora horizontes."
   ],
   "repeat": [
    "A Fronteira ainda respira graças a você. Os invasores esperam — termine o serviço.",
    "Lembre-se: no combate, o timing é tudo. Um golpe no momento perfeito vale mais que dez apressados."
   ]
  },
- "brugaves_act2": {
-  "name": "Brugaves",
+ "voz_kaelen_act2": {
+  "name": "Voz de Kaelen",
   "first": [
    "Ignis é apenas o primeiro Cardeal. Cada um deles carrega um fragmento do trono mentiroso.",
    "Quando o fogo do vulcão esfriar, siga o vento. Zephyr fala com as tempestades — e as tempestades têm ouvidos."
@@ -42,7 +42,7 @@ const DIALOGUES: Dictionary = {
    "Ei! Você não é dessas terras... Se veio pelo Cardeal Ignis, saiba que ele AQUECE o ar antes do golpe — o chão brilha quando ele vai atacar!",
    "Ele canaliza um feitiço devastador. Quebre os selos brilhantes com golpes do tipo certo, ou vire cinza.",
    "Leve isto: provisões que achei no acampamento dele. Que a fúria esteja com você.",
-   "Ouvi um velho mercador murmurando pactos nas sombras — BRUGAVES, da Fronteira. Se o Cardeal cair, procure-o: homens assim valem um exército."
+   "Um susurro verde persegue você desde a fronteira — LIRA, sacerdotisa da floresta, presa nas correntes rúnicas dos Inquisidores. Quando o Cardeal cair, corte as correntes dela: a floresta inteira respirará por você."
   ],
   "repeat": [
    "Ignis observa do vulcão. O chão brilha antes do golpe dele — não esqueça."

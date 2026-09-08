@@ -21,10 +21,10 @@ func test_unknown_npc_rejected():
 
 func test_first_dialogue_has_pages_and_signals():
 	watch_signals(dlg)
-	assert_true(dlg.start("brugaves_fronteira", false), "diálogo inicia")
+	assert_true(dlg.start("voz_kaelen_fronteira", false), "diálogo inicia")
 	assert_true(dlg.is_active(), "ativo após start")
 	assert_signal_emitted(dlg, "dialogue_started")
-	assert_eq(dlg.get_npc_name(), "Brugaves")
+	assert_eq(dlg.get_npc_name(), "Voz de Kaelen")
 	# Consome todas as páginas
 	var pages := 1
 	while dlg.advance():
@@ -35,12 +35,12 @@ func test_first_dialogue_has_pages_and_signals():
 
 
 func test_repeat_dialogue_shorter_than_first():
-	dlg.start("brugaves_fronteira", false)
+	dlg.start("voz_kaelen_fronteira", false)
 	var first_pages := 1
 	while dlg.advance():
 		first_pages += 1
 	dlg = DialogueLib.new()
-	dlg.start("brugaves_fronteira", true)  # já viu o first
+	dlg.start("voz_kaelen_fronteira", true)  # já viu o first
 	var repeat_pages := 1
 	while dlg.advance():
 		repeat_pages += 1
