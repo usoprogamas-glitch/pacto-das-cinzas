@@ -42,6 +42,11 @@ PORTRAITS = {
                "brown short hair, scarred left cheek, blue tabard with gold trim, resolute face"),
     "brugaves": ("brugaves, wise old merchant with round spectacles, gray beard, "
                  "velvet green coat with pockets full of trinkets, kind smile"),
+    "garm": ("garm, one-eyed giant gray wolf, torn left ear, broken chains hanging "
+             "from its neck, glowing pale blue remaining eye, scarred muzzle, fierce "
+             "proud posture"),
+    "lira": ("lira, ancient forest dryad priestess with bark-textured skin, "
+             "leafy antler crown, moss-covered robes, gentle green glowing eyes"),
     "thalkor": ("thalkor, elder forge-priest with bald head, runic tattoos and "
                 "bronze mask half-raised"),
 }
