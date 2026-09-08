@@ -165,17 +165,33 @@ func _spawn_npc() -> void:
  if npc_id == "mercador_fronteira":
   _toggle_shop()
   return
- _npc_current_id = npc_id
- npc_node = Node2D.new()
- npc_node.position = Vector2(420, 420) if map_id == 5 else Vector2(240, 300)
- npc_sos_char = "Brugaves"
- _npc_sos_sets = SOSMotionLoader.build_motion_sets("Brugaves", 1)  # D1 = Sul (encara o player)
- if not _npc_sos_sets.is_empty():
-  _npc_sos_sprite = Sprite2D.new()
-  _npc_sos_sprite.texture = _npc_sos_sets["idle"][0]
-  _npc_sos_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-  _npc_sos_sprite.scale = Vector2(1.7, 1.7)
-  npc_node.add_child(_npc_sos_sprite)
+  _npc_current_id = npc_id
+  npc_node = Node2D.new()
+  npc_node.position = Vector2(420, 420) if map_id == 5 else Vector2(240, 300)
+  # PRIORIDADE 1: arte própria (assets/px/npc_<id>.png). "Voz de Kaelen" usa
+  # a manifestação espectral; demais NPCs caem no placeholder SoS/Brugaves.
+  var npc_own := "res://assets/px/npc_%s.png" % _npc_current_id
+  npc_sos_char = "Brugaves"
+  if _npc_current_id.begins_with("voz_kaelen"):
+   npc_own = "res://assets/px/npc_kaelen.png"
+  var own_tex: Texture2D = null
+  if FileAccess.file_exists(npc_own):
+   own_tex = load(npc_own)
+  if own_tex != null:
+   _npc_sos_sets = {"idle": [own_tex]}
+   _npc_sos_sprite = Sprite2D.new()
+   _npc_sos_sprite.texture = own_tex
+   _npc_sos_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+   _npc_sos_sprite.scale = Vector2(0.5, 0.5)  # 192px LoRA -> ~96px no mapa
+   npc_node.add_child(_npc_sos_sprite)
+  else:
+   _npc_sos_sets = SOSMotionLoader.build_motion_sets(npc_sos_char, 1)  # D1 = Sul (encara o player)
+   if not _npc_sos_sets.is_empty():
+    _npc_sos_sprite = Sprite2D.new()
+    _npc_sos_sprite.texture = _npc_sos_sets["idle"][0]
+    _npc_sos_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+    _npc_sos_sprite.scale = Vector2(1.7, 1.7)
+    npc_node.add_child(_npc_sos_sprite)
  npc_node.add_child(_make_ground_shadow())
  add_child(npc_node)
  # Nome flutuante do NPC (SoS) — puxado do diálogo.

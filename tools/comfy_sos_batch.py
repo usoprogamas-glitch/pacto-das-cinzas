@@ -51,6 +51,32 @@ PORTRAITS = {
                 "bronze mask half-raised"),
 }
 
+# Personagens do jogo (full-body pixel-art, vista lateral-frontal p/ combate).
+# Prompt template aprendido: prédio/personagem ÚNICO, fundo flat navy, corpo inteiro.
+CHARACTERS = {
+    "npc_kaelen": "ONE single full body game character, spectral analytical ghost manifestation, translucent blue hooded figure with glowing cyan eyes, floating slightly above ground, fragments of light orbiting, pixel art game character, sea of stars style, isolated on a plain flat dark navy background, entire body visible, no crop, no ui, no grid, no other objects",
+    "char_kael": "ONE single full body game character, small fractured cherubim angel creature, broken golden halo above head, white and gold body with dark ether wings, glowing eyes, standing idle pose, front-side view, pixel art game character, sea of stars style, isolated on a plain flat dark navy background, entire body visible with feet on the ground, no crop, no ui, no grid, no other objects",
+    "char_kroug": "ONE single full body game character, hobgoblin warrior, green skin, muscular, leather armor and shoulder pads, holding a wooden club, standing idle pose, front-side view, pixel art game character, sea of stars style, isolated on a plain flat dark navy background, entire body visible with feet on the ground, no crop, no ui, no grid, no other objects",
+    "char_mercenario": "ONE single full body game character, brutal human mercenary, leather armor, iron helmet, large sword on shoulder, standing idle pose, front-side view, pixel art game character, sea of stars style, isolated on a plain flat dark navy background, entire body visible with feet on the ground, no crop, no ui, no grid, no other objects",
+    "char_cacador": "ONE single full body game character, hooded ranger hunter, dark green cloak, wooden bow in hand, quiver on back, standing idle pose, front-side view, pixel art game character, sea of stars style, isolated on a plain flat dark navy background, entire body visible with feet on the ground, no crop, no ui, no grid, no other objects",
+    "char_esqueleto": "ONE single full body game character, skeleton warrior, rusty sword, tattered leather straps, cracked skull, standing idle pose, front-side view, pixel art game character, sea of stars style, isolated on a plain flat dark navy background, entire body visible with feet on the ground, no crop, no ui, no grid, no other objects",
+    "char_troll": "ONE single full body game character, massive gray-green troll monster, hunched posture, long arms, crude stone club, standing idle pose, front-side view, pixel art game character, sea of stars style, isolated on a plain flat dark navy background, entire body visible with feet on the ground, no crop, no ui, no grid, no other objects",
+    "char_lobo_sombrio": "ONE single full body game creature, dark shadow wolf with glowing pale eyes, smoky black fur, standing idle pose, side view, pixel art game character, sea of stars style, isolated on a plain flat dark navy background, entire body visible with feet on the ground, no crop, no ui, no grid, no other objects",
+    "char_aranha_gigante": "ONE single full body game creature, giant spider monster, dark purple body with pale markings, eight legs, glowing eyes, standing idle pose, side view, pixel art game character, sea of stars style, isolated on a plain flat dark navy background, entire body visible with feet on the ground, no crop, no ui, no grid, no other objects",
+    "char_paladino": "ONE single full body game character, solar paladin knight, golden plate armor, white cape, sun emblem shield and longsword, standing idle pose, front-side view, pixel art game character, sea of stars style, isolated on a plain flat dark navy background, entire body visible with feet on the ground, no crop, no ui, no grid, no other objects",
+    "char_inquisidor": "ONE single full body game character, solar church inquisitor mage, white and gold ceremonial robes, tall staff with sun emblem, standing idle pose, front-side view, pixel art game character, sea of stars style, isolated on a plain flat dark navy background, entire body visible with feet on the ground, no crop, no ui, no grid, no other objects",
+    "char_santo_cardeal": "ONE single full body game character, holy cardinal boss, white and gold ornate vestments, solar halo disc behind head, bishop staff, imposing pose, front-side view, pixel art game character, sea of stars style, isolated on a plain flat dark navy background, entire body visible with feet on the ground, no crop, no ui, no grid, no other objects",
+    "char_chefe_orc": "ONE single full body game character, orc chief, massive green orc with war paint, bone necklace, huge double axe, standing idle pose, front-side view, pixel art game character, sea of stars style, isolated on a plain flat dark navy background, entire body visible with feet on the ground, no crop, no ui, no grid, no other objects",
+    "char_cardeal_ignis": "ONE single full body game character, fire cardinal boss, red and black robes with flame patterns, fire crown, molten cracks on skin, imposing pose, front-side view, pixel art game character, sea of stars style, isolated on a plain flat dark navy background, entire body visible with feet on the ground, no crop, no ui, no grid, no other objects",
+    "char_cardeal_zephyr": "ONE single full body game character, wind cardinal boss, pale teal flowing robes, wind swirl aura, feathered mantle, imposing pose, front-side view, pixel art game character, sea of stars style, isolated on a plain flat dark navy background, entire body visible with feet on the ground, no crop, no ui, no grid, no other objects",
+    "char_cardeal_aqua": "ONE single full body game character, water cardinal boss, deep blue robes with coral ornaments, water orb in hand, imposing pose, front-side view, pixel art game character, sea of stars style, isolated on a plain flat dark navy background, entire body visible with feet on the ground, no crop, no ui, no grid, no other objects",
+    "char_cardeal_terra": "ONE single full body game character, earth cardinal boss, heavy stone armor, moss and crystal growths, massive gauntlets, imposing pose, front-side view, pixel art game character, sea of stars style, isolated on a plain flat dark navy background, entire body visible with feet on the ground, no crop, no ui, no grid, no other objects",
+    "char_cardeal_umbra": "ONE single full body game character, shadow cardinal boss, black and violet robes, face obscured by hood with purple eyes, shadow tendrils, imposing pose, front-side view, pixel art game character, sea of stars style, isolated on a plain flat dark navy background, entire body visible with feet on the ground, no crop, no ui, no grid, no other objects",
+    "char_aurius_fase1": "ONE single full body game character, false demigod on monumental throne, golden divine armor, cracked halo, solar scepter, sitting pose on throne, front-side view, pixel art game character, sea of stars style, isolated on a plain flat dark navy background, entire throne and body visible, no crop, no ui, no grid, no other objects",
+    "char_aurius_fase2": "ONE single full body game character, seraph tyrant with six solar wings, golden divine armor, radiant crown, holding light lance, standing imposing pose, front-side view, pixel art game character, sea of stars style, isolated on a plain flat dark navy background, entire body visible with feet on the ground, no crop, no ui, no grid, no other objects",
+    "char_aurius_fase3": "ONE single single full body game character, desperate light core, unstable sphere of pure golden light with dark cracks, floating geometric rings around it, pixel art game character, sea of stars style, isolated on a plain flat dark navy background, entire object visible, no crop, no ui, no grid, no other objects",
+}
+
 ICONS = {
     "corte": "a single sword, one weapon only, vertical diagonal composition, pixel art game icon, steel blade with warm gold guard, centered on a plain flat dark navy background, isolated object, no ui, no menu, no items, no chests, no coins",
     "eter": "a single glowing arcane orb, one sphere only, pixel art game icon, cobalt blue core with white spark swirl, centered on a plain flat dark navy background, isolated object, no ui, no faces, no grid",
@@ -126,6 +152,8 @@ def submit_and_wait(wf, timeout=1500):
 
 def collect(outputs, dest, out_path, thumb, colors):
     import os
+    if out_path.startswith("res://"):
+        out_path = out_path[len("res://"):]
     if os.path.exists(out_path):
         print("SKIP (já existe):", out_path, flush=True)
         return True
@@ -158,6 +186,16 @@ def run_portraits(use_lora):
         outputs = submit_and_wait(wf)
         collect(outputs, "%s/portrait_%s.png" % (RAW_DIR, name),
                 OUT_PORTRAIT % name, 96, 24)
+
+
+def run_chars(use_lora, only=None):
+    items = CHARACTERS.items() if not only else [(k, CHARACTERS[k]) for k in only if k in CHARACTERS]
+    for name, desc in items:
+        prompt = desc
+        wf = build_workflow(prompt, 768, 768, abs(hash("char" + name)) % 10**8, use_lora, "sos_char")
+        outputs = submit_and_wait(wf)
+        collect(outputs, "%s/%s.png" % (RAW_DIR, name),
+                "res://assets/px/%s.png" % name.replace("char_", "char_"), 192, 32)
 
 
 def run_icons(use_lora, only=None):
@@ -202,6 +240,9 @@ if __name__ == "__main__":
     elif mode == "icons":
         targets = sys.argv[2:] if len(sys.argv) > 2 else None
         run_icons(lora, targets)
+    elif mode == "chars":
+        targets = sys.argv[2:] if len(sys.argv) > 2 else None
+        run_chars(lora, targets)
     elif mode == "tiles":
         run_tiles(lora)
     else:
