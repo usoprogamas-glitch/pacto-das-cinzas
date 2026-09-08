@@ -45,6 +45,7 @@ PORTRAITS = {
 ICONS = {
     "corte": "a single sword, one weapon only, vertical diagonal composition, pixel art game icon, steel blade with warm gold guard, centered on a plain flat dark navy background, isolated object, no ui, no menu, no items, no chests, no coins",
     "eter": "a single glowing arcane orb, one sphere only, pixel art game icon, cobalt blue core with white spark swirl, centered on a plain flat dark navy background, isolated object, no ui, no faces, no grid",
+    "taverna": "a complete two-story medieval fantasy tavern building, full facade side view, wooden walls, red clay tile roof, two warm glowing windows, wooden door with small porch, chimney with light smoke, pixel art game building, sea of stars style, isolated on a plain flat dark navy background, entire building visible with roof and base, no crop, no ui, no characters, no grid",
 }
 
 TILES = {
@@ -147,14 +148,17 @@ def run_portraits(use_lora):
                 OUT_PORTRAIT % name, 96, 24)
 
 
-def run_icons(use_lora):
-    for name, desc in ICONS.items():
+def run_icons(use_lora, only=None):
+    items = ICONS.items() if not only else [(k, ICONS[k]) for k in [only] if k in ICONS]
+    for name, desc in items:
         prompt = (STYLE + "pixel art game ui icon, " + desc +
                   ", on plain flat dark navy square background, centered, chunky pixels")
-        wf = build_workflow(prompt, 512, 512, abs(hash("icon" + name)) % 10**8, use_lora, "sos_icon")
+        size = 768 if name == "taverna" else 512
+        wf = build_workflow(prompt, size, size, abs(hash("icon" + name)) % 10**8, use_lora, "sos_icon")
         outputs = submit_and_wait(wf)
+        thumb = 128 if name == "taverna" else 64
         collect(outputs, "%s/icon_%s.png" % (RAW_DIR, name),
-                OUT_ICON % name, 64, 16)
+                OUT_ICON % name, thumb, 24 if name == "taverna" else 16)
 
 
 def run_tiles(use_lora):
@@ -184,7 +188,8 @@ if __name__ == "__main__":
     elif mode == "portraits":
         run_portraits(lora)
     elif mode == "icons":
-        run_icons(lora)
+        only = sys.argv[2] if len(sys.argv) > 2 else None
+        run_icons(lora, only)
     elif mode == "tiles":
         run_tiles(lora)
     else:
