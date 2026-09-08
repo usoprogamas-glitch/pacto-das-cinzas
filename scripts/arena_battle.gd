@@ -249,28 +249,41 @@ func _arena_position(u: Unit, pos: Vector2, color: Color, sprite_key: String, en
  var path := "res://assets/sprites/%s.png" % sprite_key
  var sprite: Sprite2D
  var motion_sets := {}
- # SoS (estudo): jogadores renderizam NarcisKingZale; inimigos usam o
- # personagem SoS mapeado pelo tipo do jogo (mercenario->StrifeMinion etc).
- var sos_char: String = ""
+ var sos_char: String = ""  # preenchido no fallback SoS (escopo p/ combat sets)
  var sos_dir := 3
- if not u.is_player_side() and _current_enemy_type != "":
-  var enemy_sos := {
-   "mercenario": "StrifeMinion", "cacador": "Owlsassin", "esqueleto": "BilePile",
-   "mago": "Keymouseter", "inquisidor": "Acolyte1", "paladino": "Acolyte4",
-   "orc_chefe": "BoulderDouche", "troll": "BoulderGoat",
-  }
-  sos_char = String(enemy_sos.get(_current_enemy_type, ""))
-  sos_dir = 3  # inimigos à direita olham para o lado do jogador (D3=Oeste)
- elif u.is_player_side():
-  sos_char = "NarcisKingZale"
-  sos_dir = 5
- if sos_char != "":
-  motion_sets = SOSMotionLoader.build_motion_sets(sos_char, sos_dir)
+ # PRIORIDADE 1 — arte própria do jogo (LoRA pixel-art, assets/px/):
+ # é a identidade visual definitiva; SoS vira fallback de estudo.
+ var own_path := "res://assets/px/char_%s.png" % sprite_key
+ var own_source: Image = null
+ if FileAccess.file_exists(own_path):
+  own_source = Image.new()
+  if own_source.load(own_path) != OK:
+   own_source = null
+ if own_source != null:
+  motion_sets = MotionLib.build_motion_sets(own_source)
+ if motion_sets.is_empty():
+  # PRIORIDADE 2 — sprites reais do SoS (estudo; NÃO commitado).
+  if not u.is_player_side() and _current_enemy_type != "":
+   var enemy_sos := {
+    "mercenario": "StrifeMinion", "cacador": "Owlsassin", "esqueleto": "BilePile",
+    "mago": "Keymouseter", "inquisidor": "Acolyte1", "paladino": "Acolyte4",
+    "orc_chefe": "BoulderDouche", "troll": "BoulderGoat",
+   }
+   sos_char = String(enemy_sos.get(_current_enemy_type, ""))
+   sos_dir = 3  # inimigos à direita olham para o lado do jogador (D3=Oeste)
+  elif u.is_player_side():
+   sos_char = "NarcisKingZale"
+   sos_dir = 5
+  if sos_char != "":
+   motion_sets = SOSMotionLoader.build_motion_sets(sos_char, sos_dir)
  if not motion_sets.is_empty():
   sprite = Sprite2D.new()
   sprite.texture = motion_sets["idle"][0]
   sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-  sprite.scale = Vector2(2.4, 2.4)  # ~31x53 px fonte -> ~75x127 na arena
+  if own_source != null:
+   sprite.scale = Vector2(0.45, 0.45)  # 192px LoRA -> ~86px na arena
+  else:
+   sprite.scale = Vector2(2.4, 2.4)  # ~31x53 px fonte SoS -> ~75x127
   sprite.offset = Vector2(0, -8)
  elif FileAccess.file_exists(path):
   var img := Image.new()
@@ -333,13 +346,15 @@ func _arena_position(u: Unit, pos: Vector2, color: Color, sprite_key: String, en
  # Sets de combate: primeiro os frames REAIS do SoS (convenção original);
  # sem frames, gera por bandas da ilustração (ComfyUI ou fallback).
  var combat_source: Image = null
- if sos_char != "":
+ if own_source != null:
+  combat_source = own_source  # arte própria primeiro (identidade do jogo)
+ elif sos_char != "":
   var sos_combat: Dictionary = SOSMotionLoader.build_combat_sets(sos_char, sos_dir)
   if not sos_combat.is_empty():
    animator.set_combat_sets(sos_combat)
   else:
    combat_source = SOSMotionLoader.source_image(sos_char, sos_dir)
- if combat_source == null and FileAccess.file_exists(path):
+ if combat_source == null and own_source == null and FileAccess.file_exists(path):
   var cs := Image.new()
   if cs.load(path) == OK:
    combat_source = cs
