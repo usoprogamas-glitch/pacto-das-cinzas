@@ -77,3 +77,14 @@ Valera e Brugaves eram personagens do Sea of Stars infiltrados no nosso lore
 REGRA: aprender TAMANHO/ESTILO/ESTRUTURA dos assets do SoS e permitido;
 nomes, personagens, lore e universo NUNCA. Retratos pixel_valera/
 pixel_brugaves permanecem no repo como amostras do pipeline (sem uso).
+
+## QA de qualidade de pixel art (2026-09-08)
+
+Metrica objetiva em retratos 96px (gradientes suaves de 3-12 de delta = ruido AI;
+pixel art limpo fica abaixo de 18 por cento). Primeiro lote de Garm/Lira tinha 28/18
+por cento de ruido + pixels orfaos.
+
+Tentativa de despeckle automatico (fusao de clusters de 1-2px na cor vizinha
+dominante) DESTRUIU features: o nariz do Garm e o rosto da Lira eram clusters
+pequenos deliberados. Regra: cleanup automatico de pixel art nao e seguro;
+a regeneracao com nova seed do LoRA resolveu melhor que qualquer filtro.
