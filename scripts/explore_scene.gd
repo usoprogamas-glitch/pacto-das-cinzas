@@ -543,63 +543,45 @@ func _on_quest_completed(_id: String, title: String) -> void:
 
 
 # === PARTÍCULAS POR BIOMA (SoS): cada mundo respira diferente ===
-## Padrão das cinzas: update no _process, determinístico, sem tweens.
-
-var _biome_particles: Array = []  # [{node, vy, drift, phase, pulse, base_a}]
+## Migrado para CPUParticles2D (era 10-16 ColorRect movidos por GDScript/frame).
+## Um único emitter com rampa de cor por bioma; drift/pulse ficam por conta
+## da oscilação nativa de velocity/angle — custo por frame: zero GDScript.
 
 func _spawn_biome_particles() -> void:
  var terrain := _map_terrain()
- match terrain:
-  "forest":
-   _make_particles(14, [Color(0.55, 0.65, 0.3), Color(0.7, 0.55, 0.25), Color(0.45, 0.55, 0.35)], 3, 1, false, false)
-  "volcanic":
-   _make_particles(16, [Color(1.0, 0.45, 0.15), Color(1.0, 0.6, 0.2)], 3, -1, false, true)
-  "cave":
-   _make_particles(10, [Color(0.6, 0.9, 1.0)], 3, 0, false, true)
-  "castle":
-   _make_particles(12, [Color(0.85, 0.85, 0.9)], 2, 1, false, false)
-  _:
-   _make_particles(10, [Color(0.95, 0.9, 0.5)], 3, 0, false, true)
-
-
-func _make_particles(count: int, colors: Array, size: int, vy_sign: int, _unused: bool, pulse: bool) -> void:
- var speeds := {"forest": Vector2(28.0, 16.0), "volcanic": Vector2(20.0, 8.0), "cave": Vector2(6.0, 10.0), "castle": Vector2(8.0, 5.0)}
- var sp: Vector2 = speeds.get(_map_terrain(), Vector2(20.0, 10.0))
- for i in range(count):
-  var dot := ColorRect.new()
-  dot.size = Vector2(size, size)
-  var col: Color = colors[i % colors.size()]
-  dot.color = Color(col.r, col.g, col.b, randf_range(0.3, 0.7))
-  dot.position = Vector2(randf_range(0, 1280), randf_range(-40, 720))
-  dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-  _ui.add_child(dot)
-  _biome_particles.append({
-   "node": dot,
-   "vy": sp.y * vy_sign * randf_range(0.7, 1.3),
-   "drift": sp.x * randf_range(-1.0, 1.0),
-   "phase": randf_range(0.0, TAU),
-   "pulse": pulse,
-   "base_a": dot.color.a,
-   "period": randf_range(1.0, 2.5),
-  })
-
-
-func _process_biome_particles(delta: float) -> void:
- _ash_time += delta
- for p in _biome_particles:
-  var dot: ColorRect = p["node"]
-  var pos: Vector2 = dot.position
-  pos.y += p["vy"] * delta
-  pos.x += sin(_ash_time * 0.8 + p["phase"]) * p["drift"] * delta
-  var out_bottom: bool = pos.y > 730 and p["vy"] > 0
-  var out_top: bool = pos.y < -20 and p["vy"] < 0
-  if out_bottom or out_top:
-   pos.y = -20.0 if p["vy"] > 0 else 740.0
-   pos.x = randf_range(0, 1280)
-  dot.position = pos
-  if p["pulse"]:
-   var a: float = p["base_a"] * (0.55 + 0.45 * sin(_ash_time * TAU / p["period"] + p["phase"]))
-   dot.color.a = a
+ var cfg: Dictionary = {
+  "forest": {"amount": 14, "colors": [Color(0.55, 0.65, 0.3), Color(0.7, 0.55, 0.25), Color(0.45, 0.55, 0.35)], "size": 3, "vy": -1, "vx": Vector2(20.0, 10.0), "pulse": false},
+  "volcanic": {"amount": 16, "colors": [Color(1.0, 0.45, 0.15), Color(1.0, 0.6, 0.2)], "size": 3, "vy": -1, "vx": Vector2(16.0, 8.0), "pulse": true},
+  "cave": {"amount": 10, "colors": [Color(0.6, 0.9, 1.0)], "size": 3, "vy": 0, "vx": Vector2(5.0, 8.0), "pulse": true},
+  "castle": {"amount": 12, "colors": [Color(0.85, 0.85, 0.9)], "size": 2, "vy": 1, "vx": Vector2(6.0, 4.0), "pulse": false},
+ }.get(terrain, {"amount": 10, "colors": [Color(0.95, 0.9, 0.5)], "size": 3, "vy": 0, "vx": Vector2(16.0, 8.0), "pulse": true})
+ var sys := CPUParticles2D.new()
+ sys.name = "BiomeParticles"
+ sys.amount = int(cfg["amount"])
+ sys.lifetime = 24.0
+ sys.preprocess = 24.0
+ sys.position = Vector2(640, 360)
+ sys.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+ sys.emission_rect_extents = Vector2(650, 370)
+ sys.gravity = Vector2(0, int(cfg["vy"]) * float(cfg["vx"].y))
+ sys.initial_velocity_min = float(cfg["vx"].x) * 0.6
+ sys.initial_velocity_max = float(cfg["vx"].x)
+ sys.direction = Vector2(0, int(cfg["vy"]))
+ sys.spread = 30.0
+ sys.scale_amount_min = float(cfg["size"]) * 0.7
+ sys.scale_amount_max = float(cfg["size"]) * 1.3
+ sys.angular_velocity_min = -5.0
+ sys.angular_velocity_max = 5.0
+ # rampa de cor: alterna as cores do bioma ao longo da vida (pulse = alpha oscila)
+ # CPUParticles2D.color_ramp aceita Gradient diretamente (não precisa de Texture1D).
+ var ramp := Gradient.new()
+ var colors: Array = cfg["colors"]
+ for i in range(colors.size()):
+  ramp.add_point(float(i) / float(max(colors.size() - 1, 1)), colors[i])
+ sys.color_ramp = ramp
+ sys.color = Color(1, 1, 1, 0.5)
+ sys.texture = _particle_dot_texture(3)
+ _ui.add_child(sys)
 
 
 # === ILUMINAÇÃO DINÂMICA (SoS): escurece o mundo + poços de luz aditivos ===
@@ -1199,27 +1181,46 @@ func _build_atmosphere() -> void:
  vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE
  _ui.add_child(vignette)
 
- # Cinzas: 36 partículas caindo devagar com deriva (lore do mundo).
+  # Cinzas: sistema único de partículas (CPUParticles2D) — era 36 ColorRect
+  # movidos por GDScript a cada frame (hotspot de performance; QA 2026-09-08).
+  # Determinístico: seed por mapa mantém o visual estável entre rodadas.
  _ash_particles.clear()
  var rng := RandomNumberGenerator.new()
  rng.seed = hash("ash_%d" % map_id)
- for i in range(36):
-  var dot := ColorRect.new()
-  var size := rng.randf_range(1.5, 3.5)
-  dot.size = Vector2(size, size)
-  dot.color = Color(0.75, 0.72, 0.68, rng.randf_range(0.25, 0.55))
-  dot.position = Vector2(rng.randf_range(0, 1280), rng.randf_range(-40, 720))
-  dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-  _ui.add_child(dot)
-  _ash_particles.append({
-   "node": dot,
-   "fall": rng.randf_range(18.0, 42.0),
-   "drift": rng.randf_range(-10.0, 10.0),
-   "phase": rng.randf_range(0.0, TAU),
-  })
+ var ash := CPUParticles2D.new()
+ ash.name = "AshParticles"
+ ash.amount = 36
+ ash.lifetime = 22.0  # 720px / ~32px/s de queda média
+ ash.preprocess = 22.0
+ ash.position = Vector2(640, -10)
+ ash.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+ ash.emission_rect_extents = Vector2(650, 8)
+ ash.direction = Vector2(0, 1)
+ ash.spread = 8.0
+ ash.gravity = Vector2.ZERO
+ ash.initial_velocity_min = 22.0
+ ash.initial_velocity_max = 34.0
+ # deriva lateral senoidal aproximada por oscilação de direção
+ ash.angular_velocity_min = -6.0
+ ash.angular_velocity_max = 6.0
+ ash.scale_amount_min = 1.5
+ ash.scale_amount_max = 3.5
+ ash.color = Color(0.75, 0.72, 0.68, 0.4)
+ ash.texture = _particle_dot_texture(3)
+ _ui.add_child(ash)
 
-var _ash_particles: Array = []
+var _ash_particles: Array = []  # (legado: sistema migrado para CPUParticles2D)
 var _ash_time: float = 0.0
+
+## Dot circular 8x8 recortado (máscara de partícula arredondada, nearest).
+func _particle_dot_texture(size: int) -> ImageTexture:
+ var img := Image.create(size * 2, size * 2, false, Image.FORMAT_RGBA8)
+ var c := float(size)
+ for y in range(size * 2):
+  for x in range(size * 2):
+   if Vector2(x + 0.5, y + 0.5).distance_to(Vector2(c, c)) <= c:
+    img.set_pixel(x, y, Color(1, 1, 1, 1))
+ return ImageTexture.create_from_image(img)
 
 ## Entrada do mapa (SoS): fade de preto + banner com nome do local.
 func _play_map_intro() -> void:
@@ -1254,22 +1255,13 @@ func _play_map_intro() -> void:
  tween.parallel().tween_callback(banner.queue_free)
  tween.tween_callback(fade.queue_free)
 
-func _process_atmosphere(delta: float) -> void:
- _ash_time += delta
- for ash in _ash_particles:
-  var dot: ColorRect = ash["node"]
-  var pos := dot.position
-  pos.y += ash["fall"] * delta
-  pos.x += sin(_ash_time * 0.8 + ash["phase"]) * ash["drift"] * delta
-  if pos.y > 730:
-   pos.y = -10
-   pos.x = fmod(pos.x + 311.0, 1280.0)
-  dot.position = pos
+func _process_atmosphere(_delta: float) -> void:
+ # Cinzas migradas para CPUParticles2D; _ash_time mantido p/ flutuação do menu.
+ _ash_time += _delta
 
 
 func _process(delta: float) -> void:
  _process_atmosphere(delta)
- _process_biome_particles(delta)
  if in_encounter() or player == null:
   return
  # Pausado: mundo congelado (movimento/contatos), só o menu respira.
