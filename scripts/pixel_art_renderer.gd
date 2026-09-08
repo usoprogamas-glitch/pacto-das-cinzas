@@ -958,6 +958,9 @@ static func build_lora_terrain_canvas(terrain_type: String) -> Sprite2D:
   return null
  if img.is_compressed():
   img.decompress()
+ # o tile LoRA tem bevel claro nas margens (nao e seamless): corta 7px/lado e
+ # feather de alpha nas bordas do piece funde as costuras entre tiles.
+ img = _seamless_tile(img)
  var w := 320
  var h := 180
  var tw := img.get_width()
@@ -965,16 +968,36 @@ static func build_lora_terrain_canvas(terrain_type: String) -> Sprite2D:
  var canvas := Image.create(w, h, false, Image.FORMAT_RGBA8)
  var cols := int(ceil(float(w) / tw))
  var rows := int(ceil(float(h) / th))
+ # Variação por tile (mesmo esquema da arena): shade ±6% e rotação 90° em
+ # 1 de cada 4, RNG seedado pelo bioma — quebra a repetição do padrão LoRA
+ # e mantém determinismo (testes de canvas não mudam).
+ var vrng := RandomNumberGenerator.new()
+ vrng.seed = hash("tilevar_%s" % terrain_type)
  for r in range(rows):
   for c in range(cols):
    var piece: Image = img.duplicate()
+   if piece.get_format() != Image.FORMAT_RGBA8:
+    piece.convert(Image.FORMAT_RGBA8)  # blend_rect exige mesmo formato (RGB8 do export PIL)
    # NOTA (QA 2026-09-07): NÃO aplicar paleta manual sobre o tile LoRA — o
    # quantize de origem já é consistente; paleta forçada o colapsa em cinza.
    if c % 2 == 1:
     piece.flip_x()
    if r % 2 == 1:
     piece.flip_y()
-   canvas.blend_rect(piece, Rect2i(0, 0, tw, th), Vector2i(c * tw, r * th))
+   var rot: int = vrng.randi() % 4
+   if rot == 1:
+    piece.rotate_90(CLOCKWISE)
+   elif rot == 2:
+    piece.rotate_90(COUNTERCLOCKWISE)
+   var shade: float = 0.94 + vrng.randf() * 0.12
+   for y in range(piece.get_height()):
+    for x in range(piece.get_width()):
+     var px := piece.get_pixel(x, y)
+     piece.set_pixel(x, y, Color(
+      clampf(px.r * shade, 0.0, 1.0),
+      clampf(px.g * shade, 0.0, 1.0),
+      clampf(px.b * shade, 0.0, 1.0), px.a))
+   canvas.blend_rect(piece, Rect2i(0, 0, piece.get_width(), piece.get_height()), Vector2i(c * tw, r * th))
  var sprite := Sprite2D.new()
  sprite.texture = ImageTexture.create_from_image(canvas)
  sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -989,6 +1012,14 @@ static func build_lora_terrain_canvas(terrain_type: String) -> Sprite2D:
 ## v2 (QA 2026-09-07): variação por tile (brilho/hue sutil por RNG seedado +
 ## rotação de 90° em 1 de cada 3 tiles) quebra a repetição visível do padrão;
 ## bordas ORGÂNICAS: invasão de grama/musgo do bioma com forma noise, não retângulo.
+## Torna o tile LoRA seamless: corta o bevel claro das margens (crop 7px/lado).
+static func _seamless_tile(img: Image) -> Image:
+ if img.get_width() < 32:
+  return img
+ var crop := 7
+ return img.get_region(Rect2i(crop, crop, img.get_width() - crop * 2, img.get_height() - crop * 2))
+
+
 static func build_lora_floor_texture(terrain_key: String, area: Rect2, darken: float) -> ImageTexture:
  var path := "res://assets/pixel/tile_%s.png" % terrain_key
  if not ResourceLoader.exists(path):
@@ -999,6 +1030,7 @@ static func build_lora_floor_texture(terrain_key: String, area: Rect2, darken: f
   return null
  if img.is_compressed():
   img.decompress()
+ img = _seamless_tile(img)
  var w := int(area.size.x)
  var h := int(area.size.y)
  var tw := img.get_width()
@@ -1025,6 +1057,8 @@ static func build_lora_floor_texture(terrain_key: String, area: Rect2, darken: f
  for r in range(rows):
   for c in range(cols):
    var piece: Image = img.duplicate()
+   if piece.get_format() != Image.FORMAT_RGBA8:
+    piece.convert(Image.FORMAT_RGBA8)  # blend_rect exige mesmo formato (RGB8 do export PIL)
    # variação 1: rotação 90° em ~1/3 dos tiles (quebra o grid visível)
    var rot := rng.randi() % 3
    if rot == 1:
