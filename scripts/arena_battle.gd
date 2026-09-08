@@ -9,6 +9,7 @@ const ArenaCombatLib := preload("res://scripts/arena_combat.gd")
 const MotionLib := preload("res://scripts/sprite_motion_library.gd")
 const EnemyDatabaseLib := preload("res://scripts/enemy_database.gd")
 const FxSequence := preload("res://scripts/fx_sequence.gd")
+const PixelArtRendererLib := preload("res://scripts/pixel_art_renderer.gd")
 
 signal battle_ended(victory: bool, rewards: Dictionary)
 signal battle_fled()
@@ -848,16 +849,35 @@ func _enemy_act() -> void:
 # --- UI (overlay in-place, sem .tscn) ---
 
 func _build_arena() -> void:
+ # Fundo: o mundo do explore fica VISÍVEL atrás do combate (molde SoS — a
+ # batalha acontece no mapa). Escurecimento leve, não cortina opaca.
  var dim := ColorRect.new()
- dim.color = Color(0.02, 0.02, 0.04, 0.55)
+ dim.color = Color(0.02, 0.02, 0.04, 0.18)
  dim.size = Vector2(1280, 720)
  add_child(dim)
 
- var floor_rect := ColorRect.new()
- floor_rect.color = Color(0.13, 0.11, 0.16, 0.9)
- floor_rect.position = Vector2(140, 280)
- floor_rect.size = Vector2(1000, 380)
- add_child(floor_rect)
+ # Piso REAL tileado com o LoRA do bioma atual (não palco vazio). Área do
+ # palco (140..1140 x 280..660), tiles 96px com flip alternado e escurecido
+ # 30% para os sprites brilhem por cima (molde de combate SoS).
+ var map_id_now: int = GameManager.game_data.get("current_map", 0) if GameManager else 0
+ var map_now: Dictionary = MapDatabase.get_map(map_id_now)
+ var biome := String(map_now.get("terrain", "mixed"))
+ var tile_key := "fronteira" if biome == "mixed" else biome
+ var tile_path := "res://assets/pixel/tile_%s.png" % tile_key
+ if ResourceLoader.exists(tile_path):
+  var floor_sprite := Sprite2D.new()
+  floor_sprite.name = "ArenaFloor"
+  floor_sprite.texture = PixelArtRendererLib.build_lora_floor_texture(tile_key, Rect2(140, 280, 1000, 380), 0.88)
+  floor_sprite.centered = false
+  floor_sprite.position = Vector2(140, 280)
+  floor_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+  add_child(floor_sprite)
+ else:
+  var floor_rect := ColorRect.new()
+  floor_rect.color = Color(0.13, 0.11, 0.16, 0.9)
+  floor_rect.position = Vector2(140, 280)
+  floor_rect.size = Vector2(1000, 380)
+  add_child(floor_rect)
 
  # Palco (molde SoS): elipses de "chão" sob cada grupo em vez do vazio.
  for g in [
@@ -980,7 +1000,7 @@ func _build_stage_vignette() -> void:
  add_child(vignette)
 
  log_label = Label.new()
- log_label.position = Vector2(20, 668)
+ log_label.position = Vector2(320, 692)  # direita das placas PV/PM (réplica SoS não tem log; texto vira apoio discreto)
  log_label.add_theme_font_size_override("font_size", 18)
  # Sombra de texto no log (contraste sobre sprites claros).
  log_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))

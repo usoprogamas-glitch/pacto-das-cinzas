@@ -601,6 +601,7 @@ func _build_lighting() -> void:
  # SoS (direção de arte): ambiente mais dramático — a luz pontual importa.
  var modulate := CanvasModulate.new()
  modulate.color = _ambient_color()
+ modulate.add_to_group("canvas_modulate")
  add_child(modulate)
 
  # Fallback: pools difusos onde NÃO há props emissores (biomas vazios).
@@ -613,24 +614,26 @@ func _build_lighting() -> void:
  var count: int = int({"cave": 3, "volcanic": 3, "castle": 2, "forest": 0}.get(_map_terrain(), 1))
  if has_prop_lights:
   count = 1
- for i in range(count):
-  var light := Sprite2D.new()
-  light.texture = _light_gradient_texture()
-  light.material = _add_blend_material()
-  light.position = Vector2(rng.randf_range(150, 1130), rng.randf_range(130, 610))
-  light.scale = Vector2(0.95, 0.95)
-  light.modulate = Color(0.9, 0.55, 0.2, rng.randf_range(0.14, 0.22) * (0.6 if has_prop_lights else 1.0))
-  add_child(light)
-  # Flicker sutil (vida da chama).
-  var flicker := create_tween().set_loops()
-  var base_alpha: float = light.modulate.a
-  flicker.tween_property(light, "modulate:a", base_alpha * 0.75, rng.randf_range(0.7, 1.3)).set_trans(Tween.TRANS_SINE)
-  flicker.tween_property(light, "modulate:a", base_alpha, rng.randf_range(0.7, 1.3)).set_trans(Tween.TRANS_SINE)
+  for i in range(count):
+   var light := Sprite2D.new()
+   light.texture = _light_gradient_texture()
+   light.material = _add_blend_material()
+   light.position = Vector2(rng.randf_range(150, 1130), rng.randf_range(130, 610))
+   light.scale = Vector2(1.15, 1.15)
+   light.modulate = Color(1.0, 0.85, 0.6, rng.randf_range(0.5, 0.7) * (0.6 if has_prop_lights else 1.0))
+   add_child(light)
+   # Flicker sutil (vida da chama).
+   var flicker := create_tween().set_loops()
+   var base_alpha: float = light.modulate.a
+   flicker.tween_property(light, "modulate:a", base_alpha * 0.75, rng.randf_range(0.7, 1.3)).set_trans(Tween.TRANS_SINE)
+   flicker.tween_property(light, "modulate:a", base_alpha, rng.randf_range(0.7, 1.3)).set_trans(Tween.TRANS_SINE)
 
 
 func _light_gradient_texture() -> ImageTexture:
  # Radial desenhado manualmente (Image): o GradientTexture2D gerava anel
- # (donut) com edge visível no blend aditivo.
+ # (donut) com edge visível no blend aditivo. v2 (QA 2026-09-07): pools
+ # anteriores eram manchas pálidas — agora com NÚCLEO quente (o centro da
+ # chama é quase branco) e queda com dois estágios (core rápido, halo suave).
  var size := 256
  var img := Image.create(size, size, false, Image.FORMAT_RGBA8)
  var cx := size / 2.0
@@ -639,8 +642,21 @@ func _light_gradient_texture() -> ImageTexture:
  for y in range(size):
   for x in range(size):
    var dist := Vector2(x - cx, y - cy).length() / max_r
-   var a := pow(clampf(1.0 - dist, 0.0, 1.0), 1.8) * 0.55
-   img.set_pixel(x, y, Color(1.0, 0.72, 0.35, a))
+   var a := 0.0
+   if dist < 0.28:
+    # núcleo: branco-âmbar quase sólido
+    a = lerpf(0.95, 0.75, dist / 0.28)
+   elif dist < 0.6:
+    # corpo da chama: queda rápida
+    var k := (dist - 0.28) / 0.32
+    a = lerpf(0.75, 0.3, pow(k, 0.8))
+   else:
+    # halo suave até a borda
+    var k := (dist - 0.6) / 0.4
+    a = lerpf(0.3, 0.0, k)
+   # cor: âmbar no núcleo → laranja profundo no halo
+   var col := Color(1.0, 0.82, 0.5).lerp(Color(1.0, 0.55, 0.15), clampf(dist, 0.0, 1.0))
+   img.set_pixel(x, y, Color(col.r, col.g, col.b, a))
  return ImageTexture.create_from_image(img)
 
 
@@ -688,6 +704,7 @@ const _LIGHT_PROPS := {
 
 func _spawn_props() -> void:
  var map: Dictionary = MapDatabase.get_map(map_id)
+ var terrain: String = _map_terrain()
  for cfg in map.get("props", []):
   var path: String = "res://assets/props/%s.png" % String(cfg.get("texture", ""))
   if not ResourceLoader.exists(path):
@@ -696,13 +713,36 @@ func _spawn_props() -> void:
   sprite.texture = load(path)
   sprite.position = _tile_center(cfg.get("pos", Vector2i.ZERO))
   sprite.scale = Vector2.ONE * float(cfg.get("scale", 1.0))
+  # Tint unificador por bioma (assets conversarem: ComfyUI props + atlas Eder +
+  # tiles LoRA recebem o MESMO lavar de cor do ambiente — SoS "grade/estilo").
+  # Light props não recebem tint forte (a chama tem cor própria).
+  var light_cfg: Dictionary = _LIGHT_PROPS.get(String(cfg.get("texture", "")), {})
+  sprite.modulate = _biome_prop_tint(terrain, not light_cfg.is_empty())
   # Ordem de adição (depois de bg/tiles, antes de units) garante props
   # acima do chão e abaixo das unidades — z_index -1 ficava ATRÁS do bg.
   add_child(sprite)
   sprite.add_child(_make_ground_shadow(Vector2(0, sprite.texture.get_height() * 0.42)))
-  var light_cfg: Dictionary = _LIGHT_PROPS.get(String(cfg.get("texture", "")), {})
   if not light_cfg.is_empty():
    _attach_prop_light(sprite, light_cfg)
+
+
+## Tint por bioma aplicado a props (unificação visual das 3 fontes de asset).
+func _biome_prop_tint(terrain: String, is_light_prop: bool) -> Color:
+ var base: Color
+ match terrain:
+  "cave":
+   base = Color(0.62, 0.72, 0.9)   # frio azulado da caverna
+  "volcanic":
+   base = Color(1.0, 0.82, 0.72)   # calor de brasa
+  "castle":
+   base = Color(0.78, 0.8, 0.88)   # pedra fria
+  "forest":
+   base = Color(0.85, 0.95, 0.8)   # verde úmido
+  _:
+   base = Color(0.92, 0.86, 0.78)  # poeira da Fronteira
+ if is_light_prop:
+  return base.lerp(Color.WHITE, 0.5)  # emissores quase sem tint
+ return base
 
 
 ## Poço de luz aditivo com flicker, filho do prop (herda posição/escala).
@@ -800,7 +840,7 @@ func _spawn_tile_decorations(terrain_name: String) -> void:
   deco.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
   deco.position = Vector2(rng.randf_range(60, 1220), rng.randf_range(50, 670))
   deco.scale = Vector2(deco_scale, deco_scale)
-  deco.modulate = tint
+  deco.modulate = tint * _biome_prop_tint(terrain_name, false).lerp(Color.WHITE, 0.5)
   add_child(deco)
   # Sombra ancora no pe do deco e escala com ele (arvores scale 7 flutuavam
   # com a sombra fixa de 35px — QA visual).
@@ -1325,6 +1365,11 @@ func _start_arena(enemy_index: int) -> void:
  # da batalha: "Agindo", turn_label e hints na mesma região da tela).
  if _ui:
   _ui.visible = false
+ # Ambient sobe na arena (o dim do combate ja escurece; sem isso o
+ # fundo vira poca preta e o mundo do explore desaparece).
+ var ambient_node = get_tree().get_first_node_in_group("canvas_modulate")
+ if ambient_node:
+  ambient_node.color = Color(0.88, 0.86, 0.8)
 
 
 func _set_explore_ui_visible(visible: bool) -> void:

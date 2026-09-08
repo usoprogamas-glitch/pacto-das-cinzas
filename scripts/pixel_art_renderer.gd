@@ -983,6 +983,50 @@ static func build_lora_terrain_canvas(terrain_type: String) -> Sprite2D:
  return sprite
 
 
+## Piso da ARENA: tilea o tile LoRA do bioma numa área retangular (px de tela),
+## escurecido pelo modulate — os sprites de combate brilham por cima (SoS:
+## batalha acontece no chão do próprio mundo). Retorna ImageTexture pronta.
+static func build_lora_floor_texture(terrain_key: String, area: Rect2, darken: float) -> ImageTexture:
+ var path := "res://assets/pixel/tile_%s.png" % terrain_key
+ if not ResourceLoader.exists(path):
+  return null
+ var tex: Texture2D = load(path)
+ var img: Image = tex.get_image()
+ if img == null or img.get_width() < 32:
+  return null
+ if img.is_compressed():
+  img.decompress()
+ var w := int(area.size.x)
+ var h := int(area.size.y)
+ var tw := img.get_width()
+ var th := img.get_height()
+ var canvas := Image.create(w, h, false, Image.FORMAT_RGBA8)
+ var cols := int(ceil(float(w) / tw))
+ var rows := int(ceil(float(h) / th))
+ for r in range(rows):
+  for c in range(cols):
+   var piece: Image = img.duplicate()
+   if c % 2 == 1:
+    piece.flip_x()
+   if r % 2 == 1:
+    piece.flip_y()
+   canvas.blend_rect(piece, Rect2i(0, 0, tw, th), Vector2i(c * tw, r * th))
+ # escurece para o combate + fade ALPHA nas bordas: o palco integra ao
+ # mundo em vez de retângulo duro (QA 2026-09-07).
+ for y in range(h):
+  for x in range(w):
+   var px := canvas.get_pixel(x, y)
+   var fade := 1.0
+   var edge := 44.0
+   var ex: float = minf(float(x), float(w - 1 - x))
+   var ey: float = minf(float(y), float(h - 1 - y))
+   var e := minf(ex, ey)
+   if e < edge:
+    fade = clampf(e / edge, 0.0, 1.0)
+   canvas.set_pixel(x, y, Color(px.r * darken, px.g * darken, px.b * darken, px.a * fade))
+ return ImageTexture.create_from_image(canvas)
+
+
 ## Canvas de terreno low-res (320x180) escalado com nearest: um único sprite
 ## coeso em vez de mosaico de tiles — paleta da mesma família, manchas
 ## orgânicas e variação sutil por célula. Substitui a grade 10x6 (QA visual).
