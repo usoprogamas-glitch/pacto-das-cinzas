@@ -26,12 +26,14 @@ static func build_motion_sets(source: Image) -> Dictionary:
  if small.get_format() != Image.FORMAT_RGBA8:
   small.convert(Image.FORMAT_RGBA8)
  small.resize(FRAME_SIZE, FRAME_SIZE, Image.INTERPOLATE_LANCZOS)
+ # v2 (QA "estático"): idle 4f respirando; walk 6f com amp 9 + hop —
+ # v1 tinha 2f de idle com sin(0)=sin(PI)=0 (idênticos) e shift de 2px na tela.
  var idle := []
- for i in range(2):
-  idle.append(ImageTexture.create_from_image(_shifted_frame(small, PI * float(i), 1.5, 1.0)))
- var walk := []
  for i in range(4):
-  walk.append(ImageTexture.create_from_image(_shifted_frame(small, TAU * float(i) / 4.0, 5.0, 2.0)))
+  idle.append(ImageTexture.create_from_image(_shifted_frame(small, TAU * float(i) / 4.0, 0.0, 2.0)))
+ var walk := []
+ for i in range(6):
+  walk.append(ImageTexture.create_from_image(_shifted_frame(small, TAU * float(i) / 6.0, 9.0, 2.5)))
  return {"idle": idle, "walk": walk}
 
 
