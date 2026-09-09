@@ -42,6 +42,12 @@ var player_sos_char: String = ""  # piloto: Kael renderiza Zale
 var _player_sos_sets: Dictionary = {}
 var _player_sos_sprite: Sprite2D = null
 var _player_sos_frame: float = 0.0
+var player_own_sets: Dictionary = {}  # arte própria (char_kael LoRA) — prioridade 1
+var player_own_sprite: Sprite2D = null
+var player_own_frame: float = 0.0
+var buddy_own_sets: Dictionary = {}  # poses LoRA do Kroug
+var buddy_own_sprite: Sprite2D = null
+var buddy_own_frame: float = 0.0
 var _enemy_animators: Array = []  # paralelo a enemy_nodes
 var _enemy_alert: Array = []  # paralelo a enemy_nodes: já percebeu o jogador?
 
@@ -165,33 +171,33 @@ func _spawn_npc() -> void:
  if npc_id == "mercador_fronteira":
   _toggle_shop()
   return
-  _npc_current_id = npc_id
-  npc_node = Node2D.new()
-  npc_node.position = Vector2(420, 420) if map_id == 5 else Vector2(240, 300)
-  # PRIORIDADE 1: arte própria (assets/px/npc_<id>.png). "Voz de Kaelen" usa
-  # a manifestação espectral; demais NPCs caem no placeholder SoS/Brugaves.
-  var npc_own := "res://assets/px/npc_%s.png" % _npc_current_id
-  npc_sos_char = "Brugaves"
-  if _npc_current_id.begins_with("voz_kaelen"):
-   npc_own = "res://assets/px/npc_kaelen.png"
-  var own_tex: Texture2D = null
-  if FileAccess.file_exists(npc_own):
-   own_tex = load(npc_own)
-  if own_tex != null:
-   _npc_sos_sets = {"idle": [own_tex]}
+ _npc_current_id = npc_id
+ npc_node = Node2D.new()
+ npc_node.position = Vector2(420, 420) if map_id == 5 else Vector2(240, 300)
+ # PRIORIDADE 1: arte própria (assets/px/npc_<id>.png). "Voz de Kaelen" usa
+ # a manifestação espectral; demais NPCs caem no placeholder SoS/Brugaves.
+ var npc_own := "res://assets/px/npc_%s.png" % _npc_current_id
+ npc_sos_char = "Brugaves"
+ if _npc_current_id.begins_with("voz_kaelen"):
+  npc_own = "res://assets/px/npc_kaelen.png"
+ var own_tex: Texture2D = null
+ if FileAccess.file_exists(npc_own):
+  own_tex = load(npc_own)
+ if own_tex != null:
+  _npc_sos_sets = {"idle": [own_tex]}
+  _npc_sos_sprite = Sprite2D.new()
+  _npc_sos_sprite.texture = own_tex
+  _npc_sos_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+  _npc_sos_sprite.scale = Vector2(0.5, 0.5)  # 192px LoRA -> ~96px no mapa
+  npc_node.add_child(_npc_sos_sprite)
+ else:
+  _npc_sos_sets = SOSMotionLoader.build_motion_sets(npc_sos_char, 1)  # D1 = Sul (encara o player)
+  if not _npc_sos_sets.is_empty():
    _npc_sos_sprite = Sprite2D.new()
-   _npc_sos_sprite.texture = own_tex
+   _npc_sos_sprite.texture = _npc_sos_sets["idle"][0]
    _npc_sos_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-   _npc_sos_sprite.scale = Vector2(0.5, 0.5)  # 192px LoRA -> ~96px no mapa
+   _npc_sos_sprite.scale = Vector2(1.7, 1.7)
    npc_node.add_child(_npc_sos_sprite)
-  else:
-   _npc_sos_sets = SOSMotionLoader.build_motion_sets(npc_sos_char, 1)  # D1 = Sul (encara o player)
-   if not _npc_sos_sets.is_empty():
-    _npc_sos_sprite = Sprite2D.new()
-    _npc_sos_sprite.texture = _npc_sos_sets["idle"][0]
-    _npc_sos_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-    _npc_sos_sprite.scale = Vector2(1.7, 1.7)
-    npc_node.add_child(_npc_sos_sprite)
  npc_node.add_child(_make_ground_shadow())
  add_child(npc_node)
  # Nome flutuante do NPC (SoS) — puxado do diálogo.
@@ -887,9 +893,27 @@ func _spawn_party() -> void:
  player.position = Vector2(160, 360)
  _player_shadow = _make_ground_shadow()
  player.add_child(_player_shadow)
+ # PRIORIDADE 1 — arte própria (LoRA): char_kael.png com motion sets por bandas.
+ var own_kael: Image = null
+ var own_path := "res://assets/px/char_kael.png"
+ if FileAccess.file_exists(own_path):
+  own_kael = Image.new()
+  if own_kael.load(own_path) != OK:
+   own_kael = null
+ if own_kael != null:
+  var own_sets: Dictionary = MotionLib.build_motion_sets(own_kael)
+  if not own_sets.is_empty():
+   player_own_sets = _load_lora_poses("char_kael")
+   if player_own_sets.is_empty():
+    player_own_sets = own_sets  # sem poses: usa bandas do sprite idle
+   player_own_sprite = Sprite2D.new()
+   player_own_sprite.texture = player_own_sets["idle"][0]
+   player_own_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+   player_own_sprite.scale = Vector2(0.42, 0.42)  # 192px LoRA -> ~80px no mapa
+   player.add_child(player_own_sprite)
  # Piloto SoS (estudo): Kael renderiza NarcisKingZale quando disponível.
  var sos_kael: Dictionary = SOSMotionLoader.build_motion_sets("NarcisKingZale", 3)
- if not sos_kael.is_empty():
+ if not sos_kael.is_empty() and player_own_sprite == null:
   player_sos_char = "NarcisKingZale"
   _player_sos_sets = _hue_shift_sets(sos_kael, 0.55)  # azul Valere: contrasta com o verde do chão
   _player_sos_sprite = Sprite2D.new()
@@ -898,12 +922,12 @@ func _spawn_party() -> void:
   _player_sos_sprite.scale = Vector2(1.7, 1.7)
   player.add_child(_player_sos_sprite)
  var kael_sprite := _animated_sprite("res://assets/sprites/kael.png", 0.06, Color(0.2, 0.8, 0.3))
- if player_sos_char == "":
+ if player_sos_char == "" and player_own_sprite == null:
   player.add_child(kael_sprite)
  player_animator = kael_sprite.get_meta("animator") if kael_sprite.has_meta("animator") else null
  add_child(player)
 
- # Kroug segue o Kael com atraso (trilha suave, molde SoS): filho da CENA,
+# Kroug segue o Kael com atraso (trilha suave, molde SoS): filho da CENA,
  # não do player — interpola para a posição histórica do líder.
  if GameManager and GameManager.game_data.get("starting_ally") == "kroug":
   buddy_node = Node2D.new()
@@ -911,7 +935,16 @@ func _spawn_party() -> void:
   _buddy_shadow = _make_ground_shadow()
   buddy_node.add_child(_buddy_shadow)
   # Sprite SoS do Garl (estudo): walk cycle real por direção.
-  if SOSMotionLoader.build_motion_sets("Garl", 1):
+  # PRIORIDADE: poses LoRA do Kroug (assets/px/poses/char_kroug).
+  buddy_own_sets = _load_lora_poses("char_kroug")
+  if not buddy_own_sets.is_empty():
+   buddy_own_sprite = Sprite2D.new()
+   buddy_own_sprite.texture = buddy_own_sets["idle"][0]
+   buddy_own_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+   buddy_own_sprite.scale = Vector2(0.42, 0.42)
+   buddy_node.add_child(buddy_own_sprite)
+   _buddy_animator = null
+  elif SOSMotionLoader.build_motion_sets("Garl", 1):
    buddy_sos_char = "Garl"
    var sos_sets: Dictionary = _hue_shift_sets(SOSMotionLoader.build_motion_sets("Garl", 1), 0.07)  # laranja Kroug
    var sos_sprite := Sprite2D.new()
@@ -1056,6 +1089,27 @@ func _set_move_anim(anim, moving: bool, dir_x: float = 0.0) -> void:
  anim.set_moving(moving)
  if moving and absf(dir_x) > 0.01:
   anim.face_direction(dir_x)
+
+
+## Carrega poses LoRA de assets/px/poses/<char>/ (molde SoS D/F):
+## {"idle": [tex], "walk": [a,b,c,d], "attack": [tex]}. Vazio se ausentes.
+func _load_lora_poses(char_name: String) -> Dictionary:
+ var base := "res://assets/px/poses/%s/%s" % [char_name, char_name]
+ var sets: Dictionary = {}
+ var idle_path := "res://assets/px/%s.png" % char_name
+ if ResourceLoader.exists(idle_path):
+  sets["idle"] = [load(idle_path)]
+ var walk: Array = []
+ for pose in ["walk_a", "walk_b", "walk_c", "walk_d"]:
+  var path := "%s_%s.png" % [base, pose]
+  if ResourceLoader.exists(path):
+   walk.append(load(path))
+ if walk.size() >= 3:
+  sets["walk"] = walk
+ var atk_path := "%s_attack.png" % base
+ if ResourceLoader.exists(atk_path):
+  sets["attack"] = [load(atk_path)]
+ return sets
 
 
 func _make_ground_shadow(offset: Vector2 = Vector2.ZERO) -> Sprite2D:
@@ -1321,27 +1375,52 @@ func _process(delta: float) -> void:
     SoundManager.play_sfx("step")
  # Sprites SoS na exploração: walk cycle real por direção do movimento.
  var dir_key := _sos_dir_from_vector(dir)
+ # Arte própria: anima idle/walk com flip horizontal pelo dir_x.
+ if player_own_sprite != null and not player_own_sets.is_empty():
+  var anim_name := "walk" if moving else "idle"
+  var frames: Array = player_own_sets.get(anim_name, player_own_sets["idle"])
+  if frames.size() > 0:
+   var idx := 0
+   if frames.size() > 1:
+    player_own_frame = fmod(player_own_frame + delta * (7.0 if moving else 3.0), 1.0)
+    idx = int(player_own_frame * float(frames.size()))
+   player_own_sprite.texture = frames[mini(idx, frames.size() - 1)]
+  if absf(dir.x) > 0.01:
+   player_own_sprite.flip_h = dir.x < 0.0
  if player_sos_char != "":
   _tick_sos_sprite(_player_sos_sprite, _player_sos_sets, dir_key, moving, delta, _player_sos_frame)
- if buddy_node and buddy_sos_char != "":
-  var target: Vector2 = _player_trail[mini(13, _player_trail.size() - 1)] if _player_trail.size() > 0 else player.position
-  # Nunca fica exatamente em cima do líder (offset mínimo na direção oposta).
-  var away: Vector2 = (buddy_node.position - target)
-  if away.length() < 20.0 and away.length() > 0.01:
-   target = buddy_node.position + away.normalized() * 24.0
-  var to_target := target - buddy_node.position
-  var buddy_moving := to_target.length() > 6.0
-  if buddy_moving:
-   buddy_node.position += to_target.normalized() * minf(to_target.length(), speed * 1.05 * delta)
-  var buddy_dir := _sos_dir_from_vector(to_target) if buddy_moving else dir_key
-  _tick_sos_sprite(_buddy_sos_sprite, _buddy_sos_sets, buddy_dir, buddy_moving, delta, _buddy_sos_frame)
- elif buddy_node:
-  var target: Vector2 = _player_trail[mini(13, _player_trail.size() - 1)] if _player_trail.size() > 0 else player.position
-  var to_target := target - buddy_node.position
-  var buddy_moving := to_target.length() > 6.0
-  if buddy_moving:
-   buddy_node.position += to_target.normalized() * minf(to_target.length(), speed * 1.05 * delta)
-  _set_move_anim(_buddy_animator, buddy_moving, to_target.x)
+  if buddy_node and (buddy_sos_char != "" or buddy_own_sprite != null):
+   var target: Vector2 = _player_trail[mini(13, _player_trail.size() - 1)] if _player_trail.size() > 0 else player.position
+   # Nunca fica exatamente em cima do líder (offset mínimo na direção oposta).
+   var away: Vector2 = (buddy_node.position - target)
+   if away.length() < 20.0 and away.length() > 0.01:
+    target = buddy_node.position + away.normalized() * 24.0
+   var to_target := target - buddy_node.position
+   var buddy_moving := to_target.length() > 6.0
+   if buddy_moving:
+    buddy_node.position += to_target.normalized() * minf(to_target.length(), speed * 1.05 * delta)
+   # Buddy próprio: ciclo walk/idle das poses LoRA com flip (prioridade).
+   if buddy_own_sprite != null and not buddy_own_sets.is_empty():
+    var b_anim := "walk" if buddy_moving else "idle"
+    var b_frames: Array = buddy_own_sets.get(b_anim, buddy_own_sets["idle"])
+    if b_frames.size() > 0:
+     var b_idx := 0
+     if b_frames.size() > 1:
+      buddy_own_frame = fmod(buddy_own_frame + delta * (7.0 if buddy_moving else 3.0), 1.0)
+      b_idx = int(buddy_own_frame * float(b_frames.size()))
+     buddy_own_sprite.texture = b_frames[mini(b_idx, b_frames.size() - 1)]
+    if absf(to_target.x) > 0.01:
+     buddy_own_sprite.flip_h = to_target.x < 0.0
+   else:
+    var buddy_dir := _sos_dir_from_vector(to_target) if buddy_moving else dir_key
+    _tick_sos_sprite(_buddy_sos_sprite, _buddy_sos_sets, buddy_dir, buddy_moving, delta, _buddy_sos_frame)
+  elif buddy_node:
+   var target: Vector2 = _player_trail[mini(13, _player_trail.size() - 1)] if _player_trail.size() > 0 else player.position
+   var to_target := target - buddy_node.position
+   var buddy_moving := to_target.length() > 6.0
+   if buddy_moving:
+    buddy_node.position += to_target.normalized() * minf(to_target.length(), speed * 1.05 * delta)
+   _set_move_anim(_buddy_animator, buddy_moving, to_target.x)
 
  # Sombras respiram com o idle (fase 4Hz do IDLE_FPS do animator): escala
  # varia sutilmente, lendo como peso do personagem no chão.

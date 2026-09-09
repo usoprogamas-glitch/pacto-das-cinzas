@@ -12,6 +12,7 @@ Uso:
   python tools/comfy_sos_batch.py tiles      # tiles de bioma (1 por terreno)
 """
 import json
+import os
 import time
 import urllib.request
 import sys
@@ -53,6 +54,16 @@ PORTRAITS = {
 
 # Personagens do jogo (full-body pixel-art, vista lateral-frontal p/ combate).
 # Prompt template aprendido: prédio/personagem ÚNICO, fundo flat navy, corpo inteiro.
+# Poses de MOVIMENTO por personagem (mesma seed + texto de pose variando):
+# ciclo de caminhada em 4 keyframes + pose de ataque (molde SoS D/F).
+CHARACTER_POSES = {
+    "walk_a": "walking pose, left leg stepped forward, right arm swinging back",
+    "walk_b": "walking pose, legs together passing, body upright mid-stride",
+    "walk_c": "walking pose, right leg stepped forward, left arm swinging back",
+    "walk_d": "walking pose, legs together passing, slight upward bob",
+    "attack": "attack pose, lunging forward, weapon raised mid-swing",
+}
+
 CHARACTERS = {
     "npc_kaelen": "ONE single full body game character, spectral analytical ghost manifestation, translucent blue hooded figure with glowing cyan eyes, floating slightly above ground, fragments of light orbiting, pixel art game character, sea of stars style, isolated on a plain flat dark navy background, entire body visible, no crop, no ui, no grid, no other objects",
     "char_kael": "ONE single full body game character, small fractured cherubim angel creature, broken golden halo above head, white and gold body with dark ether wings, glowing eyes, standing idle pose, front-side view, pixel art game character, sea of stars style, isolated on a plain flat dark navy background, entire body visible with feet on the ground, no crop, no ui, no grid, no other objects",
@@ -188,6 +199,30 @@ def run_portraits(use_lora):
                 OUT_PORTRAIT % name, 96, 24)
 
 
+def run_poses(use_lora, only=None):
+    """Gera poses de movimento. only = lista de chars (vazio = todos com poses)."""
+    base_chars = dict(CHARACTERS)
+    base_chars.update({k: v for k, v in CHARACTERS.items()})
+    chars = sorted(set(base_chars.keys()))
+    if only:
+        chars = [c for c in chars if c in only]
+    for char in chars:
+        if not char.startswith("char_"):
+            continue
+        char_seed = abs(hash("pose_" + char)) % 10**8
+        for pose, pose_desc in CHARACTER_POSES.items():
+            out_dir = "res://assets/px/poses/%s" % char
+            out_png = os.path.join(out_dir.replace("res://", ""), "%s_%s.png" % (char, pose))
+            if os.path.exists(out_png):
+                print("SKIP (já existe):", out_png, flush=True)
+                continue
+            prompt = base_chars[char] + ", " + pose_desc
+            wf = build_workflow(prompt, 768, 768, char_seed, use_lora, "sos_pose")
+            outputs = submit_and_wait(wf)
+            collect(outputs, "%s/%s_%s.png" % (RAW_DIR, char, pose),
+                    "res://assets/px/poses/%s/%s_%s.png" % (char, char, pose), 192, 32)
+
+
 def run_chars(use_lora, only=None):
     items = CHARACTERS.items() if not only else [(k, CHARACTERS[k]) for k in only if k in CHARACTERS]
     for name, desc in items:
@@ -243,6 +278,9 @@ if __name__ == "__main__":
     elif mode == "chars":
         targets = sys.argv[2:] if len(sys.argv) > 2 else None
         run_chars(lora, targets)
+    elif mode == "poses":
+        targets = sys.argv[2:] if len(sys.argv) > 2 else None
+        run_poses(lora, targets)
     elif mode == "tiles":
         run_tiles(lora)
     else:

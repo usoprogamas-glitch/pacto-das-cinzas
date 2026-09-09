@@ -34,8 +34,8 @@ func test_walk_cycle_generates_4_frames_different_from_base():
 		for x in range(400, 600):
 			img.set_pixel(x, y, Color.RED)
 	var sets := MotionLib.build_motion_sets(img)
-	assert_eq(sets["walk"].size(), 4, "ciclo de passada tem 4 frames")
-	assert_eq(sets["idle"].size(), 2, "idle tem 2 frames (respiração)")
+	assert_eq(sets["walk"].size(), 6, "ciclo de passada tem 6 frames (v2 energetico)")
+	assert_eq(sets["idle"].size(), 4, "idle tem 4 frames (respiração)")
 	var base256: Texture2D = sets["walk"][0]
 	assert_eq(base256.get_width(), 256, "frames gerados a 256px (downscale de memória)")
 	# Frames do ciclo são distintos entre si (movimento real, não estático).
@@ -73,8 +73,11 @@ func test_explore_attaches_animator_with_frames_to_party_and_enemies():
 	assert_not_null(scene.player_animator, "Kael tem animator com ciclos")
 	assert_gt(scene.player_animator.walk_frames.size(), 0, "Kael tem frames de passada")
 	assert_gt(scene.player_animator.idle_frames.size(), 0, "Kael tem frames de idle")
-	# Kroug agora usa sprites SoS (Garl) com walk cycle por direção.
-	if scene.buddy_sos_char != "":
+	# Kroug: prioridade poses LoRA próprias; fallback SoS (Garl) e fallback HD.
+	if scene.buddy_own_sets.has("walk"):
+		assert_gt(scene.buddy_own_sets["walk"].size(), 0, "Kroug tem poses LoRA de passada")
+		assert_not_null(scene.buddy_own_sprite, "Kroug tem sprite próprio")
+	elif scene.buddy_sos_char != "":
 		assert_not_null(scene._buddy_sos_sets["walk"], "Kroug-SoS tem walk frames")
 		assert_not_null(scene._buddy_sos_sprite, "Kroug-SoS tem sprite")
 	else:
@@ -99,6 +102,22 @@ func test_animator_cycles_texture_over_time():
 		assert_true(changed, "walk cycle SoS troca frame ao tickar")
 		return
 	var anim = scene.player_animator
+	var frame0: Texture2D = anim.sprite.texture
+	await get_tree().create_timer(0.35).timeout  # idle fps 4 → ~1.4 frames
+	var frame_later: Texture2D = anim.sprite.texture
+	if scene.player_own_sprite != null:
+		# Arte própria: o ciclo vive no sprite próprio (4 frames de idle).
+		var own_frames: Array = scene.player_own_sets["idle"]
+		var f0_own: Texture2D = scene.player_own_sprite.texture
+		var changed_own := false
+		for i in range(4):
+			scene.player_own_frame = float(i) / 4.0
+			scene.player_own_sprite.texture = own_frames[i]
+			if scene.player_own_sprite.texture != f0_own:
+				changed_own = true
+				break
+		assert_true(changed_own, "ciclo próprio troca frame ao tickar")
+		return
 	var frame0: Texture2D = anim.sprite.texture
 	await get_tree().create_timer(0.35).timeout  # idle fps 4 → ~1.4 frames
 	var frame_later: Texture2D = anim.sprite.texture
