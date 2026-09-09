@@ -360,8 +360,39 @@ func _arena_position(u: Unit, pos: Vector2, color: Color, sprite_key: String, en
    combat_source = cs
  if combat_source != null and animator.combat_sets.is_empty():
   animator.set_combat_sets(MotionLib.build_combat_sets(combat_source))
+ # Poses LoRA do inimigo (attack/walk reais) sobrepõem as bandas.
+ if not u.is_player_side() and _current_enemy_type != "":
+  var ep: Dictionary = _enemy_lora_poses(_current_enemy_type)
+  if ep.has("attack"):
+   animator.set_combat_sets({"attack": ep["attack"]})
  animator.play_idle()
  _animators[u.get_instance_id()] = animator
+
+
+## Poses LoRA de um inimigo (assets/px/poses/char_<tipo>/) — vazio se ausente.
+## Mesmo contrato de _load_lora_poses do explore; cache por tipo.
+func _enemy_lora_poses(enemy_type: String) -> Dictionary:
+ if not _enemy_pose_cache.has(enemy_type):
+  var char_key := "char_" + enemy_type
+  var sets: Dictionary = {}
+  var base := "res://assets/px/poses/%s/%s" % [char_key, char_key]
+  var idle_path := "res://assets/px/%s.png" % char_key
+  if ResourceLoader.exists(idle_path):
+   sets["idle"] = [load(idle_path)]
+  var walk: Array = []
+  for pose in ["walk_a", "walk_b", "walk_c", "walk_d"]:
+   var wpath := "%s_%s.png" % [base, pose]
+   if ResourceLoader.exists(wpath):
+    walk.append(load(wpath))
+  if walk.size() >= 3:
+   sets["walk"] = walk
+  var atk_path := "%s_attack.png" % base
+  if ResourceLoader.exists(atk_path):
+   sets["attack"] = [load(atk_path)]
+  _enemy_pose_cache[enemy_type] = sets
+ return _enemy_pose_cache[enemy_type]
+
+var _enemy_pose_cache: Dictionary = {}
 
 
 func _animator_for(u) -> UnitAnimator:
