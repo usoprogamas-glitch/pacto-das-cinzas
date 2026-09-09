@@ -12,6 +12,7 @@ Uso:
   python tools/comfy_sos_batch.py tiles      # tiles de bioma (1 por terreno)
 """
 import json
+import zlib
 import os
 import time
 import urllib.request
@@ -209,7 +210,7 @@ def run_poses(use_lora, only=None):
     for char in chars:
         if not char.startswith("char_"):
             continue
-        char_seed = abs(hash("pose_" + char)) % 10**8
+        char_seed = int(zlib.crc32(("pose_" + char).encode())) % 10**8
         for pose, pose_desc in CHARACTER_POSES.items():
             out_dir = "res://assets/px/poses/%s" % char
             out_png = os.path.join(out_dir.replace("res://", ""), "%s_%s.png" % (char, pose))
