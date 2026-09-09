@@ -99,10 +99,15 @@ main_menu.tscn → intro_story.tscn → explore_scene.tscn (mapa do ato)
 | Tool | Uso |
 |---|---|
 | qa_run.gd | QA visual 12 shots (intro→epilogue, incl. diálogo 04b) |
+| pose_consistency_qa.py | QA de consistência de poses LoRA (paleta/bbox/deltas por personagem) |
+| portrait_zoom.py (via zoom), flood_bg_local.py, rembg_poses.py, make_chars/poses_transparent.py | pipeline de personagens LoRA (fundo/crop/poses) |
 | cartographer_cli.py | gera mapas por bioma (JSON+PNG) via CartographerCore (scripts/dev/) |
-| comfy_sos_batch.py / run_sos_batches.py | assets LoRA SoS (retratos/ícones/tiles; skip-if-exists) |
+| comfy_sos_batch.py / run_sos_batches.py | assets LoRA (retratos/ícones/tiles/chars/poses; skip-if-exists; modo multi-alvo) |
 | comfy_props_batch3.py, remove_prop_bg2.py | props (SDXL) + flood-fill de fundo |
+| sos_asset_metrics.py, sos_metadata_extract.py | análise de referência do SoS (assets/codebase) |
 | atlas decode / sos tools | sprites SoS reais (7357 frames, 28 chars) |
+
+**Arquivados** em `tools/archive/` (48 scripts one-off de debugging — referência, fora do uso).
 
 ## Testes (tests/unit/, 84 arquivos)
 
