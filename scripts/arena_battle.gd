@@ -916,6 +916,8 @@ func _enemy_act() -> void:
   _show_tutorial_if_first("lock")
   _advance()
   return
+ if _result_shown:
+  return  # batalha encerrada no meio do fluxo (defesa robusta pos-vitoria)
  # Janela de defesa reativa (timed block) durante o golpe inimigo.
  var actor_anim := _animator_for(current_actor)
  if actor_anim:
