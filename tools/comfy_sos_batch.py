@@ -121,7 +121,7 @@ def has_lora():
         return False
 
 
-def build_workflow(prompt, width, height, seed, use_lora, prefix):
+def build_workflow(prompt, width, height, seed, use_lora, prefix, init_image=None, denoise=1.0):
     wf = {"1": {"class_type": "CheckpointLoaderSimple", "inputs": {"ckpt_name": CKPT}}}
     model = ["1", 0]
     clip = ["1", 1]
@@ -132,16 +132,47 @@ def build_workflow(prompt, width, height, seed, use_lora, prefix):
         model, clip = ["2", 0], ["2", 1]
     wf["10"] = {"class_type": "CLIPTextEncode", "inputs": {"text": prompt, "clip": clip}}
     wf["11"] = {"class_type": "CLIPTextEncode", "inputs": {"text": NEG, "clip": clip}}
-    wf["12"] = {"class_type": "EmptyLatentImage", "inputs": {
-        "width": width, "height": height, "batch_size": 1}}
+    if init_image:
+        # img2img: latent da imagem base — denoise moderado varia a pose
+        # mantendo a silhueta/identidade do personagem (anti-flicker de ciclo).
+        wf["20"] = {"class_type": "LoadImage", "inputs": {"image": init_image}}
+        wf["21"] = {"class_type": "VAEEncode", "inputs": {"pixels": ["20", 0], "vae": ["1", 2]}}
+        latent = ["21", 0]
+    else:
+        wf["12"] = {"class_type": "EmptyLatentImage", "inputs": {
+            "width": width, "height": height, "batch_size": 1}}
+        latent = ["12", 0]
     wf["13"] = {"class_type": "KSampler", "inputs": {
         "seed": seed, "steps": 16, "cfg": 6.0, "sampler_name": "dpmpp_2m",
-        "scheduler": "karras", "denoise": 1.0,
+        "scheduler": "karras", "denoise": denoise,
         "model": model, "positive": ["10", 0], "negative": ["11", 0],
-        "latent_image": ["12", 0]}}
+        "latent_image": latent}}
     wf["14"] = {"class_type": "VAEDecode", "inputs": {"samples": ["13", 0], "vae": ["1", 2]}}
     wf["15"] = {"class_type": "SaveImage", "inputs": {"images": ["14", 0], "filename_prefix": prefix}}
     return wf
+
+
+def upload_image(path):
+    """Upload multipart para /upload/image; retorna o nome referenciável."""
+    import mimetypes
+    import uuid
+    boundary = uuid.uuid4().hex
+    filename = os.path.basename(path)
+    with open(path, "rb") as f:
+        data = f.read()
+    body = (
+        ("--%s\r\n" % boundary).encode()
+        + ('Content-Disposition: form-data; name="image"; filename="%s"\r\n' % filename).encode()
+        + ("Content-Type: %s\r\n\r\n" % (mimetypes.guess_type(filename)[0] or "application/octet-stream")).encode()
+        + data
+        + ("\r\n--%s--\r\n" % boundary).encode()
+    )
+    req = urllib.request.Request(
+        BASE + "/upload/image", data=body,
+        headers={"Content-Type": "multipart/form-data; boundary=%s" % boundary})
+    with urllib.request.urlopen(req) as r:
+        res = json.loads(r.read())
+    return res.get("name", filename)
 
 
 def submit_and_wait(wf, timeout=1500):
@@ -217,8 +248,13 @@ def run_poses(use_lora, only=None):
             if os.path.exists(out_png):
                 print("SKIP (já existe):", out_png, flush=True)
                 continue
+            base_raw = os.path.join(RAW_DIR, "%s.png" % char)
+            init_name = None
+            if os.path.exists(base_raw):
+                init_name = upload_image(base_raw)
             prompt = base_chars[char] + ", " + pose_desc
-            wf = build_workflow(prompt, 768, 768, char_seed, use_lora, "sos_pose")
+            wf = build_workflow(prompt, 768, 768, char_seed, use_lora, "sos_pose",
+                                init_image=init_name, denoise=0.5)
             outputs = submit_and_wait(wf)
             collect(outputs, "%s/%s_%s.png" % (RAW_DIR, char, pose),
                     "res://assets/px/poses/%s/%s_%s.png" % (char, char, pose), 192, 32)
