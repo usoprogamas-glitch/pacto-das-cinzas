@@ -1,0 +1,8 @@
+Config_ID,Módulo / Etapa do Workflow,Nós Utilizados (Node Names),Parâmetros Recomendados,Objetivo / Função no Pipeline
+CFG_01,Node Base,CheckpointLoaderSimple,SDXL 1.0 ou PixelWave / DreamShaper XL,Carregar o modelo base para geração
+CFG_02,LoRA Loader,LoraLoader,Pixel Art LoRA (peso 0.8) + SpriteSheet LoRA (peso 0.7),Aplicar estilo de pixel art e formato de sprite sheet
+CFG_03,Prompt Nodes,CLIPTextEncode,Positive & Negative prompts,Codificar os textos de prompt positivo e negativo
+CFG_04,Latent Image,EmptyLatentImage,1024x1024 para Grid 4x4 ou 8x1 frame strip,Definir a resolução base do grid do sprite sheet
+CFG_05,Sampler,KSampler,"euler_ancestral, karras, 28 steps, cfg 7.0, denoise 1.0",Gerar a imagem a partir do latent e prompts
+CFG_06,Consistency,"ControlNetLoader, ControlNetApply",Tile / LineArt ou OpenPose,Manter poses sequenciais e consistência do personagem
+CFG_07,Pós-Processamento,"Rembg (Remove Background), Image Crop",Transparência PNG pura,Extrair cada sprite individual com fundo transparente

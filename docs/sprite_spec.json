@@ -1,0 +1,377 @@
+{
+ "config": {
+  "checkpoint": "SDXL Base",
+  "lora": {
+   "pixel_art": 0.8,
+   "spritesheet": 0.7
+  },
+  "sampler": "euler_ancestral",
+  "scheduler": "karras",
+  "steps": 28,
+  "cfg": 7.0,
+  "size": [
+   1024,
+   1024
+  ],
+  "background": "chroma_green",
+  "post": [
+   "rembg",
+   "chroma_key_green",
+   "crop"
+  ]
+ },
+ "entries": [
+  {
+   "id": "SPR_PROT_01_IDLE",
+   "categoria": "Protagonista",
+   "personagem": "Deus Despedaçado",
+   "fase": "Imp Menor (A Casca)",
+   "anim": "Idle",
+   "view": "Top-Down 2.5D",
+   "prompt": "pixel art style, sprite sheet, multiple frames, pure chroma green background, game asset, 8-directional, crisp lines, clean contours, 0.8m tall, charcoal/crimson skin, blunt horns, sulfur yellow eyes, abyssal spark",
+   "negative": "noise, blurry anti-aliasing, complex background, unwanted realistic 3D shadows, text, deformations",
+   "controlnet": "ControlNet OpenPose"
+  },
+  {
+   "id": "SPR_PROT_02_WALK",
+   "categoria": "Protagonista",
+   "personagem": "Deus Despedaçado",
+   "fase": "Nobre Abissal",
+   "anim": "Walk",
+   "view": "Top-Down 2.5D",
+   "prompt": "pixel art style, sprite sheet, multiple frames, pure chroma green background, game asset, 8-directional, crisp lines, clean contours, 2.1m tall, slate-gray skin, cobalt blue aether runes, retractable shadow wings, elegant obsidian horns",
+   "negative": "noise, blurry anti-aliasing, complex background, unwanted realistic 3D shadows, text, deformations",
+   "controlnet": "ControlNet OpenPose"
+  },
+  {
+   "id": "SPR_PROT_03_ATTACK",
+   "categoria": "Protagonista",
+   "personagem": "Deus Despedaçado",
+   "fase": "Arquidemônio",
+   "anim": "Attack",
+   "view": "Top-Down 2.5D",
+   "prompt": "pixel art style, sprite sheet, multiple frames, pure chroma green background, game asset, 8-directional, crisp lines, clean contours, 3.2m tall, permanent levitation, crystalline horn crown, cloak of black flames and stellar embers, 3 pairs of vertical eyes",
+   "negative": "noise, blurry anti-aliasing, complex background, unwanted realistic 3D shadows, text, deformations",
+   "controlnet": "ControlNet OpenPose"
+  },
+  {
+   "id": "SPR_PROT_04_CAST",
+   "categoria": "Protagonista",
+   "personagem": "Deus Despedaçado",
+   "fase": "Avatar Primordial",
+   "anim": "Cast",
+   "view": "Top-Down 2.5D",
+   "prompt": "pixel art style, sprite sheet, multiple frames, pure chroma green background, game asset, 8-directional, crisp lines, clean contours, 4.5m tall, cosmic nebulas, 6 wings of light and shadow, stellar aether halo, restored divine entity",
+   "negative": "noise, blurry anti-aliasing, complex background, unwanted realistic 3D shadows, text, deformations",
+   "controlnet": "ControlNet OpenPose"
+  },
+  {
+   "id": "SPR_APOS_KROUG_03_IDLE",
+   "categoria": "Apóstolo",
+   "personagem": "Kroug, O Escudo das Cinzas",
+   "fase": "Rei Ogro de Fogo (Forma 3)",
+   "anim": "Idle",
+   "view": "Top-Down 2.5D",
+   "prompt": "pixel art style, sprite sheet, multiple frames, pure chroma green background, game asset, 8-directional, crisp lines, clean contours, 3.8m tall, volcanic rock, magma fissures, colossal molten obsidian club",
+   "negative": "noise, blurry anti-aliasing, complex background, unwanted realistic 3D shadows, text, deformations",
+   "controlnet": "ControlNet OpenPose"
+  },
+  {
+   "id": "SPR_APOS_LIRA_03_CAST",
+   "categoria": "Apóstolo",
+   "personagem": "Lira, A Sacerdotisa da Floresta",
+   "fase": "Rainha Ent Primordial (Forma 3)",
+   "anim": "Cast",
+   "view": "Top-Down 2.5D",
+   "prompt": "pixel art style, sprite sheet, multiple frames, pure chroma green background, game asset, 8-directional, crisp lines, clean contours, 4.5m tall, monumental living roots, toxic flowers, healing emerald sap",
+   "negative": "noise, blurry anti-aliasing, complex background, unwanted realistic 3D shadows, text, deformations",
+   "controlnet": "ControlNet OpenPose"
+  },
+  {
+   "id": "SPR_APOS_THALKOR_03_ATTACK",
+   "categoria": "Apóstolo",
+   "personagem": "Thal'kor, A Lâmina Cega",
+   "fase": "Serafim Negro (Forma 3)",
+   "anim": "Attack",
+   "view": "Top-Down 2.5D",
+   "prompt": "pixel art style, sprite sheet, multiple frames, pure chroma green background, game asset, 8-directional, crisp lines, clean contours, black silk blindfold over empty eyes, 6 razor steel feather wings, dual stellar aether katanas",
+   "negative": "noise, blurry anti-aliasing, complex background, unwanted realistic 3D shadows, text, deformations",
+   "controlnet": "ControlNet OpenPose"
+  },
+  {
+   "id": "SPR_APOS_GARM_03_RUN",
+   "categoria": "Apóstolo",
+   "personagem": "Garm, O Devorador de Horizontes",
+   "fase": "Fenrir Menor (Forma 3)",
+   "anim": "Walk/Run",
+   "view": "Top-Down 2.5D",
+   "prompt": "pixel art style, sprite sheet, multiple frames, pure chroma green background, game asset, 8-directional, crisp lines, clean contours, two-story titanic wolf, icy blue flames mane, crushing paws",
+   "negative": "noise, blurry anti-aliasing, complex background, unwanted realistic 3D shadows, text, deformations",
+   "controlnet": "ControlNet OpenPose"
+  },
+  {
+   "id": "SPR_ANTAG_INQ_01_WALK",
+   "categoria": "Inimigo/Elite",
+   "personagem": "Inquisidores de Aço",
+   "fase": "Tríade",
+   "anim": "Walk",
+   "view": "Top-Down 2.5D",
+   "prompt": "pixel art style, sprite sheet, multiple frames, pure chroma green background, game asset, 8-directional, crisp lines, clean contours, plate armor, white and gold hoods, anti-magic sacred chains, runic stakes, silver rapiers",
+   "negative": "noise, blurry anti-aliasing, complex background, unwanted realistic 3D shadows, text, deformations",
+   "controlnet": "ControlNet OpenPose"
+  },
+  {
+   "id": "SPR_BOSS_AURIUS_01_IDLE",
+   "categoria": "Chefe",
+   "personagem": "Aurius, o Falso Deus",
+   "fase": "Entidade Solar",
+   "anim": "Idle",
+   "view": "Top-Down 2.5D",
+   "prompt": "pixel art style, sprite sheet, multiple frames, pure chroma green background, game asset, 8-directional, crisp lines, clean contours, solar entity of geometric gold rings, 12 blinding plasma light wings, solar sword",
+   "negative": "noise, blurry anti-aliasing, complex background, unwanted realistic 3D shadows, text, deformations",
+   "controlnet": "ControlNet OpenPose"
+  },
+  {
+   "id": "SPR_SYS_KAELEN_01_HUD",
+   "categoria": "Sistema / Interface",
+   "personagem": "Kaelen (A Voz do Mundo)",
+   "fase": "Projeção Holográfica",
+   "anim": "UI Portrait / Hologram Idle",
+   "view": "Frontal Portrait",
+   "prompt": "pixel art style, glowing cyan-blue holographic digital avatar portrait, abstract geometric deity face with floating cosmic runes, digital glitch aura, clean transparent/chroma green background, sharp pixel lines, 64x64 icon style",
+   "negative": "realistic human skin, complex background, 3D render, blur, noisy pixels",
+   "controlnet": "ControlNet Tile"
+  },
+  {
+   "id": "SPR_APOS_KROUG_01_IDLE",
+   "categoria": "Apóstolo",
+   "personagem": "Kroug",
+   "fase": "Goblin da Lama (Forma 1)",
+   "anim": "Idle/Flee",
+   "view": "Top-Down 2.5D",
+   "prompt": "pixel art style, sprite sheet, multiple frames, pure chroma green background, 0.9m tall skinny mud goblin, ragged brown loincloth, holding brittle wooden club, nervous expressions, 8-directional, crisp pixel contours",
+   "negative": "muscular, armored, realistic, 3D",
+   "controlnet": "ControlNet OpenPose"
+  },
+  {
+   "id": "SPR_APOS_KROUG_02_BLOCK",
+   "categoria": "Apóstolo",
+   "personagem": "Kroug",
+   "fase": "Hobgoblin de Ferro (Forma 2)",
+   "anim": "Defend/Attack",
+   "view": "Top-Down 2.5D",
+   "prompt": "pixel art style, sprite sheet, multiple frames, pure chroma green background, 1.9m tall muscular hobgoblin in salvaged rusted iron plate armor, holding heavy iron tower shield and spiked mace, defensive block pose, 8-directional",
+   "negative": "weak, small goblin, blurry",
+   "controlnet": "ControlNet OpenPose"
+  },
+  {
+   "id": "SPR_APOS_LIRA_01_FLOAT",
+   "categoria": "Apóstolo",
+   "personagem": "Lira",
+   "fase": "Muda Mágica (Forma 1)",
+   "anim": "Idle/Heal",
+   "view": "Top-Down 2.5D",
+   "prompt": "pixel art style, sprite sheet, pure chroma green background, tiny 0.4m bioluminescent floating plant sprout nymph, glowing emerald leaf hair, radiating healing sparkles, gentle hovering animation frames, 8-directional",
+   "negative": "human woman, giant tree, dark monster",
+   "controlnet": "ControlNet OpenPose"
+  },
+  {
+   "id": "SPR_APOS_LIRA_02_CAST",
+   "categoria": "Apóstolo",
+   "personagem": "Lira",
+   "fase": "Dríade Sombria (Forma 2)",
+   "anim": "Cast/Skill",
+   "view": "Top-Down 2.5D",
+   "prompt": "pixel art style, sprite sheet, pure chroma green background, 1.7m slender dark dryad humanoid, body of black ironwood bark, glowing purple vine hair, poisonous thorn brambles erupting from ground, 8-directional",
+   "negative": "cheerful elf, bright flowers, blurry",
+   "controlnet": "ControlNet OpenPose"
+  },
+  {
+   "id": "SPR_APOS_THALKOR_01_FLY",
+   "categoria": "Apóstolo",
+   "personagem": "Thal'kor",
+   "fase": "Corvo Bestial (Forma 1)",
+   "anim": "Fly/Scout",
+   "view": "Top-Down 2.5D",
+   "prompt": "pixel art style, sprite sheet, pure chroma green background, large three-beaked monstrous raven, metallic black feathers, fast flapping flight animation frames, diving scout pose, 8-directional",
+   "negative": "cute bird, pigeon, white feathers",
+   "controlnet": "ControlNet OpenPose"
+  },
+  {
+   "id": "SPR_APOS_THALKOR_02_SLASH",
+   "categoria": "Apóstolo",
+   "personagem": "Thal'kor",
+   "fase": "Harpia Noturna (Forma 2)",
+   "anim": "Attack/Dash",
+   "view": "Top-Down 2.5D",
+   "prompt": "pixel art style, sprite sheet, pure chroma green background, agile winged harpy humanoid, sharp feather blade daggers in hands, throwing razor black feathers, acrobat diving dash animation, 8-directional",
+   "negative": "colorful feathers, cute anime girl, bulky",
+   "controlnet": "ControlNet OpenPose"
+  },
+  {
+   "id": "SPR_APOS_GARM_01_RUN",
+   "categoria": "Apóstolo",
+   "personagem": "Garm",
+   "fase": "Lobo Caolho (Forma 1)",
+   "anim": "Walk/Run",
+   "view": "Top-Down 2.5D",
+   "prompt": "pixel art style, sprite sheet, pure chroma green background, agile lean silver-gray wolf, prominent scar over blind left eye, sharp amber right eye, running gallop animation frames, saddle mounts for imp, 8-directional",
+   "negative": "cute puppy, fluffy husky, 3D render",
+   "controlnet": "ControlNet OpenPose"
+  },
+  {
+   "id": "SPR_APOS_GARM_02_BITE",
+   "categoria": "Apóstolo",
+   "personagem": "Garm",
+   "fase": "Cão do Inferno Sombrio (Forma 2)",
+   "anim": "Attack/Bite",
+   "view": "Top-Down 2.5D",
+   "prompt": "pixel art style, sprite sheet, pure chroma green background, double-sized shadow hound, fur composed of black billowing smoke, dripping green acidic saliva from fangs, vicious pounce attack animation, 8-directional",
+   "negative": "cute dog, fire hound with normal red fur",
+   "controlnet": "ControlNet OpenPose"
+  },
+  {
+   "id": "SPR_NPC_GOB_WORKER_01",
+   "categoria": "NPC / Aliado",
+   "personagem": "Goblin Construtor das Cinzas",
+   "fase": "Cidadão Comum",
+   "anim": "Work/Idle",
+   "view": "Top-Down 2.5D",
+   "prompt": "pixel art style, sprite sheet, pure chroma green background, small hunched goblin worker, carrying stone basket and pickaxe, mining volcanic rock animation, 4-directional",
+   "negative": "warrior armor, magic spells, weapons",
+   "controlnet": "ControlNet OpenPose"
+  },
+  {
+   "id": "SPR_NPC_DWARF_SMITH_01",
+   "categoria": "NPC / Aliado",
+   "personagem": "Mestre Ferreiro Anão Rebelde",
+   "fase": "Clãs dos Picos de Cinza",
+   "anim": "Forge/Idle",
+   "view": "Top-Down 2.5D",
+   "prompt": "pixel art style, sprite sheet, pure chroma green background, stocky dwarf blacksmith, thick braided gray beard, heavy leather apron, hammering glowing obsidian bar on anvil, 4-directional",
+   "negative": "tall, human, holy robes",
+   "controlnet": "ControlNet OpenPose"
+  },
+  {
+   "id": "SPR_NPC_ELF_DRUID_01",
+   "categoria": "NPC / Aliado",
+   "personagem": "Herbalista Elfo Caído",
+   "fase": "Raízes Podres",
+   "anim": "Craft/Cast",
+   "view": "Top-Down 2.5D",
+   "prompt": "pixel art style, sprite sheet, pure chroma green background, slender dark fallen elf, tattered ash cloak, brewing glowing aether potion in cauldron, mixing glowing fungi, 4-directional",
+   "negative": "bright blonde high elf, golden armor",
+   "controlnet": "ControlNet OpenPose"
+  },
+  {
+   "id": "SPR_NPC_GOLEM_ETHER_01",
+   "categoria": "NPC / Tropa de Choque",
+   "personagem": "Golem de Éter Antigo",
+   "fase": "Construto Reativado",
+   "anim": "Walk/Smash",
+   "view": "Top-Down 2.5D",
+   "prompt": "pixel art style, sprite sheet, pure chroma green background, 3m tall ancient basalt stone golem, glowing blue aether energy core in chest, heavy stone fist slam animation, 8-directional",
+   "negative": "organic skin, iron robot, steam",
+   "controlnet": "ControlNet OpenPose"
+  },
+  {
+   "id": "SPR_ENEMY_PALADIN_WALL_01",
+   "categoria": "Inimigo / Tropa",
+   "personagem": "Paladino da Alvorada",
+   "fase": "Linha de Escudos",
+   "anim": "Shield Wall / Walk",
+   "view": "Top-Down 2.5D",
+   "prompt": "pixel art style, sprite sheet, pure chroma green background, human knight in gleaming silver-white plate armor, white tabard with sun crest, massive locked tower shield, spear thrust animation, 8-directional",
+   "negative": "dark armor, demon, monster",
+   "controlnet": "ControlNet OpenPose"
+  },
+  {
+   "id": "SPR_ENEMY_GRIFFIN_CAV_01",
+   "categoria": "Inimigo / Elite",
+   "personagem": "Cavaleiro de Grifo Alabastro",
+   "fase": "Cavalaria Aérea",
+   "anim": "Fly/Dive Attack",
+   "view": "Top-Down 2.5D",
+   "prompt": "pixel art style, sprite sheet, pure chroma green background, armored white feathered griffin, mounted paladin lancer with radiant gold lance, diving aerial swoop attack, 8-directional",
+   "negative": "black bird, demon horse",
+   "controlnet": "ControlNet OpenPose"
+  },
+  {
+   "id": "SPR_ENEMY_CROSSBOW_01",
+   "categoria": "Inimigo / Tropa",
+   "personagem": "Besteiro da Inquisição",
+   "fase": "Atirador Sagrado",
+   "anim": "Shoot / Reload",
+   "view": "Top-Down 2.5D",
+   "prompt": "pixel art style, sprite sheet, pure chroma green background, zealous inquisitorial sharpshooter, hooded steel visor, aiming heavy mechanical crossbow loaded with glowing golden bolts, 8-directional",
+   "negative": "friendly, mage robes",
+   "controlnet": "ControlNet OpenPose"
+  },
+  {
+   "id": "SPR_ENEMY_BISHOP_HEAL_01",
+   "categoria": "Inimigo / Suporte",
+   "personagem": "Arcebispo Solar",
+   "fase": "Clérigo de Retaguarda",
+   "anim": "Cast/Heal",
+   "view": "Top-Down 2.5D",
+   "prompt": "pixel art style, sprite sheet, pure chroma green background, ornate white and gold liturgical robes, holding golden sun staff, chanting healing beam aura animation, 8-directional",
+   "negative": "evil cultist, dark magic, armor",
+   "controlnet": "ControlNet OpenPose"
+  },
+  {
+   "id": "SPR_BOSS_CARD_IGNIS_01",
+   "categoria": "Chefe",
+   "personagem": "Cardeal Ignis",
+   "fase": "O Bispo de Lava Branca (Ato I Boss)",
+   "anim": "Cast/Lava Burst",
+   "view": "Top-Down 2.5D",
+   "prompt": "pixel art style, sprite sheet, pure chroma green background, towering pontiff in burning white robes over golden plate armor, tall papal mitre, summoning erupting rivers of pure white-hot holy magma from floor, 8-directional",
+   "negative": "red lava, weak, dark demon",
+   "controlnet": "ControlNet OpenPose"
+  },
+  {
+   "id": "SPR_BOSS_CARD_ZEPHYR_01",
+   "categoria": "Chefe",
+   "personagem": "Cardeal Zephyr",
+   "fase": "O Soberano das Tempestades (Ato II Boss)",
+   "anim": "Fly/Tornado",
+   "view": "Top-Down 2.5D",
+   "prompt": "pixel art style, sprite sheet, pure chroma green background, winged cardinal riding four-winged celestial pegasus, wielding silver wind rapier, summoning swirling golden light cyclones, 8-directional",
+   "negative": "grounded, dark monster",
+   "controlnet": "ControlNet OpenPose"
+  },
+  {
+   "id": "SPR_BOSS_CARD_AQUA_01",
+   "categoria": "Chefe",
+   "personagem": "Cardeal Aqua",
+   "fase": "A Senhora do Lago Bispado (Ato II Boss)",
+   "anim": "Cast/Holy Wave",
+   "view": "Top-Down 2.5D",
+   "prompt": "pixel art style, sprite sheet, pure chroma green background, veiled cardinal in flowing aqua-blue and gold vestments, floating above pool of consecrated burning holy water, tidal wave tsunami attack, 8-directional",
+   "negative": "dryad, fire, dark magic",
+   "controlnet": "ControlNet OpenPose"
+  },
+  {
+   "id": "SPR_BOSS_CARD_TERRA_01",
+   "categoria": "Chefe",
+   "personagem": "Cardeal Terra",
+   "fase": "A Muralha Sagrada Viva (Ato III Boss)",
+   "anim": "Slam/Wall Raise",
+   "view": "Top-Down 2.5D",
+   "prompt": "pixel art style, sprite sheet, pure chroma green background, giant bearded cardinal encased in living sanctified white marble battlements, colossal stone warhammer, raising fortress pillars from ground, 8-directional",
+   "negative": "agile, small, dark stone",
+   "controlnet": "ControlNet OpenPose"
+  },
+  {
+   "id": "SPR_BOSS_CARD_UMBRA_01",
+   "categoria": "Chefe",
+   "personagem": "Cardeal Umbra",
+   "fase": "O Grande Inquisidor das Sombras (Ato III Boss)",
+   "anim": "Teleport/Mind Break",
+   "view": "Top-Down 2.5D",
+   "prompt": "pixel art style, sprite sheet, pure chroma green background, masked sinister cardinal draped in black and gold liturgical cloaks, wielding twin sacrificial khopeshes, creating shadowy mirror clones and mind-control sigils, 8-directional",
+   "negative": "bright holy aura, friendly",
+   "controlnet": "ControlNet OpenPose"
+  }
+ ]
+}

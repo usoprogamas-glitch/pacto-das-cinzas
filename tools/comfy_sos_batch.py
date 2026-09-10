@@ -121,13 +121,14 @@ def has_lora():
         return False
 
 
-def build_workflow(prompt, width, height, seed, use_lora, prefix, init_image=None, denoise=1.0):
+def build_workflow(prompt, width, height, seed, use_lora, prefix, init_image=None, denoise=1.0,
+                   sampler="dpmpp_2m", scheduler="karras", steps=16, cfg=6.0, lora_weight=1.0):
     wf = {"1": {"class_type": "CheckpointLoaderSimple", "inputs": {"ckpt_name": CKPT}}}
     model = ["1", 0]
     clip = ["1", 1]
     if use_lora:
         wf["2"] = {"class_type": "LoraLoader", "inputs": {
-            "lora_name": LORA, "strength_model": 1.0, "strength_clip": 1.0,
+            "lora_name": LORA, "strength_model": lora_weight, "strength_clip": lora_weight,
             "model": ["1", 0], "clip": ["1", 1]}}
         model, clip = ["2", 0], ["2", 1]
     wf["10"] = {"class_type": "CLIPTextEncode", "inputs": {"text": prompt, "clip": clip}}
@@ -143,8 +144,8 @@ def build_workflow(prompt, width, height, seed, use_lora, prefix, init_image=Non
             "width": width, "height": height, "batch_size": 1}}
         latent = ["12", 0]
     wf["13"] = {"class_type": "KSampler", "inputs": {
-        "seed": seed, "steps": 16, "cfg": 6.0, "sampler_name": "dpmpp_2m",
-        "scheduler": "karras", "denoise": denoise,
+        "seed": seed, "steps": steps, "cfg": cfg, "sampler_name": sampler,
+        "scheduler": scheduler, "denoise": denoise,
         "model": model, "positive": ["10", 0], "negative": ["11", 0],
         "latent_image": latent}}
     wf["14"] = {"class_type": "VAEDecode", "inputs": {"samples": ["13", 0], "vae": ["1", 2]}}
